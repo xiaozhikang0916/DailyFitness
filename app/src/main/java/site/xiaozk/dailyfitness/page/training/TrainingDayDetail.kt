@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,7 +32,6 @@ import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyTrainingPartGroup
 import site.xiaozk.dailyfitness.repository.model.TrainingDayData
 import site.xiaozk.dailyfitness.widget.BackButton
-import site.xiaozk.dailyfitness.widget.FloatingActionButtonShowHide
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -59,9 +59,11 @@ fun TrainingDayDetailPage(
                 },
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    IconButton(onClick = {
-                        nav?.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
-                    }) {
+                    IconButton(
+                        onClick = {
+                            nav?.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                        }
+                    ) {
                         Icon(painter = rememberVectorPainter(image = Icons.Default.Create), contentDescription = "add")
                     }
                 }

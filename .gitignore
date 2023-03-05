@@ -87,3 +87,7 @@ lint/tmp/
 # mac ds_store
 .DS_Store
 */.DS_Store
+
+# idea shelf
+/.idea/shelf/Changes/
+/.idea/shelf/Changes.xml
