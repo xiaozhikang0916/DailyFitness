@@ -47,7 +47,7 @@ fun TrainingDayDetailPage(
 ) {
     val viewModel: TrainingDayDetailViewModel = hiltViewModel()
     val data = viewModel.getTrainingData(date)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val nav = LocalNavController.current
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
@@ -58,16 +58,15 @@ fun TrainingDayDetailPage(
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(onClick = {
+                        nav?.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                    }) {
+                        Icon(painter = rememberVectorPainter(image = Icons.Default.Create), contentDescription = "add")
+                    }
+                }
             )
         },
-        floatingActionButton = {
-            FloatingActionButtonShowHide(
-                onClick = { nav?.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route) },
-                topAppBarState = scrollBehavior.state
-            ) {
-                Icon(painter = rememberVectorPainter(image = Icons.Default.Create), contentDescription = "add")
-            }
-        }
     ) {
         TrainingDayDetail(
             data = data.collectAsState(initial = TrainingDayData(date)).value,

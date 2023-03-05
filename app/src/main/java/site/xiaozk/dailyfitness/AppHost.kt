@@ -5,7 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -119,7 +119,7 @@ fun AppHome(bottomNavController: NavHostController) {
                         )
                     }) {
                         Image(
-                            painter = rememberVectorPainter(image = Icons.Default.AddCircle),
+                            painter = rememberVectorPainter(image = Icons.Default.Add),
                             contentDescription = null
                         )
                     }
