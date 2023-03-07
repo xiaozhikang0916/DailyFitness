@@ -3,6 +3,7 @@ package site.xiaozk.dailyfitness.database.inject
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import dagger.BindsOptionalOf
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -12,6 +13,8 @@ import site.xiaozk.dailyfitness.database.AppDataBase
 import site.xiaozk.dailyfitness.database.dao.DailyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.UserDao
+import java.util.Optional
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 /**
@@ -39,11 +42,33 @@ class DaoProvider {
 
     @Provides
     @Singleton
-    fun provideAppDataBase(@ApplicationContext context: Context):AppDataBase {
+    fun provideAppDataBaseBuilder(@ApplicationContext context: Context):RoomDatabase.Builder<AppDataBase> {
         return Room.databaseBuilder(
             context = context,
             klass = AppDataBase::class.java,
             "fitness.db"
-        ).build()
+        )
     }
+
+    @Provides
+    @Singleton
+    fun provideAppDatabase(builder: RoomDatabase.Builder<AppDataBase>, @DebugDatabaseBuilder debugBuilder: Optional<RoomDatabase.Builder<AppDataBase>>): AppDataBase {
+        return if (debugBuilder.isPresent) {
+            debugBuilder.get().build()
+        } else {
+            builder.build()
+        }
+    }
+
+
+}
+
+@Qualifier annotation class DebugDatabaseBuilder
+
+@InstallIn(SingletonComponent::class)
+@Module
+interface DebugDatabaseModule {
+    @BindsOptionalOf
+    @DebugDatabaseBuilder
+    fun getDebugDatabaseBuilder(): RoomDatabase.Builder<AppDataBase>
 }
