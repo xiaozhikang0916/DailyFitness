@@ -9,6 +9,7 @@ import java.time.Instant
  * @create: 2023/2/23
  */
 data class BodyDataRecord(
+    val id: Int = 0,
     val instant: Instant = Instant.EPOCH,
     val weight: Float = 0f,
     val bustSize: Float = 0f,
@@ -43,7 +44,7 @@ fun Collection<BodyDataRecord>.average(): BodyDataRecord {
     return if (count == 1) {
         this.first()
     } else {
-        this.fold(BodyDataRecord(Instant.now(), 0f, 0f, 0f, 0f, 0f)) { acc, data ->
+        this.fold(BodyDataRecord(0, Instant.now(), 0f, 0f, 0f, 0f, 0f)) { acc, data ->
             acc + data
         } / count
     }

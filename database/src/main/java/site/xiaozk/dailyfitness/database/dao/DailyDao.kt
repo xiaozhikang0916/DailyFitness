@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.MapInfo
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
 import site.xiaozk.dailyfitness.database.model.DBDailyTrainAction
@@ -24,6 +25,10 @@ import java.time.LocalDate
 interface DailyDao {
     @Insert
     suspend fun addDailyPersonData(data: DBDailyBodyData)
+
+    @Update
+    suspend fun updateDailyPersonData(data: DBDailyBodyData)
+
     @Delete
     suspend fun deleteDailyPersonData(data: DBDailyBodyData)
 

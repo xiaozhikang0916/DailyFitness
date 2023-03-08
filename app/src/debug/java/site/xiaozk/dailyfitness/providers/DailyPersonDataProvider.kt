@@ -14,9 +14,9 @@ import java.time.ZoneId
 class DailyPersonDataProvider : PreviewParameterProvider<BodyDataRecord> {
     override val values: Sequence<BodyDataRecord>
         get() = sequenceOf(
-            BodyDataRecord(instant = Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
-            BodyDataRecord(instant = Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
-            BodyDataRecord(instant = Instant.now(), 70f, 70f, 60f, 70f, 0.2f)
+            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
+            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
+            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f)
         )
 }
 

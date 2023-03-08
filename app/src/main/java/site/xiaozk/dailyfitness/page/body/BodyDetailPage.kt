@@ -1,17 +1,31 @@
 package site.xiaozk.dailyfitness.page.body
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,11 +59,61 @@ fun BodyDetailPage() {
             showBottomNavBar = true
         }
     }
-    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value)
+    var deleteBodyDialog by remember {
+        mutableStateOf<BodyDataRecord?>(null)
+    }
+    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value) {
+        deleteBodyDialog = it
+    }
+
+    if (deleteBodyDialog != null) {
+        val dismiss by rememberUpdatedState(newValue = { deleteBodyDialog = null })
+        AlertDialog(
+            onDismissRequest = dismiss,
+            buttons = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                ) {
+                    Text(
+                        text = "取消",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable { dismiss() },
+                        textAlign = TextAlign.Center
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
+                    )
+                    Text(
+                        text = "删除",
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable {
+                                deleteBodyDialog?.let {
+                                    viewModel.deleteBodyDetail(it)
+                                }
+                                dismiss()
+                            },
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            title = {
+                Text(text = "确认删除？")
+            }
+        )
+    }
 }
 
 @Composable
-fun BodyDetailPage(data: BodyDataWithDate) {
+fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> Unit) {
     val dates =
         data.personData.entries.sortedBy { it.key }
 
@@ -59,18 +123,24 @@ fun BodyDetailPage(data: BodyDataWithDate) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(dates) {
-                BodyDetailDaily(day = it.key, data = it.value.average(), format = formatter)
+                BodyDetailDaily(day = it.key, data = it.value.average(), format = formatter, onCardLongClick = onCardLongClick)
             }
         }
     }
-
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun BodyDetailDaily(day: LocalDate, data: BodyDataRecord, format: DateTimeFormatter) {
+private fun BodyDetailDaily(
+    day: LocalDate,
+    data: BodyDataRecord,
+    format: DateTimeFormatter,
+    onCardLongClick: (BodyDataRecord) -> Unit,
+) {
     Card(
         modifier = Modifier
             .padding(all = 6.dp)
+            .combinedClickable(onLongClick = { onCardLongClick(data) }) { }
             .fillMaxWidth(),
     ) {
         Text(

@@ -47,12 +47,13 @@ data class AddDailyBodyState(
     fun toDailyBodyData(): BodyDataRecord {
         if (valid) {
             return BodyDataRecord(
+                id = 0,
                 instant = Instant.now(),
-                bodyField.weight.toFloatOrNull() ?: 0f,
-                bodyField.bustSize.toFloatOrNull() ?: 0f,
-                bodyField.waistSize.toFloatOrNull() ?: 0f,
-                bodyField.hipSize.toFloatOrNull() ?: 0f,
-                bodyField.bodyFat.toFloatOrNull() ?: 0f,
+                weight = bodyField.weight.toFloatOrNull() ?: 0f,
+                bustSize = bodyField.bustSize.toFloatOrNull() ?: 0f,
+                waistSize = bodyField.waistSize.toFloatOrNull() ?: 0f,
+                hipSize = bodyField.hipSize.toFloatOrNull() ?: 0f,
+                bodyFat = bodyField.bodyFat.toFloatOrNull() ?: 0f,
             )
         } else {
             throw IllegalArgumentException("Some of your input field is invalid")

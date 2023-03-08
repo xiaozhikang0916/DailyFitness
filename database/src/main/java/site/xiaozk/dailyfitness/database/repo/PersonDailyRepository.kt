@@ -37,6 +37,12 @@ class PersonDailyRepository @Inject constructor(
         )
     }
 
+    override suspend fun updatePersonDailyData(user: User, data: BodyDataRecord) {
+        dailyDao.updateDailyPersonData(
+            data = data.toDbEntity(user.uid)
+        )
+    }
+
     override suspend fun removePersonDailyData(data: BodyDataRecord) {
         dailyDao.deleteDailyPersonData(data = data.toDbEntity())
 

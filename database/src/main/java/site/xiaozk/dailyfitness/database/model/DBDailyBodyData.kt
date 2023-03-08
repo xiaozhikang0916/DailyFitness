@@ -23,6 +23,7 @@ data class DBDailyBodyData(
 ) {
     fun toRepoEntity(): BodyDataRecord {
         return BodyDataRecord(
+            id = id,
             instant = recordTime,
             weight = weight,
             bustSize = bustSize,
@@ -35,6 +36,7 @@ data class DBDailyBodyData(
 
 fun BodyDataRecord.toDbEntity(userId: Int = 0): DBDailyBodyData {
     return DBDailyBodyData(
+        id = this.id,
         recordTime = this.instant,
         userId = userId,
         weight = this.weight,

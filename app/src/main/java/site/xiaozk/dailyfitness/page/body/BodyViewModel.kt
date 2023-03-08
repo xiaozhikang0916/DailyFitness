@@ -4,13 +4,16 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
+import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import java.time.LocalDate
 import javax.inject.Inject
@@ -27,6 +30,18 @@ class BodyViewModel @Inject constructor(
 ) : ViewModel() {
     val bodyDetail: Flow<BodyDataWithDate> = flow {
         val user = userRepo.getCurrentUser()
-        emitAll(bodyRepo.getPersonDailyDataFlow(user, LocalDate.now().withDayOfMonth(1), LocalDate.now().withDayOfMonth(30)))
+        emitAll(
+            bodyRepo.getPersonDailyDataFlow(
+                user,
+                LocalDate.now().withDayOfMonth(1),
+                LocalDate.now().withDayOfMonth(30)
+            )
+        )
+    }
+
+    fun deleteBodyDetail(data: BodyDataRecord) {
+        viewModelScope.launch {
+            bodyRepo.removePersonDailyData(data)
+        }
     }
 }
