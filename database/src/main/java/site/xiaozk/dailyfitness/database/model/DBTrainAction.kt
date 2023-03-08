@@ -25,7 +25,6 @@ data class DBTrainAction(
     val isCountedAction: Boolean,
 ) {
     fun toRepoEntity(part: DBTrainPart): TrainAction {
-
         return TrainAction(
             id = this.id,
             actionName = this.actionName,
@@ -35,4 +34,14 @@ data class DBTrainAction(
             isCountedAction = this.isCountedAction
         )
     }
+}
+
+fun TrainAction.toDbEntity(): DBTrainAction {
+    return DBTrainAction(
+        actionName = this.actionName,
+        partId = this.part.id,
+        isCountedAction = this.isCountedAction,
+        isTimedAction = this.isTimedAction,
+        isWeightedAction = this.isWeightedAction
+    )
 }

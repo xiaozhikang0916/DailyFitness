@@ -1,8 +1,10 @@
 package site.xiaozk.dailyfitness.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.DBTrainPart
@@ -28,5 +30,20 @@ interface TrainDao {
 
     @Insert
     suspend fun addTrainAction(trainAction: DBTrainAction)
+
+    @Query("SELECT * FROM train_action JOIN train_part ON train_action.partId = train_part.id WHERE train_action.id = :actionId")
+    fun getTrainAction(actionId: Int): Flow<Map<DBTrainAction, DBTrainPart>>
+
+    @Delete
+    suspend fun deleteTrainPart(trainPart: DBTrainPart)
+
+    @Delete
+    suspend fun deleteTrainAction(trainAction: DBTrainAction)
+
+    @Update
+    suspend fun updateTrainPart(trainPart: DBTrainPart)
+
+    @Update
+    suspend fun updateTrainAction(trainAction: DBTrainAction)
 
 }

@@ -1,9 +1,13 @@
 package site.xiaozk.dailyfitness.database.repo
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import site.xiaozk.dailyfitness.database.dao.TrainDao
+import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.database.model.toRepoEntity
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
@@ -39,18 +43,33 @@ class TrainActionRepository @Inject constructor(
     }
 
     override suspend fun addTrainPart(part: TrainPart) {
-        trainDao.addTrainPart(site.xiaozk.dailyfitness.database.model.DBTrainPart(partName = part.partName))
+        trainDao.addTrainPart(part.toDbEntity())
+    }
+
+    override suspend fun updateTrainPart(part: TrainPart) {
+        trainDao.updateTrainPart(part.toDbEntity())
+    }
+
+    override suspend fun removeTrainPart(part: TrainPart) {
+        trainDao.deleteTrainPart(part.toDbEntity())
+    }
+
+    @OptIn(FlowPreview::class)
+    override fun getAction(actionId: Int): Flow<TrainAction> {
+        return trainDao.getTrainAction(actionId).flatMapConcat { it.entries.map { it.key.toRepoEntity(it.value) }.asFlow() }
     }
 
     override suspend fun addTrainAction(action: TrainAction) {
         trainDao.addTrainAction(
-            site.xiaozk.dailyfitness.database.model.DBTrainAction(
-                actionName = action.actionName,
-                partId = action.part.id,
-                isCountedAction = action.isCountedAction,
-                isTimedAction = action.isTimedAction,
-                isWeightedAction = action.isWeightedAction
-            )
+            action.toDbEntity()
         )
+    }
+
+    override suspend fun updateTrainAction(action: TrainAction) {
+        trainDao.updateTrainAction(action.toDbEntity())
+    }
+
+    override suspend fun removeTrainAction(action: TrainAction) {
+        trainDao.deleteTrainAction(action.toDbEntity())
     }
 }

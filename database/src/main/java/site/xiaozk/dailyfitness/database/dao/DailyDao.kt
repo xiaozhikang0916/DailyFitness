@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.MapInfo
 import androidx.room.Query
@@ -23,6 +24,8 @@ import java.time.LocalDate
 interface DailyDao {
     @Insert
     suspend fun addDailyPersonData(data: DBDailyBodyData)
+    @Delete
+    suspend fun deleteDailyPersonData(data: DBDailyBodyData)
 
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND recordTime > :fromTimestampMilli AND recordTime < :toTimestampMilli")
     fun getPersonDailyDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<List<DBDailyBodyData>>
@@ -63,5 +66,8 @@ interface DailyDao {
 
     @Insert
     suspend fun addDailyTrainAction(dailyTrainAction: DBDailyTrainAction)
+
+    @Delete
+    suspend fun deleteDailyTrainAction(dailyTrainAction: DBDailyTrainAction)
 
 }

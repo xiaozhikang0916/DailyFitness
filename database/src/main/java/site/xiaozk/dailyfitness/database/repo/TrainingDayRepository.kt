@@ -52,6 +52,10 @@ class TrainingDayRepository @Inject constructor(
         )
     }
 
+    override suspend fun deleteTrainAction(user: User, action: DailyTrainAction) {
+        dailyDao.deleteDailyTrainAction(action.toDbEntity(user.uid))
+    }
+
     override fun getAllTrainParts(): Flow<List<TrainPartGroup>> {
         return trainDao.getAllTrainPartWithAction().map {
             it.map { group -> group.toRepoEntity() }

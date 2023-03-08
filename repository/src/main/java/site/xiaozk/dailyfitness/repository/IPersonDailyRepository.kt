@@ -1,8 +1,8 @@
 package site.xiaozk.dailyfitness.repository
 
 import kotlinx.coroutines.flow.Flow
-import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
+import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.LocalDate
 
@@ -14,4 +14,5 @@ import java.time.LocalDate
 interface IPersonDailyRepository {
     fun getPersonDailyDataFlow(user: User, from: LocalDate, to: LocalDate): Flow<BodyDataWithDate>
     suspend fun addPersonDailyData(user: User, data: BodyDataRecord)
+    suspend fun removePersonDailyData(data: BodyDataRecord)
 }

@@ -20,6 +20,7 @@ class DailyTrainActionProvider : PreviewParameterProvider<DailyTrainAction> {
             val actions = TrainActionProvider().values
             return actions.mapIndexed { index, it ->
                 DailyTrainAction(
+                    id = 0,
                     instant = Calendar.getInstance().toInstant().minus(index.toLong(), ChronoUnit.DAYS),
                     action = it,
                     takenDuration = RecordedDuration(0f),

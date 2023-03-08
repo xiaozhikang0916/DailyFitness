@@ -11,6 +11,7 @@ import java.time.LocalDate
  * @create: 2023/2/23
  */
 data class DailyTrainAction(
+    val id: Int = 0,
     val instant: Instant,
     val action: TrainAction,
     val takenDuration: RecordedDuration?,

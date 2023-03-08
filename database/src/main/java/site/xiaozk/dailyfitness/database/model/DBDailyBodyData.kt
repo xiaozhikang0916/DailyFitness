@@ -32,3 +32,15 @@ data class DBDailyBodyData(
         )
     }
 }
+
+fun BodyDataRecord.toDbEntity(userId: Int = 0): DBDailyBodyData {
+    return DBDailyBodyData(
+        recordTime = this.instant,
+        userId = userId,
+        weight = this.weight,
+        bustSize = this.bustSize,
+        waistSize = this.waistSize,
+        hipSize = this.hipSize,
+        bodyFat = this.bodyFat
+    )
+}

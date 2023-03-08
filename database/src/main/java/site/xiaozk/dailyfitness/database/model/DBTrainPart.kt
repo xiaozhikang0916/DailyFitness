@@ -24,9 +24,14 @@ data class DBTrainPart(
         )
     }
 }
+
+fun TrainPart.toDbEntity() : DBTrainPart {
+    return DBTrainPart(id = this.id, partName = this.partName)
+}
+
 fun Map.Entry<DBTrainPart, List<DBTrainAction>?>.toRepoEntity(): TrainPartGroup {
     return TrainPartGroup(
-        part = TrainPart(key.id, key.partName),
+        part = key.toRepoEntity(),
         actions = value?.map { it.toRepoEntity(key) } ?: emptyList()
     )
 }

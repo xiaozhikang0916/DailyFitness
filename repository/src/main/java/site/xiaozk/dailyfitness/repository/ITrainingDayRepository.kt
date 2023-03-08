@@ -23,5 +23,7 @@ interface ITrainingDayRepository {
 
     suspend fun addTrainAction(user: User, action: DailyTrainAction)
 
+    suspend fun deleteTrainAction(user: User, action: DailyTrainAction)
+
     fun getAllTrainParts(): Flow<List<TrainPartGroup>>
 }

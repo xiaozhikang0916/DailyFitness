@@ -42,6 +42,7 @@ data class DBDailyTrainAction(
 
 fun DailyTrainAction.toDbEntity(userId: Int): DBDailyTrainAction {
     return DBDailyTrainAction(
+        actionId = this.id,
         usingActionId = this.action.id,
         actionTime = this.instant,
         recordedDuration = DBRecordedDuration.fromRepo(this.takenDuration),
@@ -65,7 +66,7 @@ data class DBRecordedWeight(
 
     companion object {
         fun fromRepo(weight: RecordedWeight?): DBRecordedWeight? {
-            return if (weight != null ) {
+            return if (weight != null) {
                 DBRecordedWeight(
                     takenWeight = weight.weight,
                     weightUnit = DBWeightUnit.fromRepo(weight.weightUnit)
@@ -134,7 +135,7 @@ enum class DBTimeUnit(val repoUnit: TimeUnit) {
 
 fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDayList(): TrainingDayList {
     val zone = ZoneId.systemDefault()
-    return this.flatMap {outMap ->
+    return this.flatMap { outMap ->
         outMap.value.flatMap { innerMap ->
             innerMap.value.map {
                 outMap.key to (innerMap.key to it)
@@ -142,6 +143,7 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDay
         }
     }.map {
         DailyTrainAction(
+            id = it.second.second.actionId,
             instant = it.second.second.actionTime,
             action = it.second.first.toRepoEntity(it.first),
             takenDuration = it.second.second.recordedDuration?.toRepoEntity(),
@@ -159,6 +161,8 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDay
         it.first to it.second.groupBy { it.action.part }.map { DailyTrainingPartGroup(it.key, it.value) }
     }.associate {
         it.first to TrainingDayData(it)
-    }.let { TrainingDayList(it) }
+    }.let {
+        TrainingDayList(it)
+    }
 
 }
