@@ -29,6 +29,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.LocalNavController
@@ -45,14 +47,18 @@ import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainPartPage() {
+fun AddTrainPartPage(partId: Int = 0) {
     val viewModel: AddTrainPartViewModel = hiltViewModel()
+    viewModel.loadPart(partId = partId)
     val state = viewModel.status.collectAsState()
     val nav = LocalNavController.current
     LaunchedEffect(key1 = state.value) {
-        if (state.value == ActionStatus.Done) {
+        if (state.value.submitStatus == ActionStatus.Done) {
             nav?.popBackStack()
         }
+    }
+    var name by remember(state.value.part) {
+        mutableStateOf(state.value.part.partName)
     }
     Scaffold(
         topBar = {
@@ -62,12 +68,11 @@ fun AddTrainPartPage() {
         },
         modifier = Modifier.systemBarsPadding()
     ) {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(it)) {
-            var name by remember {
-                mutableStateOf("")
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it)
+        ) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -78,7 +83,7 @@ fun AddTrainPartPage() {
 
             Button(
                 onClick = { viewModel.addPart(name) },
-                enabled = state.value == ActionStatus.Idle,
+                enabled = state.value.submitStatus == ActionStatus.Idle,
                 modifier = Modifier
                     .padding(all = 4.dp)
                     .fillMaxWidth()
@@ -93,18 +98,38 @@ fun AddTrainPartPage() {
 class AddTrainPartViewModel @Inject constructor(
     private val repo: ITrainActionRepository,
 ) : ViewModel() {
-    private val _status = MutableStateFlow<ActionStatus>(ActionStatus.Idle)
+    private val _status = MutableStateFlow(AddTrainPartState())
     val status = _status.asStateFlow()
+
+    fun loadPart(partId: Int = 0) {
+        Log.i("AddTrainPart", "Load part with part id $partId")
+        viewModelScope.launch {
+            _status.emitAll(
+                repo.getActionsOfPart(partId).map {
+                    AddTrainPartState(
+                        it.part,
+                    )
+                }
+            )
+        }
+    }
+
     fun addPart(name: String) {
         viewModelScope.launch {
-            _status.emit(ActionStatus.Loading)
+            val current = status.value
+            _status.emit(current.copy(submitStatus = ActionStatus.Loading))
             try {
-                repo.addTrainPart(TrainPart(partName = name))
-                _status.emit(ActionStatus.Done)
+                repo.addOrUpdateTrainPart(current.part.copy(partName = name))
+                _status.emit(current.copy(submitStatus = ActionStatus.Done))
             } catch (e: Exception) {
                 Log.e("AddTrainPart", "Add part failed", e)
-                _status.emit(ActionStatus.Failed(e))
+                _status.emit(current.copy(submitStatus = ActionStatus.Failed(e)))
             }
         }
     }
 }
+
+data class AddTrainPartState(
+    val part: TrainPart = TrainPart(),
+    val submitStatus: ActionStatus = ActionStatus.Idle,
+)

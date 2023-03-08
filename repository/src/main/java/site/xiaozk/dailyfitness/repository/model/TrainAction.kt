@@ -2,11 +2,11 @@ package site.xiaozk.dailyfitness.repository.model
 
 data class TrainAction(
     val id: Int = 0,
-    val actionName: String,
+    val actionName: String = "",
     val part: TrainPart,
-    val isTimedAction: Boolean,
-    val isWeightedAction: Boolean,
-    val isCountedAction: Boolean,
+    val isTimedAction: Boolean = false,
+    val isWeightedAction: Boolean = false,
+    val isCountedAction: Boolean = false,
 )
 
 data class TrainPart(

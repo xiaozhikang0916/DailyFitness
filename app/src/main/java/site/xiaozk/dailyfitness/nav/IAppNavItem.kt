@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
@@ -22,6 +23,7 @@ import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.TrainingHome
 import site.xiaozk.dailyfitness.page.training.add.AddDailyTrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import java.time.LocalDate
 import java.time.ZoneId
@@ -91,7 +93,8 @@ object AppHomeRootNav : IAppNavGraphItem {
         }
 
         companion object {
-            fun all(): List<AppHomePage> = listOf(TrainingHomeNavItem, BodyDetailNavItem, TrainPartNavItem)
+            fun all(): List<AppHomePage> =
+                listOf(TrainingHomeNavItem, BodyDetailNavItem, TrainPartNavItem)
         }
 
         fun NavGraphBuilder.homeGraph() {
@@ -137,7 +140,10 @@ object TrainingDayGroup {
     }
 
     fun NavGraphBuilder.trainingDayGraph() {
-        composable(TrainDayNavItem.route, arguments = listOf(navArgument("date") { nullable = true })) {
+        composable(
+            TrainDayNavItem.route,
+            arguments = listOf(navArgument("date") { nullable = true })
+        ) {
             TrainingDayDetailPage(date = TrainDayNavItem.fromArgument(it.arguments))
         }
         composable(TrainDayAddActionNavItem.route) {
@@ -145,7 +151,6 @@ object TrainingDayGroup {
         }
     }
 }
-
 
 object AddDailyBodyDetailNavItem : IAppNavItem {
     override val route: String
@@ -162,53 +167,68 @@ object TrainPartGraph {
 
     object AddTrainPartNavItem : IAppNavItem {
         override val route: String
-            get() = "train_part/add"
+            get() = "train_part/add?partId={partId}"
+
+        fun getRoute(part: TrainPart? = null): String {
+            return "train_part/add?partId=${part?.id ?: 0}"
+        }
+
+        fun fromArgument(argument: Bundle?): Int {
+            return argument?.getInt("partId", 0) ?: 0
+        }
     }
 
     object TrainPartDetailNavItem : IAppNavItem {
 
         override val route: String
-            get() = "train_part/detail?part={part}"
+            get() = "train_part/detail?partId={partId}"
 
         fun getRoute(part: TrainPart): String {
-            return "train_part/detail?part=${part.id}"
-        }
-
-        fun fromArgument(arg: String): Int {
-            return arg.toIntOrNull() ?: 0
+            return "train_part/detail?partId=${part.id}"
         }
 
         fun fromArgument(argument: Bundle?): Int {
-            return argument?.getString("part")?.let(::fromArgument) ?: 0
+            return argument?.getInt("partId", 0) ?: 0
         }
     }
 
     object AddTrainActionNavItem : IAppNavItem {
 
         override val route: String
-            get() = "train_part/add_action?part={part}"
+            get() = "train_part/add_action?partId={partId}&actionId={actionId}"
 
-        fun getRoute(part: TrainPart): String {
-            return "train_part/add_action?part=${part.id}"
+        fun getRoute(part: TrainPart, action: TrainAction? = null): String {
+            return "train_part/add_action?partId=${part.id}&actionId=${action?.id ?: 0}"
         }
 
-        fun fromArgument(arg: String): Int {
-            return arg.toIntOrNull() ?: 0
+        fun partIdFromArgument(argument: Bundle?): Int {
+            return argument?.getInt("partId", 0) ?: 0
         }
 
-        fun fromArgument(argument: Bundle?): Int {
-            return argument?.getString("part")?.let(::fromArgument) ?: 0
+        fun actionIdFromArgument(argument: Bundle?): Int {
+            return argument?.getInt("actionId", 0) ?: 0
         }
     }
 
     fun NavGraphBuilder.trainPartGraph() {
 
-        composable(AddTrainPartNavItem.route) {
-            AddTrainPartPage()
+        composable(
+            AddTrainPartNavItem.route,
+            arguments = listOf(navArgument("partId") {
+                defaultValue = 0
+                type = NavType.IntType
+            })
+        ) {
+            AddTrainPartPage(
+                partId = AddTrainPartNavItem.fromArgument(it.arguments)
+            )
         }
         composable(
             TrainPartDetailNavItem.route,
-            arguments = listOf(navArgument("part") { nullable = false })
+            arguments = listOf(navArgument("partId") {
+                nullable = false
+                type = NavType.IntType
+            })
         ) {
             TrainPartDetail(
                 trainPartId = TrainPartDetailNavItem.fromArgument(it.arguments),
@@ -216,10 +236,20 @@ object TrainPartGraph {
         }
         composable(
             AddTrainActionNavItem.route,
-            arguments = listOf(navArgument("part") { nullable = false })
+            arguments = listOf(
+                navArgument("partId") {
+                    nullable = false
+                    type = NavType.IntType
+                },
+                navArgument("actionId") {
+                    defaultValue = 0
+                    type = NavType.IntType
+                }
+            )
         ) {
             AddTrainActionPage(
-                partId = AddTrainActionNavItem.fromArgument(it.arguments),
+                partId = AddTrainActionNavItem.partIdFromArgument(it.arguments),
+                actionId = AddTrainActionNavItem.actionIdFromArgument(it.arguments),
             )
         }
     }

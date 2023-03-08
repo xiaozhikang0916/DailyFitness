@@ -1,5 +1,7 @@
 package site.xiaozk.dailyfitness.page.action.parts
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -77,19 +79,27 @@ fun TrainPartDetail(trainPartId: Int) {
                     )
                 }
                 items(trainPart.actions) {
-                    TrainActionInPart(action = it)
+                    TrainActionInPart(action = it) { ac ->
+                        nav?.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute(ac.part, ac))
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TrainActionInPart(action: TrainAction) {
+private fun TrainActionInPart(action: TrainAction, onActionLongClick: (TrainAction) -> Unit) {
     Card(
         modifier = Modifier
             .padding(all = 4.dp)
             .fillMaxWidth()
+            .combinedClickable(
+                onLongClick = {
+                    onActionLongClick(action)
+                }
+            ) {  }
     ) {
         Text(text = action.actionName)
     }

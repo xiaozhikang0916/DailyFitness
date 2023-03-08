@@ -38,6 +38,7 @@ data class DBTrainAction(
 
 fun TrainAction.toDbEntity(): DBTrainAction {
     return DBTrainAction(
+        id = this.id,
         actionName = this.actionName,
         partId = this.part.id,
         isCountedAction = this.isCountedAction,

@@ -33,6 +33,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.LocalNavController
@@ -48,26 +52,25 @@ import javax.inject.Inject
  * @create: 2023/2/28
  */
 
-
 @Composable
-fun AddTrainActionPage(partId: Int) {
+fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
-    viewModel.initData(partId)
+    viewModel.initData(partId, actionId)
     val nav = LocalNavController.current
     val state = viewModel.state.collectAsState().value
-    val part = state.part
-    val status = state.status
-    var isTimed by remember {
-        mutableStateOf(false)
+    val part = state?.action?.part
+    val status = state?.status
+    var isTimed by remember(state?.action) {
+        mutableStateOf(state?.action?.isTimedAction ?: false)
     }
-    var isCounted by remember {
-        mutableStateOf(false)
+    var isCounted by remember(state?.action) {
+        mutableStateOf(state?.action?.isCountedAction ?: false)
     }
-    var isWeighted by remember {
-        mutableStateOf(false)
+    var isWeighted by remember(state?.action) {
+        mutableStateOf(state?.action?.isWeightedAction ?: false)
     }
-    var name by remember {
-        mutableStateOf("")
+    var name by remember(state?.action) {
+        mutableStateOf(state?.action?.actionName ?: "")
     }
     LaunchedEffect(key1 = status) {
         if (status == ActionStatus.Done) {
@@ -88,7 +91,7 @@ fun AddTrainActionPage(partId: Int) {
                 .padding(padding)
         ) {
             Text(
-                text = part.partName,
+                text = part?.partName ?: "",
                 modifier = Modifier
                     .padding(all = 4.dp)
                     .fillMaxWidth(),
@@ -136,7 +139,6 @@ fun AddTrainActionPage(partId: Int) {
             Button(
                 onClick = {
                     viewModel.addTrainAction(
-                        part = part,
                         actionName = name,
                         isTimed = isTimed,
                         isWeighted = isWeighted,
@@ -157,48 +159,56 @@ fun AddTrainActionPage(partId: Int) {
 class AddTrainActionViewModel @Inject constructor(
     private val repo: ITrainActionRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AddTrainActionState())
+    private val _state = MutableStateFlow<AddTrainActionState?>(null)
     val state = _state.asStateFlow()
 
-    fun initData(partId: Int) {
+    fun initData(partId: Int, actionId: Int = 0) {
+        Log.i("AddTrainAction", "Load action with part id $partId, action id $actionId")
         viewModelScope.launch {
-            repo.getActionsOfPart(partId).collect {
-                _state.emit(
-                    _state.value.copy(part = it.part)
-                )
-            }
+            _state.emitAll(
+                repo.getActionsOfPart(partId).map {
+                    if (actionId != 0) {
+                        it.actions.find { action -> action.id == actionId }
+                    } else {
+                        null
+                    } ?: TrainAction(part = it.part)
+                }.map {
+                    AddTrainActionState(it)
+                }
+            )
         }
     }
 
     fun addTrainAction(
-        part: TrainPart,
         actionName: String,
         isTimed: Boolean,
         isWeighted: Boolean,
         isCounted: Boolean,
     ) {
-        viewModelScope.launch {
-            _state.emit(_state.value.copy(status = ActionStatus.Loading))
-            try {
-                repo.addTrainAction(
-                    TrainAction(
-                        part = part,
-                        actionName = actionName,
-                        isTimedAction = isTimed,
-                        isWeightedAction = isWeighted,
-                        isCountedAction = isCounted,
+        val current = _state.value
+        if (current != null) {
+            viewModelScope.launch {
+                _state.emit(current.copy(status = ActionStatus.Loading))
+                try {
+                    repo.addOrUpdateTrainAction(
+                        current.action.copy(
+                            actionName = actionName,
+                            isTimedAction = isTimed,
+                            isWeightedAction = isWeighted,
+                            isCountedAction = isCounted,
+                        )
                     )
-                )
-                _state.emit(_state.value.copy(status = ActionStatus.Done))
-            } catch (e: Exception) {
-                Log.e("AddTrainAction", "Add action failed", e)
-                _state.emit(_state.value.copy(status = ActionStatus.Failed(e)))
+                    _state.emit(current.copy(status = ActionStatus.Done))
+                } catch (e: Exception) {
+                    Log.e("AddTrainAction", "Add action failed", e)
+                    _state.emit(current.copy(status = ActionStatus.Failed(e)))
+                }
             }
         }
     }
 }
 
 data class AddTrainActionState(
-    val part: TrainPart = TrainPart(),
+    val action: TrainAction,
     val status: ActionStatus = ActionStatus.Idle,
 )

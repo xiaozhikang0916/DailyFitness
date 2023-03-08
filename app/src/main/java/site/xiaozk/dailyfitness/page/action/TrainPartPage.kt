@@ -1,6 +1,8 @@
 package site.xiaozk.dailyfitness.page.action
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,32 +36,51 @@ fun TrainPartPage() {
     val part = viewModel.trainParts.collectAsState(initial = TrainPartPage()).value
     val localNav = LocalNavController.current
     localNav?.navController?.let {
-        AppHomeRootNav.AppHomePage.TrainPartNavItem.updateAppScaffoldState(navController = it, state = AppScaffoldState(
-            fabRoute = TrainPartGraph.AddTrainPartNavItem.route,
-            showBottomNavBar = true,
-        ))
+        AppHomeRootNav.AppHomePage.TrainPartNavItem.updateAppScaffoldState(
+            navController = it, state = AppScaffoldState(
+                fabRoute = TrainPartGraph.AddTrainPartNavItem.getRoute(),
+                showBottomNavBar = true,
+            )
+        )
     }
-    TrainPartPage(part) {
-        localNav?.navigate(TrainPartGraph.TrainPartDetailNavItem.getRoute(it.part))
-    }
+    TrainPartPage(
+        part, onCardClick = {
+            localNav?.navigate(TrainPartGraph.TrainPartDetailNavItem.getRoute(it.part))
+        }, onCardLongClick = {
+            localNav?.navigate(TrainPartGraph.AddTrainPartNavItem.getRoute(it.part))
+        }
+    )
 }
 
 @Composable
-fun TrainPartPage(page: TrainPartPage, onCardClick: (TrainPartGroup) -> Unit) {
+fun TrainPartPage(
+    page: TrainPartPage,
+    onCardClick: (TrainPartGroup) -> Unit,
+    onCardLongClick: (TrainPartGroup) -> Unit,
+) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(page.allParts) {
-            TrainPart(part = it, onCardClick)
+            TrainPart(part = it, onCardClick, onCardLongClick)
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TrainPart(part: TrainPartGroup, onCardClick: (TrainPartGroup) -> Unit) {
+private fun TrainPart(
+    part: TrainPartGroup,
+    onCardClick: (TrainPartGroup) -> Unit,
+    onCardLongClick: (TrainPartGroup) -> Unit,
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(all = 4.dp)
-            .clickable {
+            .combinedClickable(
+                onLongClick = {
+                    onCardLongClick(part)
+                }
+            ) {
                 onCardClick(part)
             }
     ) {
