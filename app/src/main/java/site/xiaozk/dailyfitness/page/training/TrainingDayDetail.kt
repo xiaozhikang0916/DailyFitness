@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -184,26 +185,29 @@ private fun DailyTrainingPart(group: DailyTrainingPartGroup, onActionDelete: (Da
             modifier = Modifier
                 .padding(all = 4.dp)
                 .fillMaxWidth(),
-            style = MaterialTheme.typography.titleSmall
+            style = MaterialTheme.typography.bodyLarge
         )
         group.actions.forEach { group ->
-            Text(text = group.action.actionName, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+            Text(
+                text = group.action.actionName,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodyMedium,
+            )
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .align(Alignment.End)
             ) {
                 group.trainAction.forEach { action ->
                     Text(
                         text = action.displayText.joinToString(separator = " "),
                         modifier = Modifier
-                            .weight(1f)
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                             .combinedClickable(
                                 onLongClick = {
                                     onActionDelete(action)
                                 }
-                            ) {}
-
+                            ) {},
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
