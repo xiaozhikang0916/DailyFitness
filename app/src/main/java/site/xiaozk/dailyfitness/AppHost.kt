@@ -57,7 +57,7 @@ import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 fun AppHost() {
     val hostNavController = rememberNavController()
 
-    DailyFitnessTheme(darkTheme = false) {
+    DailyFitnessTheme {
         CompositionLocalProvider(
             hostNavController.provides()
         ) {
