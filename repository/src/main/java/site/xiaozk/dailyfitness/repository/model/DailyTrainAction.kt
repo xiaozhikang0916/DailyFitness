@@ -40,12 +40,9 @@ value class TrainingDayList(
 
 data class TrainingDayData(
     val date: LocalDate,
-    val trainedParts: List<DailyTrainingPartGroup> = emptyList(),
+    val actions: List<DailyTrainingActionList> = emptyList(),
 ) {
-    constructor(pair: Pair<LocalDate, List<DailyTrainingPartGroup>>) : this(pair.first, pair.second)
-    val maxTrainedParts by lazy {
-        trainedParts.maxByOrNull { it.actions.size }?.trainPart?.partName
-    }
+    constructor(pair: Pair<LocalDate, List<DailyTrainingActionList>>) : this(pair.first, pair.second)
 }
 
 data class DailyTrainingPartGroup(

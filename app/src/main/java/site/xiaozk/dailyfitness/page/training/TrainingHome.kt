@@ -89,12 +89,12 @@ private fun HomePageTrainedDay(
             fontSize = 14.sp,
         )
 
-        day.maxTrainedParts?.let {
-            Text(
-                text = it,
-                modifier = Modifier.padding(top = 4.dp),
-                fontSize = 12.sp,
-            )
-        }
+//        day.maxTrainedParts?.let {
+//            Text(
+//                text = it,
+//                modifier = Modifier.padding(top = 4.dp),
+//                fontSize = 12.sp,
+//            )
+//        }
     }
 }

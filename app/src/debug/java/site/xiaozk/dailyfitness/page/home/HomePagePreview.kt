@@ -40,7 +40,7 @@ class TrainedDayDateProvider : PreviewParameterProvider<TrainingDayData> {
         get() {
             return DailyTrainPartProvider().values.map {
                 it.actions.first().trainAction.first().instant.atZone(ZoneId.systemDefault()).toLocalDate() to it
-            }.groupBy({ it.first }) { it.second }.entries.map { TrainingDayData(it.key, it.value) }.asSequence()
+            }.groupBy({ it.first }) { it.second }.entries.map { TrainingDayData(it.key, it.value.flatMap { it.actions }) }.asSequence()
         }
 
 }

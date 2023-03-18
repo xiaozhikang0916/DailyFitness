@@ -7,7 +7,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
 import site.xiaozk.dailyfitness.repository.model.DailyTrainingActionList
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingPartGroup
 import site.xiaozk.dailyfitness.repository.model.TrainingDayData
 import site.xiaozk.dailyfitness.repository.model.TrainingDayList
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
@@ -157,8 +156,6 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDay
         entry.key to entry.value.groupBy({ it.first }) { it.second }
     }.map {
         it.first to it.second.entries.map { entry -> DailyTrainingActionList(entry.toPair()) }
-    }.map {
-        it.first to it.second.groupBy { it.action.part }.map { DailyTrainingPartGroup(it.key, it.value) }
     }.associate {
         it.first to TrainingDayData(it)
     }.let {

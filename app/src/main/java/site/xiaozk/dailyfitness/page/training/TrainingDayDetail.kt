@@ -4,18 +4,20 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,10 +42,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingPartGroup
+import site.xiaozk.dailyfitness.repository.model.DailyTrainingActionList
 import site.xiaozk.dailyfitness.repository.model.TrainingDayData
 import site.xiaozk.dailyfitness.widget.BackButton
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
@@ -78,7 +81,7 @@ fun TrainingDayDetailPage(
                             nav?.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
                         }
                     ) {
-                        Icon(painter = rememberVectorPainter(image = Icons.Default.Create), contentDescription = "add")
+                        Icon(painter = rememberVectorPainter(image = Icons.Default.Add), contentDescription = "add")
                     }
                 }
             )
@@ -93,7 +96,7 @@ fun TrainingDayDetailPage(
             }
         )
 
-        if (deleteActionDialog != null) {
+        deleteActionDialog?.let {
             val dismiss = {
                 deleteActionDialog = null
             }
@@ -104,12 +107,9 @@ fun TrainingDayDetailPage(
                         text = "删除",
                         modifier = Modifier
                             .clickable {
-                                deleteActionDialog?.let {
-                                    viewModel.removeTrainAction(it)
-                                }
+                                viewModel.removeTrainAction(it)
                                 dismiss()
                             },
-                        color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
                 },
@@ -122,7 +122,15 @@ fun TrainingDayDetailPage(
                     )
                 },
                 title = {
-                    Text(text = "确认删除？")
+                    Text(text = "删除动作记录")
+                },
+                text = {
+                    val dateTimeFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
+                    Text(
+                        text = "你将要删除记录于${dateTimeFormat.format(it.instant)}的动作记录${it.action.actionName} ${
+                            it.displayText.joinToString(" ")
+                        }"
+                    )
                 }
             )
         }
@@ -139,8 +147,10 @@ fun TrainingDayDetail(
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = padding,
     ) {
         item {
@@ -148,50 +158,52 @@ fun TrainingDayDetail(
                 text = dateFormat.format(data.date),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(all = 4.dp),
-                style = MaterialTheme.typography.titleMedium
+                    .padding(top = 12.dp),
+                style = MaterialTheme.typography.titleLarge
             )
         }
-        items(data.trainedParts) {
-            DailyTrainingPart(group = it, onActionDelete = onTrainingActionDeleted)
+        itemsIndexed(data.actions) { index, it ->
+            DailyTrainingAction(action = it, onActionDelete = onTrainingActionDeleted)
+            if (index != data.actions.size - 1) {
+                Divider(modifier = Modifier.fillMaxWidth())
+            }
         }
     }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DailyTrainingPart(group: DailyTrainingPartGroup, onActionDelete: (DailyTrainAction) -> Unit) {
-    Card(modifier = Modifier.padding(horizontal = 4.dp)) {
-        Text(
-            text = group.trainPart.partName,
-            modifier = Modifier
-                .padding(all = 4.dp)
-                .fillMaxWidth(),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        group.actions.forEach { group ->
+private fun DailyTrainingAction(action: DailyTrainingActionList, onActionDelete: (DailyTrainAction) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = group.action.actionName,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.bodyMedium,
+                text = action.action.actionName,
+                modifier = Modifier.align(Alignment.TopStart),
+                style = MaterialTheme.typography.bodyLarge,
             )
             Column(
                 modifier = Modifier
-                    .align(Alignment.End)
+                    .align(Alignment.BottomEnd)
+                    .padding(top = 18.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.End,
             ) {
-                group.trainAction.forEach { action ->
+                action.trainAction.forEach { action ->
                     Text(
                         text = action.displayText.joinToString(separator = " "),
                         modifier = Modifier
-                            .padding(horizontal = 12.dp, vertical = 4.dp)
                             .combinedClickable(
                                 onLongClick = {
                                     onActionDelete(action)
                                 }
-                            ) {},
-                        style = MaterialTheme.typography.bodySmall,
+                            ) {}
+                            .padding(vertical = 1.dp)
+                            .heightIn(24.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
                     )
                 }
+
             }
         }
     }

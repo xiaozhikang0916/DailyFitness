@@ -24,7 +24,7 @@ class TrainingDayProvider : PreviewParameterProvider<TrainingDayData> {
                     actions[it.part]!!.groupBy { it.action }.entries.map { DailyTrainingActionList(it.toPair()) }
                 )
             }.let {
-                TrainingDayData(localDate, it.toList())
+                TrainingDayData(localDate, it.flatMap { it.actions }.toList())
             }.let {
                 sequenceOf(it)
             }
