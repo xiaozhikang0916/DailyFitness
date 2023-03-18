@@ -15,6 +15,7 @@ import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
+import java.time.Instant
 import javax.inject.Inject
 import kotlin.experimental.ExperimentalTypeInference
 
@@ -29,6 +30,8 @@ sealed interface IDailyTrainIntent : IIntent
 object LoadPartIntent : IDailyTrainIntent
 
 class PartLoadedIntent(val allParts: List<TrainPartGroup>) : IDailyTrainIntent
+
+class SetInstantIntent(val instant: Instant): IDailyTrainIntent
 
 class SelectPartIntent(val part: TrainPartGroup) : IDailyTrainIntent
 
@@ -65,6 +68,9 @@ class DailyTrainReducer
             }
 
             is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyTrainPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false))
+            is SetInstantIntent -> AddDailyTrainResult(
+                state = state.copy(instant = intent.instant)
+            )
             is SelectPartIntent -> AddDailyTrainResult(state = state.copy(
                 selectedPart = intent.part,
                 showPartMenuState = false,

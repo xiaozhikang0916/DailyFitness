@@ -47,6 +47,7 @@ class AddDailyTrainViewModel @Inject constructor(
 }
 
 data class AddDailyTrainPageState(
+    val instant: Instant = Instant.now(),
     val allParts: List<TrainPartGroup> = emptyList(),
     val selectedPart: TrainPartGroup? = null,
     val selectedAction: TrainAction? = null,
@@ -63,7 +64,7 @@ data class AddDailyTrainPageState(
     fun toDailyTrain(): DailyTrainAction {
         if (selectedAction != null && valid) {
             return DailyTrainAction(
-                instant = Instant.now(),
+                instant = instant,
                 action = selectedAction,
                 takenCount = count.toIntOrNull() ?: 0,
                 takenDuration = duration.toFloatOrNull()?.let { RecordedDuration(it, timeUnit) },
@@ -86,7 +87,7 @@ data class AddDailyTrainPageState(
         )
     }
 
-    val durationValid: Boolean
+    val timeValid: Boolean
         get() = (duration.isBlank() || duration.toFloatOrNull() != null)
     val weightValid: Boolean
         get() = (weight.isBlank() || weight.toFloatOrNull() != null)
@@ -95,6 +96,6 @@ data class AddDailyTrainPageState(
 
     val valid: Boolean
         get() {
-            return durationValid && weightValid && countValid
+            return timeValid && weightValid && countValid && selectedAction != null
         }
 }
