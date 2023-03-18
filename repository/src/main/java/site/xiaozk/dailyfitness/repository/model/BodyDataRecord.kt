@@ -38,14 +38,3 @@ data class BodyDataRecord(
         )
     }
 }
-
-fun Collection<BodyDataRecord>.average(): BodyDataRecord {
-    val count = this.size
-    return if (count == 1) {
-        this.first()
-    } else {
-        this.fold(BodyDataRecord(0, Instant.now(), 0f, 0f, 0f, 0f, 0f)) { acc, data ->
-            acc + data
-        } / count
-    }
-}

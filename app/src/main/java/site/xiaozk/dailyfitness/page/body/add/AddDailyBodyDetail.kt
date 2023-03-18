@@ -2,24 +2,33 @@
 
 package site.xiaozk.dailyfitness.page.body.add
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,6 +42,7 @@ import site.xiaozk.dailyfitness.widget.BackButton
  * @create: 2023/2/27
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddDailyBodyDetail() {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
@@ -45,9 +55,17 @@ fun AddDailyBodyDetail() {
     }
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(text = "记录身体数据") }, navigationIcon = { BackButton() })
+            TopAppBar(
+                title = { Text(text = "记录身体数据") },
+                navigationIcon = { BackButton(Icons.Default.Close) },
+                actions = {
+                    TextButton(onClick = { viewModel.reduce(SubmitBodyIntent) }) {
+                        Text(text = "SAVE")
+                    }
+                }
+            )
         },
-        modifier = Modifier.systemBarsPadding()
+        modifier = Modifier.systemBarsPadding(),
     ) {
         AddDailyBodyDetail(pageState.value, padding = it, viewModel::reduce)
     }
@@ -55,17 +73,30 @@ fun AddDailyBodyDetail() {
 
 @Composable
 fun AddDailyBodyDetail(state: AddDailyBodyState, padding: PaddingValues = PaddingValues(), onIntent: (IDailyBodyIntent) -> Unit) {
-    Column(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
-            .padding(padding)
+            .padding(horizontal = 12.dp),
+        contentPadding = padding,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        InputField.values().forEach {
+        val focus = InputField.values().map { FocusRequester() }
+        itemsIndexed(
+            InputField.values(),
+            span = { _, it ->
+                when (it) {
+                    InputField.Weight -> GridItemSpan(2)
+                    else -> GridItemSpan(1)
+                }
+            }
+        ) { index, it ->
             OutlinedTextField(
                 value = state.bodyField.getField(it),
                 modifier = Modifier
-                    .padding(all = 4.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .focusRequester(focus[index]),
                 onValueChange = { input -> onIntent(InputIntent(input, it)) },
                 label = {
                     Text(text = it.label)
@@ -75,15 +106,16 @@ fun AddDailyBodyDetail(state: AddDailyBodyState, padding: PaddingValues = Paddin
                 },
                 supportingText = {
                     if (state.bodyField.checkFieldValid(it).not()) {
-                        Text(text = "输入数字有误", color = MaterialTheme.colorScheme.error)
+                        Text(text = "输入数字有误")
                     }
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = if (index < InputField.values().size - 1) ImeAction.Next else ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(onNext = { focus.getOrNull(index + 1)?.requestFocus() }),
+                isError = state.bodyField.checkFieldValid(it).not()
             )
-        }
-
-        Button(onClick = { onIntent(SubmitBodyIntent) }, modifier = Modifier.padding(all = 4.dp)) {
-            Text(text = "Submit", modifier = Modifier.fillMaxWidth())
         }
     }
 }

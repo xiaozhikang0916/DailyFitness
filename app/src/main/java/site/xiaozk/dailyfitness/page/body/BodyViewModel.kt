@@ -1,16 +1,15 @@
 package site.xiaozk.dailyfitness.page.body
 
-import android.app.Application
-import android.content.Context
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
@@ -39,9 +38,18 @@ class BodyViewModel @Inject constructor(
         )
     }
 
+    private val _deleteAction = MutableStateFlow<ActionStatus>(ActionStatus.Idle)
+    val deleteAction = _deleteAction.asStateFlow()
+
     fun deleteBodyDetail(data: BodyDataRecord) {
         viewModelScope.launch {
-            bodyRepo.removePersonDailyData(data)
+            _deleteAction.emit(ActionStatus.Loading)
+            try {
+                bodyRepo.removePersonDailyData(data)
+                _deleteAction.emit(ActionStatus.Done)
+            } catch (e: Exception) {
+                _deleteAction.emit(ActionStatus.Failed(e))
+            }
         }
     }
 }

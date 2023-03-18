@@ -77,7 +77,7 @@ value class BodyField(
             val num = str.toFloatOrNull()
             if (num != null) {
                 if (field == InputField.BodyFat) {
-                    num in 0f..1f
+                    num in 0f..100f
                 } else {
                     num >= 0f
                 }
