@@ -1,6 +1,8 @@
 package site.xiaozk.dailyfitness.theme
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +16,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import java.lang.IllegalStateException
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -100,7 +103,8 @@ fun DailyFitnessTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            // TODO window controller
+            val window = view.context.findActivity().window
             window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
         }
@@ -111,4 +115,18 @@ fun DailyFitnessTheme(
         typography = Typography,
         content = content
     )
+}
+
+private fun Context.findActivity(): Activity {
+    var context: Context = this
+    if (context is Activity) {
+        return context
+    }
+    while (context is ContextWrapper) {
+        context = context.baseContext
+        if (context is Activity) {
+            return context
+        }
+    }
+    throw IllegalStateException()
 }
