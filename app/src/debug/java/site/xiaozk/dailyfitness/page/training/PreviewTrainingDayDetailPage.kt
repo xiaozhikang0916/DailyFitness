@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import site.xiaozk.dailyfitness.page.home.TrainedDayDateProvider
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 
 /**
  * @author: xiaozhikang
@@ -14,6 +14,6 @@ import site.xiaozk.dailyfitness.repository.model.TrainingDayData
 
 @Preview
 @Composable
-fun PreviewTrainingDayDetail(@PreviewParameter(provider = TrainedDayDateProvider::class) data: TrainingDayData) {
+fun PreviewTrainingDayDetail(@PreviewParameter(provider = TrainedDayDateProvider::class) data: DailyWorkout) {
     TrainingDayDetail(data = data)
 }

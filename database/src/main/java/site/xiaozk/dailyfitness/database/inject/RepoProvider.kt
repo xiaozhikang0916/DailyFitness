@@ -9,11 +9,11 @@ import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.UserDao
 import site.xiaozk.dailyfitness.database.repo.PersonDailyRepository
 import site.xiaozk.dailyfitness.database.repo.TrainActionRepository
-import site.xiaozk.dailyfitness.database.repo.TrainingDayRepository
+import site.xiaozk.dailyfitness.database.repo.DailyWorkoutRepository
 import site.xiaozk.dailyfitness.database.repo.UserRepository
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
-import site.xiaozk.dailyfitness.repository.ITrainingDayRepository
+import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import javax.inject.Singleton
 
@@ -37,8 +37,8 @@ class RepoProvider {
     }
 
     @Provides
-    fun provideTrainingDayRepo(dailyDao: DailyDao, trainDao: TrainDao): ITrainingDayRepository {
-        return TrainingDayRepository(dailyDao, trainDao)
+    fun provideTrainingDayRepo(dailyDao: DailyDao, trainDao: TrainDao): IDailyWorkoutRepository {
+        return DailyWorkoutRepository(dailyDao, trainDao)
     }
 
     @Provides

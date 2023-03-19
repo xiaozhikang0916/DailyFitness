@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
@@ -61,9 +61,9 @@ data class AddDailyTrainPageState(
     val note: String = "",
     val submitStatus: ActionStatus = ActionStatus.Idle,
 ) {
-    fun toDailyTrain(): DailyTrainAction {
+    fun toDailyTrain(): DailyWorkoutAction {
         if (selectedAction != null && valid) {
-            return DailyTrainAction(
+            return DailyWorkoutAction(
                 instant = instant,
                 action = selectedAction,
                 takenCount = count.toIntOrNull() ?: 0,

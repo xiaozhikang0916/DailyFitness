@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
-import site.xiaozk.dailyfitness.database.model.DBDailyTrainAction
+import site.xiaozk.dailyfitness.database.model.DBDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.DBTrainPart
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
@@ -46,7 +46,7 @@ interface DailyDao {
             AND actionTime > :fromTimestampMilli 
             AND actionTime < :toTimestampMilli
         """)
-    fun getDailyTrainingActions(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainAction, List<DBDailyTrainAction>>>
+    fun getDailyWorkoutActions(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
 
     @MapInfo(keyTable = "train_action", keyColumn = "actionID", valueTable = "train_part")
     @Query("SELECT train_action.id as actionID, train_part.* FROM train_part JOIN train_action ON train_action.partId = train_part.id WHERE train_action.id IN (:actionId) ")
@@ -63,16 +63,16 @@ interface DailyDao {
 //            ) as daily
 //        JOIN train_part ON partId = train_part.id
 //        """)
-//    fun getDailyTrainingDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainPart, List<Map<DBTrainAction, List<DBDailyTrainAction>>>>>
+//    fun getDailyWorkoutDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainPart, List<Map<DBTrainAction, List<DBDailyWorkoutAction>>>>>
 
-//    fun getDailyTrainingDataFlow(user: User, from: LocalDate, to: LocalDate) =
-//        getDailyTrainingDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
+//    fun getDailyWorkoutDataFlow(user: User, from: LocalDate, to: LocalDate) =
+//        getDailyWorkoutDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
 
 
     @Insert
-    suspend fun addDailyTrainAction(dailyTrainAction: DBDailyTrainAction)
+    suspend fun addDailyWorkoutAction(dailyTrainAction: DBDailyWorkoutAction)
 
     @Delete
-    suspend fun deleteDailyTrainAction(dailyTrainAction: DBDailyTrainAction)
+    suspend fun deleteDailyWorkoutAction(dailyTrainAction: DBDailyWorkoutAction)
 
 }

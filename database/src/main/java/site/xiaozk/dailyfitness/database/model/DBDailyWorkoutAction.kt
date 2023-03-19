@@ -5,10 +5,10 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingActionList
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
-import site.xiaozk.dailyfitness.repository.model.TrainingDayList
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
@@ -28,7 +28,7 @@ import java.time.ZoneId
         ForeignKey(entity = DBUser::class, parentColumns = ["uid"], childColumns = ["userId"])],
     indices = [Index("userId"), Index("usingActionId")]
 )
-data class DBDailyTrainAction(
+data class DBDailyWorkoutAction(
     @PrimaryKey(autoGenerate = true) val actionId: Int = 0,
     val usingActionId: Int,
     val userId: Int,
@@ -39,8 +39,8 @@ data class DBDailyTrainAction(
     val note: String?,
 )
 
-fun DailyTrainAction.toDbEntity(userId: Int): DBDailyTrainAction {
-    return DBDailyTrainAction(
+fun DailyWorkoutAction.toDbEntity(userId: Int): DBDailyWorkoutAction {
+    return DBDailyWorkoutAction(
         actionId = this.id,
         usingActionId = this.action.id,
         actionTime = this.instant,
@@ -132,7 +132,7 @@ enum class DBTimeUnit(val repoUnit: TimeUnit) {
     }
 }
 
-fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDayList(): TrainingDayList {
+fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toTrainingDayList(): WorkoutDayList {
     val zone = ZoneId.systemDefault()
     return this.flatMap { outMap ->
         outMap.value.flatMap { innerMap ->
@@ -141,7 +141,7 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDay
             }
         }
     }.map {
-        DailyTrainAction(
+        DailyWorkoutAction(
             id = it.second.second.actionId,
             instant = it.second.second.actionTime,
             action = it.second.first.toRepoEntity(it.first),
@@ -155,11 +155,11 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyTrainAction>>>.toTrainingDay
     }.entries.map { entry ->
         entry.key to entry.value.groupBy({ it.first }) { it.second }
     }.map {
-        it.first to it.second.entries.map { entry -> DailyTrainingActionList(entry.toPair()) }
+        it.first to it.second.entries.map { entry -> DailyWorkoutListActionPair(entry.toPair()) }
     }.associate {
-        it.first to TrainingDayData(it)
+        it.first to DailyWorkout(it)
     }.let {
-        TrainingDayList(it)
+        WorkoutDayList(it)
     }
 
 }

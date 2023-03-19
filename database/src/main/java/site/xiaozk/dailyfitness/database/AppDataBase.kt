@@ -9,7 +9,7 @@ import site.xiaozk.dailyfitness.database.dao.DailyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.UserDao
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
-import site.xiaozk.dailyfitness.database.model.DBDailyTrainAction
+import site.xiaozk.dailyfitness.database.model.DBDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.DBTrainPart
 import site.xiaozk.dailyfitness.database.model.DBUser
@@ -22,7 +22,7 @@ import java.time.Instant
  */
 @Database(
     entities = [
-        DBDailyTrainAction::class,
+        DBDailyWorkoutAction::class,
         DBDailyBodyData::class,
         DBTrainAction::class,
         DBTrainPart::class,

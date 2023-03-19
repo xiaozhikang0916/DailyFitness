@@ -6,8 +6,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import site.xiaozk.dailyfitness.page.training.TrainingHome
 import site.xiaozk.dailyfitness.providers.DailyTrainPartProvider
-import site.xiaozk.dailyfitness.repository.model.TrainingDayList
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import java.time.ZoneId
 
 /**
@@ -17,16 +17,16 @@ import java.time.ZoneId
  */
 @Preview
 @Composable
-fun PreviewHomePage(@PreviewParameter(HomePageDataProvider::class) data: TrainingDayList) {
+fun PreviewHomePage(@PreviewParameter(HomePageDataProvider::class) data: WorkoutDayList) {
     TrainingHome(data = data, onNav = {})
 }
 
-class HomePageDataProvider : PreviewParameterProvider<TrainingDayList> {
-    override val values: Sequence<TrainingDayList>
+class HomePageDataProvider : PreviewParameterProvider<WorkoutDayList> {
+    override val values: Sequence<WorkoutDayList>
         get() {
             val trainedDay = TrainedDayDateProvider().values
             return sequenceOf(
-                TrainingDayList(
+                WorkoutDayList(
                     trainedDay.map {
                         it.date to it
                     }.toMap()
@@ -35,12 +35,12 @@ class HomePageDataProvider : PreviewParameterProvider<TrainingDayList> {
         }
 }
 
-class TrainedDayDateProvider : PreviewParameterProvider<TrainingDayData> {
-    override val values: Sequence<TrainingDayData>
+class TrainedDayDateProvider : PreviewParameterProvider<DailyWorkout> {
+    override val values: Sequence<DailyWorkout>
         get() {
             return DailyTrainPartProvider().values.map {
                 it.actions.first().trainAction.first().instant.atZone(ZoneId.systemDefault()).toLocalDate() to it
-            }.groupBy({ it.first }) { it.second }.entries.map { TrainingDayData(it.key, it.value.flatMap { it.actions }) }.asSequence()
+            }.groupBy({ it.first }) { it.second }.entries.map { DailyWorkout(it.key, it.value.flatMap { it.actions }) }.asSequence()
         }
 
 }

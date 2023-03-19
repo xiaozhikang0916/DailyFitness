@@ -9,10 +9,10 @@ import site.xiaozk.dailyfitness.database.model.toRepoEntity
 import site.xiaozk.dailyfitness.database.model.toTrainingDayList
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
 import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
-import site.xiaozk.dailyfitness.repository.ITrainingDayRepository
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
+import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
-import site.xiaozk.dailyfitness.repository.model.TrainingDayList
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.LocalDate
 import javax.inject.Inject
@@ -22,16 +22,18 @@ import javax.inject.Inject
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/3/1
  */
-class TrainingDayRepository @Inject constructor(
+class DailyWorkoutRepository @Inject constructor(
     private val dailyDao: DailyDao,
     private val trainDao: TrainDao,
-) : ITrainingDayRepository {
-    override fun getTrainingDayList(
+) : IDailyWorkoutRepository {
+    private var lastWorkout: DailyWorkoutAction? = null
+
+    override fun getWorkoutDayList(
         user: User,
         from: LocalDate,
         to: LocalDate,
-    ): Flow<TrainingDayList> {
-        return dailyDao.getDailyTrainingActions(
+    ): Flow<WorkoutDayList> {
+        return dailyDao.getDailyWorkoutActions(
             user.uid,
             from.getStartEpochMillis(),
             to.getEndEpochMillis()
@@ -46,19 +48,23 @@ class TrainingDayRepository @Inject constructor(
         }
     }
 
-    override suspend fun addTrainAction(user: User, action: DailyTrainAction) {
-        dailyDao.addDailyTrainAction(
-            action.toDbEntity(user.uid)
-        )
+    override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) {
+        val workout = action.toDbEntity(user.uid)
+        dailyDao.addDailyWorkoutAction(workout)
+        lastWorkout = action
     }
 
-    override suspend fun deleteTrainAction(user: User, action: DailyTrainAction) {
-        dailyDao.deleteDailyTrainAction(action.toDbEntity(user.uid))
+    override suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction) {
+        dailyDao.deleteDailyWorkoutAction(action.toDbEntity(user.uid))
     }
 
     override fun getAllTrainParts(): Flow<List<TrainPartGroup>> {
         return trainDao.getAllTrainPartWithAction().map {
             it.map { group -> group.toRepoEntity() }
         }
+    }
+
+    override suspend fun getLastWorkout(date: LocalDate): DailyWorkoutAction? {
+        return lastWorkout?.takeIf { LocalDate.from(it.instant) == date }
     }
 }

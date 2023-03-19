@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
-import site.xiaozk.dailyfitness.repository.ITrainingDayRepository
+import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -22,29 +22,29 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class TrainingDayDetailViewModel @Inject constructor(
-    private val trainRepo: ITrainingDayRepository,
+    private val trainRepo: IDailyWorkoutRepository,
     private val userRepo: IUserRepository,
 ) : ViewModel() {
-    fun getTrainingData(date: LocalDate): Flow<TrainingDayData?> = flow {
+    fun getTrainingData(date: LocalDate): Flow<DailyWorkout?> = flow {
         val user = userRepo.getCurrentUser()
         emitAll(
-            trainRepo.getTrainingOfDayFlow(user, date)
+            trainRepo.getWorkoutOfDayFlow(user, date)
         )
     }
 
-    fun addTrainingAction(action: DailyTrainAction) {
+    fun addTrainingAction(action: DailyWorkoutAction) {
         viewModelScope.launch {
             val user = userRepo.getCurrentUser()
-            trainRepo.addTrainAction(user, action)
+            trainRepo.addWorkoutAction(user, action)
         }
     }
 
-    fun removeTrainAction(action: DailyTrainAction) {
+    fun removeTrainAction(action: DailyWorkoutAction) {
         viewModelScope.launch {
             Log.i("TrainingDayDetail", "deleting action $action")
             val user = userRepo.getCurrentUser()
             try {
-                trainRepo.deleteTrainAction(user, action)
+                trainRepo.deleteWorkoutAction(user, action)
                 Log.i("TrainingDayDetail", "delete action ${action.id} done")
             } catch (e: Exception) {
                 Log.e("TrainingDayDetail", "delete action ${action.id} failed", e)

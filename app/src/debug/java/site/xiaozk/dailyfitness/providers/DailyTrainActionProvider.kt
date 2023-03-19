@@ -1,9 +1,9 @@
 package site.xiaozk.dailyfitness.providers
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingActionList
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingPartGroup
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListPartPair
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import java.time.temporal.ChronoUnit
@@ -14,12 +14,12 @@ import java.util.Calendar
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/24
  */
-class DailyTrainActionProvider : PreviewParameterProvider<DailyTrainAction> {
-    override val values: Sequence<DailyTrainAction>
+class DailyTrainActionProvider : PreviewParameterProvider<DailyWorkoutAction> {
+    override val values: Sequence<DailyWorkoutAction>
         get() {
             val actions = TrainActionProvider().values
             return actions.mapIndexed { index, it ->
-                DailyTrainAction(
+                DailyWorkoutAction(
                     id = 0,
                     instant = Calendar.getInstance().toInstant().minus(index.toLong(), ChronoUnit.DAYS),
                     action = it,
@@ -32,15 +32,15 @@ class DailyTrainActionProvider : PreviewParameterProvider<DailyTrainAction> {
         }
 }
 
-class DailyTrainPartProvider : PreviewParameterProvider<DailyTrainingPartGroup> {
-    override val values: Sequence<DailyTrainingPartGroup>
+class DailyTrainPartProvider : PreviewParameterProvider<DailyWorkoutListPartPair> {
+    override val values: Sequence<DailyWorkoutListPartPair>
         get() {
             val parts = TrainPartProvider().values
             val actions = DailyTrainActionProvider().values.groupBy { it.action.part }
             return parts.map {
-                DailyTrainingPartGroup(
+                DailyWorkoutListPartPair(
                     it.part,
-                    actions[it.part]!!.groupBy { it.action }.entries.map { DailyTrainingActionList(it.toPair()) }
+                    actions[it.part]!!.groupBy { it.action }.entries.map { DailyWorkoutListActionPair(it.toPair()) }
                 )
             }
         }

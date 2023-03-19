@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.map
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
-import site.xiaozk.dailyfitness.repository.ITrainingDayRepository
+import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -58,7 +58,7 @@ typealias AddDailyTrainResult = IntentResult<AddDailyTrainPageState, IDailyTrain
 @ViewModelScoped
 class DailyTrainReducer
 @Inject constructor(
-    private val repo: ITrainingDayRepository,
+    private val repo: IDailyWorkoutRepository,
     private val userRepo: IUserRepository,
 ) {
     fun reduce(state: AddDailyTrainPageState, intent: IDailyTrainIntent): AddDailyTrainResult {
@@ -90,7 +90,7 @@ class DailyTrainReducer
             is ActionMenuIntent -> AddDailyTrainResult(state = state.copy(showActionMenuState = intent.show, showPartMenuState = false))
             SubmitIntent -> AddDailyTrainResult(state = state.copy()) {
                 try {
-                    repo.addTrainAction(userRepo.getCurrentUser(), state.toDailyTrain())
+                    repo.addWorkoutAction(userRepo.getCurrentUser(), state.toDailyTrain())
                     emit(SubmitDoneIntent(ActionStatus.Done))
                 } catch (e: Exception) {
                     Log.e("AddDailyTrain", "Add daily train action failed", e)

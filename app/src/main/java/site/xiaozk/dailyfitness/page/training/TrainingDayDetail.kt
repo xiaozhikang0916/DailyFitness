@@ -41,9 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.repository.model.DailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.DailyTrainingActionList
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.widget.BackButton
 import java.time.LocalDate
 import java.time.ZoneId
@@ -64,7 +64,7 @@ fun TrainingDayDetailPage(
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val nav = LocalNavController.current
     var deleteActionDialog by remember {
-        mutableStateOf<DailyTrainAction?>(null)
+        mutableStateOf<DailyWorkoutAction?>(null)
     }
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
@@ -88,7 +88,7 @@ fun TrainingDayDetailPage(
         },
     ) {
         TrainingDayDetail(
-            data = data.collectAsState(initial = null).value ?: TrainingDayData(date),
+            data = data.collectAsState(initial = null).value ?: DailyWorkout(date),
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             padding = it,
             onTrainingActionDeleted = {
@@ -139,10 +139,10 @@ fun TrainingDayDetailPage(
 
 @Composable
 fun TrainingDayDetail(
-    data: TrainingDayData,
+    data: DailyWorkout,
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(),
-    onTrainingActionDeleted: (DailyTrainAction) -> Unit = {},
+    onTrainingActionDeleted: (DailyWorkoutAction) -> Unit = {},
 ) {
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
 
@@ -173,7 +173,7 @@ fun TrainingDayDetail(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DailyTrainingAction(action: DailyTrainingActionList, onActionDelete: (DailyTrainAction) -> Unit) {
+private fun DailyTrainingAction(action: DailyWorkoutListActionPair, onActionDelete: (DailyWorkoutAction) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Text(

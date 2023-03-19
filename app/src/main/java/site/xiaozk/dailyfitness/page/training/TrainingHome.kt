@@ -22,8 +22,8 @@ import site.xiaozk.dailyfitness.nav.AppHomeRootNav
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.nav.updateAppScaffoldState
-import site.xiaozk.dailyfitness.repository.model.TrainingDayList
-import site.xiaozk.dailyfitness.repository.model.TrainingDayData
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -50,12 +50,12 @@ fun TrainingHome() {
             showBottomNavBar = true
         }
     }
-    val trainingDayList = homeViewModel.pageData.collectAsState(initial = TrainingDayList())
-    TrainingHome(data = trainingDayList.value, onNav = { localNav?.navigate(it) })
+    val workoutDayList = homeViewModel.pageData.collectAsState(initial = WorkoutDayList())
+    TrainingHome(data = workoutDayList.value, onNav = { localNav?.navigate(it) })
 }
 
 @Composable
-fun TrainingHome(data: TrainingDayList, onNav: (String) -> Unit) {
+fun TrainingHome(data: WorkoutDayList, onNav: (String) -> Unit) {
     val dates = data.trainedDate.values.sortedBy { it.date }
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
@@ -74,9 +74,9 @@ fun TrainingHome(data: TrainingDayList, onNav: (String) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomePageTrainedDay(
-    day: TrainingDayData,
+    day: DailyWorkout,
     format: DateTimeFormatter,
-    onCardClick: (TrainingDayData) -> Unit,
+    onCardClick: (DailyWorkout) -> Unit,
 ) {
     Card(
         onClick = { onCardClick(day) },
