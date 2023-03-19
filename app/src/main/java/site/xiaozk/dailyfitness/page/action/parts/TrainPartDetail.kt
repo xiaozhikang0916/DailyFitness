@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
-import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.widget.BackButton
 import site.xiaozk.dailyfitness.widget.FloatingActionButtonShowHide
@@ -90,7 +90,7 @@ fun TrainPartDetail(trainPartId: Int) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TrainActionInPart(action: TrainAction, onActionLongClick: (TrainAction) -> Unit) {
+private fun TrainActionInPart(action: TrainActionWithPart, onActionLongClick: (TrainActionWithPart) -> Unit) {
     Card(
         modifier = Modifier
             .padding(all = 4.dp)

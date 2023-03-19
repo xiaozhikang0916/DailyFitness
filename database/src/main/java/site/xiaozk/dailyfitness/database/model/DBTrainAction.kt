@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 
 @Entity(
     tableName = "train_action",
@@ -24,14 +25,20 @@ data class DBTrainAction(
     val isWeightedAction: Boolean,
     val isCountedAction: Boolean,
 ) {
-    fun toRepoEntity(part: DBTrainPart): TrainAction {
+    fun toRepoAction(): TrainAction {
         return TrainAction(
             id = this.id,
+            partId = this.partId,
             actionName = this.actionName,
-            part = part.toRepoEntity(),
             isTimedAction = this.isTimedAction,
             isWeightedAction = this.isWeightedAction,
             isCountedAction = this.isCountedAction
+        )
+    }
+    fun toRepoEntity(part: DBTrainPart): TrainActionWithPart {
+        return TrainActionWithPart(
+            action = toRepoAction(),
+            part = part.toRepoEntity(),
         )
     }
 }
@@ -40,7 +47,7 @@ fun TrainAction.toDbEntity(): DBTrainAction {
     return DBTrainAction(
         id = this.id,
         actionName = this.actionName,
-        partId = this.part.id,
+        partId = this.partId,
         isCountedAction = this.isCountedAction,
         isTimedAction = this.isTimedAction,
         isWeightedAction = this.isWeightedAction

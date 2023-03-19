@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
@@ -50,7 +50,7 @@ data class AddDailyTrainPageState(
     val instant: Instant = Instant.now(),
     val allParts: List<TrainPartGroup> = emptyList(),
     val selectedPart: TrainPartGroup? = null,
-    val selectedAction: TrainAction? = null,
+    val selectedAction: TrainActionWithPart? = null,
     val showPartMenuState: Boolean = false,
     val showActionMenuState: Boolean = false,
     val duration: String = "",

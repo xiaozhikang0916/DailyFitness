@@ -52,22 +52,6 @@ interface DailyDao {
     @Query("SELECT train_action.id as actionID, train_part.* FROM train_part JOIN train_action ON train_action.partId = train_part.id WHERE train_action.id IN (:actionId) ")
     suspend fun getTrainPartOfAction(actionId: IntArray): Map<Int, DBTrainPart>
 
-    //TODO use multimap instead of multi query
-//    @Query("""
-//        SELECT train_part.*, daily.* FROM (
-//            SELECT train_action.*, daily_train_action.* from daily_train_action
-//            JOIN train_action ON usingActionId = train_action.id
-//            WHERE userId = :userId
-//            AND actionTime > :fromTimestampMilli
-//            AND actionTime < :toTimestampMilli
-//            ) as daily
-//        JOIN train_part ON partId = train_part.id
-//        """)
-//    fun getDailyWorkoutDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainPart, List<Map<DBTrainAction, List<DBDailyWorkoutAction>>>>>
-
-//    fun getDailyWorkoutDataFlow(user: User, from: LocalDate, to: LocalDate) =
-//        getDailyWorkoutDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
-
 
     @Insert
     suspend fun addDailyWorkoutAction(dailyTrainAction: DBDailyWorkoutAction)

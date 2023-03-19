@@ -31,8 +31,11 @@ interface TrainDao {
     @Insert
     suspend fun addTrainAction(trainAction: DBTrainAction)
 
+    @Query("SELECT * FROM train_action WHERE train_action.id = :actionId LIMIT 1")
+    fun getTrainAction(actionId: Int): Flow<DBTrainAction>
+
     @Query("SELECT * FROM train_action JOIN train_part ON train_action.partId = train_part.id WHERE train_action.id = :actionId")
-    fun getTrainAction(actionId: Int): Flow<Map<DBTrainAction, DBTrainPart>>
+    fun getTrainActionWithPart(actionId: Int): Flow<Map<DBTrainAction, DBTrainPart>>
 
     @Delete
     suspend fun deleteTrainPart(trainPart: DBTrainPart)

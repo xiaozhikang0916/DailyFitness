@@ -11,7 +11,7 @@ import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
-import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
@@ -37,7 +37,7 @@ class SelectPartIntent(val part: TrainPartGroup) : IDailyTrainIntent
 
 class PartMenuIntent(val show: Boolean) : IDailyTrainIntent
 
-class SelectActionIntent(val action: TrainAction) : IDailyTrainIntent
+class SelectActionIntent(val action: TrainActionWithPart) : IDailyTrainIntent
 
 class ActionMenuIntent(val show: Boolean) : IDailyTrainIntent
 

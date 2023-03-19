@@ -23,7 +23,7 @@ import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.TrainingHome
 import site.xiaozk.dailyfitness.page.training.add.AddDailyTrainAction
-import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import java.time.LocalDate
 import java.time.ZoneId
@@ -197,7 +197,7 @@ object TrainPartGraph {
         override val route: String
             get() = "train_part/add_action?partId={partId}&actionId={actionId}"
 
-        fun getRoute(part: TrainPart, action: TrainAction? = null): String {
+        fun getRoute(part: TrainPart, action: TrainActionWithPart? = null): String {
             return "train_part/add_action?partId=${part.id}&actionId=${action?.id ?: 0}"
         }
 

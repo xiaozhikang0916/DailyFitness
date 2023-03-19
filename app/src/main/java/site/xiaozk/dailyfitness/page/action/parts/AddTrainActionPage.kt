@@ -34,14 +34,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.widget.BackButton
 import javax.inject.Inject
@@ -58,7 +57,7 @@ fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
     viewModel.initData(partId, actionId)
     val nav = LocalNavController.current
     val state = viewModel.state.collectAsState().value
-    val part = state?.action?.part
+    val part = state?.part
     val status = state?.status
     var isTimed by remember(state?.action) {
         mutableStateOf(state?.action?.isTimedAction ?: false)
@@ -171,9 +170,9 @@ class AddTrainActionViewModel @Inject constructor(
                         it.actions.find { action -> action.id == actionId }
                     } else {
                         null
-                    } ?: TrainAction(part = it.part)
+                    } ?: TrainActionWithPart(part = it.part)
                 }.map {
-                    AddTrainActionState(it)
+                    AddTrainActionState(it.action, it.part)
                 }
             )
         }
@@ -210,5 +209,6 @@ class AddTrainActionViewModel @Inject constructor(
 
 data class AddTrainActionState(
     val action: TrainAction,
+    val part: TrainPart,
     val status: ActionStatus = ActionStatus.Idle,
 )

@@ -1,9 +1,6 @@
 package site.xiaozk.dailyfitness.database.repo
 
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import site.xiaozk.dailyfitness.database.dao.TrainDao
@@ -26,11 +23,9 @@ class TrainActionRepository @Inject constructor(
 ) : ITrainActionRepository {
     override fun getAllActions(): Flow<TrainPartPage> {
         return trainDao.getAllTrainPartWithAction().map { map ->
-            TrainPartPage(
-                map.entries.map {
-                    it.toRepoEntity()
-                }
-            )
+            TrainPartPage(map.entries.map {
+                it.toRepoEntity()
+            })
         }
     }
 
@@ -54,9 +49,8 @@ class TrainActionRepository @Inject constructor(
         trainDao.deleteTrainPart(part.toDbEntity())
     }
 
-    @OptIn(FlowPreview::class)
     override fun getAction(actionId: Int): Flow<TrainAction> {
-        return trainDao.getTrainAction(actionId).flatMapConcat { it.entries.map { it.key.toRepoEntity(it.value) }.asFlow() }
+        return trainDao.getTrainAction(actionId).map { it.toRepoAction() }
     }
 
     override suspend fun addTrainAction(action: TrainAction) {
