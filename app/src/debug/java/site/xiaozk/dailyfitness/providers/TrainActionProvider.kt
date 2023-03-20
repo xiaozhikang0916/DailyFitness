@@ -1,10 +1,13 @@
 package site.xiaozk.dailyfitness.providers
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
+import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 
 /**
  * @author: xiaozhikang
@@ -31,4 +34,27 @@ class TrainActionProvider : PreviewParameterProvider<TrainActionWithPart> {
 class TrainPartProvider : PreviewParameterProvider<TrainPartGroup> {
     override val values: Sequence<TrainPartGroup>
         get() = TrainActionProvider().values.groupBy { it.part }.map { TrainPartGroup(it.key, it.value) }.asSequence()
+}
+
+class TrainActionStaticPageProvider: PreviewParameterProvider<TrainActionStaticPage> {
+    override val values: Sequence<TrainActionStaticPage>
+        get() = TrainActionProvider().values.map {
+            TrainActionStaticPage(it.action, 5, 5)
+        }
+}
+
+class TrainPartStaticPageProvider: PreviewParameterProvider<TrainPartStaticPage> {
+    override val values: Sequence<TrainPartStaticPage>
+        get() = TrainPartProvider().values.map {
+            TrainPartStaticPage(it.part, it.actions.size, 5, 10)
+        }
+}
+
+class HomeTrainPartPageProvider: PreviewParameterProvider<HomeTrainPartPage> {
+    override val values: Sequence<HomeTrainPartPage>
+        get() = sequenceOf(
+            HomeTrainPartPage(
+                TrainPartStaticPageProvider().values.toList()
+            )
+        )
 }

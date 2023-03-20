@@ -3,6 +3,8 @@ package site.xiaozk.dailyfitness.page.action
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,8 +23,10 @@ import site.xiaozk.dailyfitness.nav.AppScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.nav.updateAppScaffoldState
+import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.TrainPartPage
+import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 
 /**
  * @author: xiaozhikang
@@ -92,6 +96,29 @@ private fun TrainPart(
                 text = it.actionName,
                 modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun TrainStaticPage(
+    homeTrainPartPage: HomeTrainPartPage,
+    onPartClick: (TrainPartStaticPage) -> Unit = {},
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp),
+        contentPadding = PaddingValues(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            HomeTrainPartHeadCard(homeTrainPartPage)
+        }
+        items(homeTrainPartPage.parts) {
+            TrainPartCard(trainPartStaticPage = it, modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onPartClick(it) })
         }
     }
 }
