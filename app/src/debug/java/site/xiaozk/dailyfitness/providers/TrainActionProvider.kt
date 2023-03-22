@@ -39,14 +39,17 @@ class TrainPartProvider : PreviewParameterProvider<TrainPartGroup> {
 class TrainActionStaticPageProvider: PreviewParameterProvider<TrainActionStaticPage> {
     override val values: Sequence<TrainActionStaticPage>
         get() = TrainActionProvider().values.map {
-            TrainActionStaticPage(it.action, 5, 5)
+            TrainActionStaticPage(it.action, DailyTrainActionProvider().values.toList())
         }
 }
 
 class TrainPartStaticPageProvider: PreviewParameterProvider<TrainPartStaticPage> {
     override val values: Sequence<TrainPartStaticPage>
-        get() = TrainPartProvider().values.map {
-            TrainPartStaticPage(it.part, it.actions.size, 5, 10)
+        get() {
+            val actionStatic: Map<TrainAction, List<TrainActionStaticPage>> = TrainActionStaticPageProvider().values.groupBy { it.action }
+            return TrainPartProvider().values.map {
+                TrainPartStaticPage(it.part, it.actions.flatMap { actionStatic[it.action].orEmpty() }, 5, 10)
+            }
         }
 }
 

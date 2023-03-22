@@ -2,7 +2,7 @@ package site.xiaozk.dailyfitness.repository.model
 
 data class TrainActionWithPart(
     val part: TrainPart,
-    val action: TrainAction = TrainAction(),
+    val action: TrainAction = TrainAction(partId = part.id),
 ) {
     val id: Int
         get() = action.id

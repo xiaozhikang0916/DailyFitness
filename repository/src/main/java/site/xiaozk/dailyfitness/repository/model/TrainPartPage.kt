@@ -1,5 +1,7 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import java.time.ZoneId
+
 /**
  * @author: xiaozhikang
  * @create: 2023/3/19
@@ -15,13 +17,18 @@ data class HomeTrainPartPage(
 
 data class TrainPartStaticPage(
     val trainPart: TrainPart = TrainPart(),
-    val actionCount: Int = 0,
+    val actions: List<TrainActionStaticPage> = emptyList(),
     val partWorkoutCount: Int = 0,
     val workoutCount: Int = 0,
-)
+) {
+    val actionCount: Int = actions.size
+}
 
 data class TrainActionStaticPage(
     val action: TrainAction = TrainAction(),
-    val workoutCount: Int = 0,
-    val workoutDays: Int = 0,
-)
+    val workouts: List<DailyWorkoutAction> = emptyList(),
+) {
+
+    val workoutCount: Int = workouts.size
+    val workoutDays: Int = workouts.map { it.instant.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct().size
+}
