@@ -9,23 +9,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -51,6 +58,7 @@ import javax.inject.Inject
  * @create: 2023/2/28
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
@@ -76,82 +84,112 @@ fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
             nav?.popBackStack()
         }
     }
+    val inputValid = remember {
+        derivedStateOf { name.isNotBlank() && part != null }
+    }
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
         topBar = {
-            TopAppBar(title = { Text(text = "新增训练动作") }, navigationIcon = {
-                BackButton()
-            })
+            TopAppBar(
+                title = { Text(text = "新增训练动作") },
+                colors = TopAppBarDefaults.smallTopAppBarColors(),
+                navigationIcon = {
+                    BackButton(icon = Icons.Default.Close)
+                },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            viewModel.addTrainAction(
+                                actionName = name,
+                                isTimed = isTimed,
+                                isWeighted = isWeighted,
+                                isCounted = isCounted
+                            )
+                        },
+                        enabled = inputValid.value
+                    ) {
+                        Text(text = "SAVE")
+                    }
+                },
+            )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(horizontal = 12.dp)
         ) {
-            Text(
-                text = part?.partName ?: "",
+
+            OutlinedTextField(
+                value = part?.partName ?: "",
+                onValueChange = { },
                 modifier = Modifier
-                    .padding(all = 4.dp)
                     .fillMaxWidth(),
-                style = MaterialTheme.typography.titleMedium
+                readOnly = true,
+                label = {
+                    Text(text = "训练部位")
+                }
             )
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier
-                    .padding(all = 4.dp)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                label = {
+                    Text(text = "动作名称")
+                }
             )
 
             Row(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Checkbox(checked = isTimed, onCheckedChange = { isTimed = it })
-                Text(text = "计时动作")
-            }
+                FilterChip(
+                    selected = isTimed,
+                    onClick = { isTimed = isTimed.not() },
+                    label = { Text(text = "计时动作") },
+                    leadingIcon = {
+                        if (isTimed) {
+                            CheckedIcon()
+                        }
+                    }
+                )
+                FilterChip(
+                    selected = isWeighted,
+                    onClick = { isWeighted = isWeighted.not() },
+                    label = { Text(text = "计重动作") },
+                    leadingIcon = {
+                        if (isWeighted) {
+                            CheckedIcon()
+                        }
+                    }
+                )
+                FilterChip(
+                    selected = isCounted,
+                    onClick = { isCounted = isCounted.not() },
+                    label = { Text(text = "计次动作") },
+                    leadingIcon = {
+                        if (isCounted) {
+                            CheckedIcon()
+                        }
+                    }
+                )
 
-            Row(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Checkbox(checked = isWeighted, onCheckedChange = { isWeighted = it })
-                Text(text = "计重动作")
-            }
-
-            Row(
-                modifier = Modifier
-                    .padding(4.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Checkbox(checked = isCounted, onCheckedChange = { isCounted = it })
-                Text(text = "计次动作")
-            }
-
-            Button(
-                onClick = {
-                    viewModel.addTrainAction(
-                        actionName = name,
-                        isTimed = isTimed,
-                        isWeighted = isWeighted,
-                        isCounted = isCounted
-                    )
-                },
-                modifier = Modifier
-                    .padding(all = 4.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(text = "Submit")
             }
         }
     }
+}
+
+@Composable
+private fun CheckedIcon() {
+    Icon(
+        painter = rememberVectorPainter(image = Icons.Default.Done),
+        modifier = Modifier.size(18.dp),
+        contentDescription = null,
+    )
+
 }
 
 @HiltViewModel
