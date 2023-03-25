@@ -3,17 +3,13 @@
 package site.xiaozk.dailyfitness.page.action.parts
 
 import android.util.Log
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +32,6 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainPart
-import site.xiaozk.dailyfitness.widget.BackButton
 import javax.inject.Inject
 
 /**
@@ -60,19 +55,20 @@ fun AddTrainPartPage(partId: Int = 0) {
     var name by remember(state.value.part) {
         mutableStateOf(state.value.part.partName)
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text(text = "新增训练部位") }, navigationIcon = {
-                BackButton()
-            })
+    AlertDialog(
+        onDismissRequest = { nav?.popBackStack() },
+        confirmButton = {
+            TextButton(onClick = { viewModel.addPart(name) }) {
+                Text(text = "保存")
+            }
         },
-        modifier = Modifier.systemBarsPadding()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-        ) {
+        dismissButton = {
+            TextButton(onClick = { nav?.popBackStack() }) {
+                Text(text = "取消")
+            }
+        },
+        title = { Text(text = "新增训练部位") },
+        text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -80,18 +76,8 @@ fun AddTrainPartPage(partId: Int = 0) {
                     .padding(all = 4.dp)
                     .fillMaxWidth()
             )
-
-            Button(
-                onClick = { viewModel.addPart(name) },
-                enabled = state.value.submitStatus == ActionStatus.Idle,
-                modifier = Modifier
-                    .padding(all = 4.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(text = "Submit")
-            }
-        }
-    }
+        },
+    )
 }
 
 @HiltViewModel

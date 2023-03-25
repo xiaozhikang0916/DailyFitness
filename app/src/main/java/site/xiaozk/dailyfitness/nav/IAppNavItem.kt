@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
@@ -212,7 +213,7 @@ object TrainPartGraph {
 
     fun NavGraphBuilder.trainPartGraph() {
 
-        composable(
+        dialog(
             AddTrainPartNavItem.route,
             arguments = listOf(navArgument("partId") {
                 defaultValue = 0
