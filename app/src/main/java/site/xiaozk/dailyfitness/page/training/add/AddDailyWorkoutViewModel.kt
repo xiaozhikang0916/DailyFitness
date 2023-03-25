@@ -23,10 +23,10 @@ import javax.inject.Inject
  * @create: 2023/2/26
  */
 @HiltViewModel
-class AddDailyTrainViewModel @Inject constructor(
-    private val reducer: DailyTrainReducer,
+class AddDailyWorkoutViewModel @Inject constructor(
+    private val reducer: DailyWorkoutReducer,
 ) : ViewModel() {
-    private val _stateFlow = MutableStateFlow(AddDailyTrainPageState())
+    private val _stateFlow = MutableStateFlow(AddDailyWorkoutPageState())
 
     val stateFlow = _stateFlow.asStateFlow()
 
@@ -46,7 +46,7 @@ class AddDailyTrainViewModel @Inject constructor(
     }
 }
 
-data class AddDailyTrainPageState(
+data class AddDailyWorkoutPageState(
     val instant: Instant = Instant.now(),
     val allParts: List<TrainPartGroup> = emptyList(),
     val selectedPart: TrainPartGroup? = null,
@@ -76,7 +76,7 @@ data class AddDailyTrainPageState(
         }
     }
 
-    fun cleanInput(): AddDailyTrainPageState {
+    fun cleanInput(): AddDailyWorkoutPageState {
         return this.copy(
             duration = "",
             weight = "",

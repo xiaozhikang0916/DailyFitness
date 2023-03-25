@@ -53,21 +53,21 @@ object SubmitIntent : IDailyTrainIntent
 
 class SubmitDoneIntent(val status: ActionStatus) : IDailyTrainIntent
 
-typealias AddDailyTrainResult = IntentResult<AddDailyTrainPageState, IDailyTrainIntent>
+typealias AddDailyTrainResult = IntentResult<AddDailyWorkoutPageState, IDailyTrainIntent>
 
 @ViewModelScoped
-class DailyTrainReducer
+class DailyWorkoutReducer
 @Inject constructor(
     private val repo: IDailyWorkoutRepository,
     private val userRepo: IUserRepository,
 ) {
-    fun reduce(state: AddDailyTrainPageState, intent: IDailyTrainIntent): AddDailyTrainResult {
+    fun reduce(state: AddDailyWorkoutPageState, intent: IDailyTrainIntent): AddDailyTrainResult {
         return when (intent) {
             LoadPartIntent -> AddDailyTrainResult(state = state.copy()) {
                 emitAll(repo.getAllTrainParts().map { PartLoadedIntent(it) })
             }
 
-            is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyTrainPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false))
+            is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyWorkoutPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false))
             is SetInstantIntent -> AddDailyTrainResult(
                 state = state.copy(instant = intent.instant)
             )

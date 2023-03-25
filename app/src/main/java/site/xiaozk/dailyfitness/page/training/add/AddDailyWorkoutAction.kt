@@ -51,8 +51,8 @@ import site.xiaozk.dailyfitness.widget.SegmentedControl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDailyTrainAction() {
-    val viewModel: AddDailyTrainViewModel = hiltViewModel()
+fun AddDailyWorkoutAction() {
+    val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
     val nav = LocalNavController.current
@@ -89,7 +89,7 @@ fun AddDailyTrainAction() {
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddDailyTrainPage(
-    pageState: AddDailyTrainPageState,
+    pageState: AddDailyWorkoutPageState,
     paddingValues: PaddingValues = PaddingValues(),
     onIntent: (IDailyTrainIntent) -> Unit,
 ) {
@@ -111,7 +111,7 @@ fun AddDailyTrainPage(
             onItemSelected = { it ->
                 onIntent(SelectPartIntent(it))
             },
-            itemToString = { it.part.partName }
+            itemToString = { it.part.partName },
         )
 
         val selectedPart = pageState.selectedPart
@@ -127,7 +127,10 @@ fun AddDailyTrainPage(
                 onItemSelected = { it ->
                     onIntent(SelectActionIntent(it))
                 },
-                itemToString = { it.actionName }
+                itemToString = { it.actionName },
+                onDismiss = {
+//                    onIntent(ActionMenuIntent(false))
+                },
             )
         }
 
@@ -284,7 +287,7 @@ fun AddDailyTrainPage(
 
 @Composable
 private fun WeightRadio(
-    pageState: AddDailyTrainPageState,
+    pageState: AddDailyWorkoutPageState,
     modifier: Modifier = Modifier,
     onWeightUnitSelect: (WeightUnit) -> Unit,
 ) {
@@ -302,7 +305,7 @@ private fun WeightRadio(
 
 @Composable
 private fun TimeUnitRadio(
-    pageState: AddDailyTrainPageState,
+    pageState: AddDailyWorkoutPageState,
     modifier: Modifier = Modifier,
     onTimeUnitSelect: (TimeUnit) -> Unit,
 ) {

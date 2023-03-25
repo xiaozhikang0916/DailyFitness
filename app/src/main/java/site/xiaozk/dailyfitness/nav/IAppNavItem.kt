@@ -22,7 +22,7 @@ import site.xiaozk.dailyfitness.page.body.BodyDetailPage
 import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.TrainingHome
-import site.xiaozk.dailyfitness.page.training.add.AddDailyTrainAction
+import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import java.time.LocalDate
@@ -147,7 +147,7 @@ object TrainingDayGroup {
             TrainingDayDetailPage(date = TrainDayNavItem.fromArgument(it.arguments))
         }
         composable(TrainDayAddActionNavItem.route) {
-            AddDailyTrainAction()
+            AddDailyWorkoutAction()
         }
     }
 }

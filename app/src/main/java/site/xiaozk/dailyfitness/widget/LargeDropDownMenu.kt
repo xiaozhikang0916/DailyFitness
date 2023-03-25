@@ -28,13 +28,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 
 @Composable
 fun <T> LargeDropdownMenu(
@@ -54,6 +54,7 @@ fun <T> LargeDropdownMenu(
             onClick = onClick,
         )
     },
+    onDismiss: () -> Unit = {},
 ) {
     var selectedIndex by remember {
         mutableStateOf(-1)
@@ -71,7 +72,8 @@ fun <T> LargeDropdownMenu(
             onItemSelected(item)
         },
         itemToString = itemToString,
-        drawItem = drawItem
+        drawItem = drawItem,
+        onDismiss = onDismiss
     )
 }
 
@@ -95,8 +97,13 @@ fun <T> LargeDropdownMenu(
             onClick = onClick,
         )
     },
+    onDismiss: () -> Unit,
 ) {
     var expanded by remember(expended) { mutableStateOf(expended) }
+    val dismiss by rememberUpdatedState {
+        expanded = false
+        onDismiss()
+    }
 
     Box(modifier = modifier.height(IntrinsicSize.Min)) {
         OutlinedTextField(
@@ -125,44 +132,42 @@ fun <T> LargeDropdownMenu(
 
     if (expanded) {
         Dialog(
-            onDismissRequest = { expanded = false },
+            onDismissRequest = dismiss,
         ) {
-            DailyFitnessTheme {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                ) {
-                    val listState = rememberLazyListState()
-                    if (selectedIndex > -1) {
-                        LaunchedEffect("ScrollToSelected") {
-                            listState.scrollToItem(index = selectedIndex)
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                val listState = rememberLazyListState()
+                if (selectedIndex > -1) {
+                    LaunchedEffect("ScrollToSelected") {
+                        listState.scrollToItem(index = selectedIndex)
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.fillMaxWidth(), state = listState) {
+                    if (notSetLabel != null) {
+                        item {
+                            LargeDropdownMenuItem(
+                                text = notSetLabel,
+                                selected = false,
+                                enabled = false,
+                                onClick = { },
+                            )
                         }
                     }
-
-                    LazyColumn(modifier = Modifier.fillMaxWidth(), state = listState) {
-                        if (notSetLabel != null) {
-                            item {
-                                LargeDropdownMenuItem(
-                                    text = notSetLabel,
-                                    selected = false,
-                                    enabled = false,
-                                    onClick = { },
-                                )
-                            }
+                    itemsIndexed(items) { index, item ->
+                        val selectedItem = index == selectedIndex
+                        drawItem(
+                            item,
+                            selectedItem,
+                            true
+                        ) {
+                            onItemSelected(index, item)
+                            dismiss()
                         }
-                        itemsIndexed(items) { index, item ->
-                            val selectedItem = index == selectedIndex
-                            drawItem(
-                                item,
-                                selectedItem,
-                                true
-                            ) {
-                                onItemSelected(index, item)
-                                expanded = false
-                            }
 
-                            if (index < items.lastIndex) {
-                                Divider(modifier = Modifier.padding(horizontal = 16.dp))
-                            }
+                        if (index < items.lastIndex) {
+                            Divider(modifier = Modifier.padding(horizontal = 16.dp))
                         }
                     }
                 }
