@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
-
 package site.xiaozk.dailyfitness.page.training
 
 import androidx.compose.foundation.layout.Box
@@ -12,19 +10,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import site.xiaozk.dailyfitness.nav.AppHomeRootNav
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.nav.updateAppScaffoldState
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
-import java.time.LocalDate
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -41,17 +38,16 @@ import java.time.format.FormatStyle
 @Composable
 fun TrainingHome() {
     val homeViewModel: TrainingHomeViewModel = hiltViewModel()
-    val localNav = LocalNavController.current
-    localNav?.navController?.let {
-        AppHomeRootNav.AppHomePage.TrainingHomeNavItem.updateAppScaffoldState(
-            navController = it
-        ) {
-            fabRoute = TrainingDayGroup.TrainDayNavItem.getRoute(LocalDate.now())
-            showBottomNavBar = true
-        }
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.scaffoldState.emit(
+            HomepageScaffoldState(
+                title = "训练记录",
+            )
+        )
     }
     val workoutDayList = homeViewModel.pageData.collectAsState(initial = WorkoutDayList())
-    TrainingHome(data = workoutDayList.value, onNav = { localNav?.navigate(it) })
+    TrainingHome(data = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
 }
 
 @Composable

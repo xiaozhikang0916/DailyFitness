@@ -11,10 +11,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import site.xiaozk.dailyfitness.AppHome
+import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
 import site.xiaozk.dailyfitness.page.action.TrainPartPage
 import site.xiaozk.dailyfitness.page.action.parts.AddTrainActionPage
 import site.xiaozk.dailyfitness.page.action.parts.AddTrainPartPage
@@ -50,8 +49,11 @@ object AppRootNav : IAppNavGraphItem {
         get() = AppHomeRootNav.route
 
     fun NavGraphBuilder.appRootGraph() {
-        composable(AppRootNav.route) {
-            AppHome(bottomNavController = rememberNavController())
+        navigation(
+            route = AppRootNav.route,
+            startDestination = startWith
+        ) {
+            homeGraph()
         }
     }
 }

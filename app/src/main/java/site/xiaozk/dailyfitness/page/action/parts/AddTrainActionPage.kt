@@ -5,24 +5,19 @@ package site.xiaozk.dailyfitness.page.action.parts
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,12 +39,15 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.PageHandleAction
+import site.xiaozk.dailyfitness.nav.PageHandleType
+import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
-import site.xiaozk.dailyfitness.widget.BackButton
 import javax.inject.Inject
 
 /**
@@ -57,13 +55,12 @@ import javax.inject.Inject
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/28
  */
-
+// todo mvi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
+fun AddTrainActionPage(partId: Int, actionId: Int = 0, padding: PaddingValues = PaddingValues()) {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
     viewModel.initData(partId, actionId)
-    val nav = LocalNavController.current
     val state = viewModel.state.collectAsState().value
     val part = state?.part
     val status = state?.status
@@ -79,105 +76,108 @@ fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
     var name by remember(state?.action) {
         mutableStateOf(state?.action?.actionName ?: "")
     }
+    val inputValid = remember(name, part) {
+        derivedStateOf {
+            name.isNotBlank() && part != null
+        }
+    }
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    LaunchedEffect(key1 = inputValid.value) {
+        appScaffoldViewModel.scaffoldState.emit(
+            FullDialogScaffoldState(
+                title = "新增训练动作",
+                actionItems = listOf(
+                    TopAction.textPageAction(
+                        text = "SAVE",
+                        type = PageHandleType.SAVE,
+                        valid = inputValid.value,
+                    )
+                )
+            )
+        )
+    }
     LaunchedEffect(key1 = status) {
         if (status == ActionStatus.Done) {
-            nav?.popBackStack()
+            appScaffoldViewModel.showSnackbarAndBack("添加成功")
+        } else if (status is ActionStatus.Failed) {
+            appScaffoldViewModel.showSnackbar("添加失败")
         }
     }
-    val inputValid = remember {
-        derivedStateOf { name.isNotBlank() && part != null }
-    }
-    Scaffold(
-        modifier = Modifier.systemBarsPadding(),
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "新增训练动作") },
-                colors = TopAppBarDefaults.smallTopAppBarColors(),
-                navigationIcon = {
-                    BackButton(icon = Icons.Default.Close)
-                },
-                actions = {
-                    TextButton(
-                        onClick = {
-                            viewModel.addTrainAction(
-                                actionName = name,
-                                isTimed = isTimed,
-                                isWeighted = isWeighted,
-                                isCounted = isCounted
-                            )
-                        },
-                        enabled = inputValid.value
-                    ) {
-                        Text(text = "SAVE")
-                    }
-                },
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 12.dp)
-        ) {
-
-            OutlinedTextField(
-                value = part?.partName ?: "",
-                onValueChange = { },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                readOnly = true,
-                label = {
-                    Text(text = "训练部位")
-                }
-            )
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                label = {
-                    Text(text = "动作名称")
-                }
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                FilterChip(
-                    selected = isTimed,
-                    onClick = { isTimed = isTimed.not() },
-                    label = { Text(text = "计时动作") },
-                    leadingIcon = {
-                        if (isTimed) {
-                            CheckedIcon()
-                        }
-                    }
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.topAction.collect {
+            if (it.actionType is PageHandleAction && it.actionType.type == PageHandleType.SAVE) {
+                viewModel.addTrainAction(
+                    actionName = name,
+                    isTimed = isTimed,
+                    isWeighted = isWeighted,
+                    isCounted = isCounted
                 )
-                FilterChip(
-                    selected = isWeighted,
-                    onClick = { isWeighted = isWeighted.not() },
-                    label = { Text(text = "计重动作") },
-                    leadingIcon = {
-                        if (isWeighted) {
-                            CheckedIcon()
-                        }
-                    }
-                )
-                FilterChip(
-                    selected = isCounted,
-                    onClick = { isCounted = isCounted.not() },
-                    label = { Text(text = "计次动作") },
-                    leadingIcon = {
-                        if (isCounted) {
-                            CheckedIcon()
-                        }
-                    }
-                )
-
             }
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(horizontal = 12.dp)
+    ) {
+
+        OutlinedTextField(
+            value = part?.partName ?: "",
+            onValueChange = { },
+            modifier = Modifier
+                .fillMaxWidth(),
+            readOnly = true,
+            label = {
+                Text(text = "训练部位")
+            }
+        )
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier
+                .fillMaxWidth(),
+            label = {
+                Text(text = "动作名称")
+            }
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            FilterChip(
+                selected = isTimed,
+                onClick = { isTimed = isTimed.not() },
+                label = { Text(text = "计时动作") },
+                leadingIcon = {
+                    if (isTimed) {
+                        CheckedIcon()
+                    }
+                }
+            )
+            FilterChip(
+                selected = isWeighted,
+                onClick = { isWeighted = isWeighted.not() },
+                label = { Text(text = "计重动作") },
+                leadingIcon = {
+                    if (isWeighted) {
+                        CheckedIcon()
+                    }
+                }
+            )
+            FilterChip(
+                selected = isCounted,
+                onClick = { isCounted = isCounted.not() },
+                label = { Text(text = "计次动作") },
+                leadingIcon = {
+                    if (isCounted) {
+                        CheckedIcon()
+                    }
+                }
+            )
+
         }
     }
 }

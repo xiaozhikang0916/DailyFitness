@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,10 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem
-import site.xiaozk.dailyfitness.nav.AppHomeRootNav
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.updateAppScaffoldState
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import java.time.LocalDate
@@ -46,21 +46,21 @@ import java.time.format.FormatStyle
  */
 
 @Composable
-fun BodyDetailPage() {
+fun BodyDetailPage(padding: PaddingValues = PaddingValues()) {
     val viewModel: BodyViewModel = hiltViewModel()
-    val localNav = LocalNavController.current
-    localNav?.navController?.let {
-        AppHomeRootNav.AppHomePage.BodyDetailNavItem.updateAppScaffoldState(
-            navController = it
-        ) {
-            fabRoute = AddDailyBodyDetailNavItem.route
-            showBottomNavBar = true
-        }
+
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.scaffoldState.emit(
+            HomepageScaffoldState(
+                title = "身体数据",
+            )
+        )
     }
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
     }
-    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value) {
+    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value, padding = padding) {
         deleteBodyDialog = it
     }
 
@@ -101,7 +101,7 @@ fun BodyDetailPage() {
 }
 
 @Composable
-fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> Unit) {
+fun BodyDetailPage(data: BodyDataWithDate, padding: PaddingValues, onCardLongClick: (BodyDataRecord) -> Unit) {
     val dates =
         data.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
 
@@ -113,14 +113,17 @@ fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> 
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = padding,
         ) {
             itemsIndexed(dates) { index, it ->
                 BodyDetailDaily(day = it.first, data = it.second, format = formatter, onCardLongClick = onCardLongClick)
                 if (index != dates.size - 1) {
-                    Divider(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp))
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    )
                 }
             }
         }

@@ -9,19 +9,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,10 +29,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.PageHandleAction
+import site.xiaozk.dailyfitness.nav.PageHandleType
+import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
-import site.xiaozk.dailyfitness.widget.BackButton
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
 import site.xiaozk.dailyfitness.widget.SegmentedControl
 
@@ -49,41 +45,37 @@ import site.xiaozk.dailyfitness.widget.SegmentedControl
  * @create: 2023/2/26
  */
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDailyWorkoutAction() {
+fun AddDailyWorkoutAction(paddingValues: PaddingValues = PaddingValues()) {
     val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val nav = LocalNavController.current
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    LaunchedEffect(key1 = pageState.value.valid) {
+        appScaffoldViewModel.scaffoldState.emit(
+            FullDialogScaffoldState(
+                title = "新增训练记录",
+                actionItems = listOf(
+                    TopAction.textPageAction("SAVE", PageHandleType.SAVE, pageState.value.valid)
+                )
+            )
+        )
+    }
     LaunchedEffect(pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
-            nav?.popBackStack()
+            appScaffoldViewModel.showSnackbarAndBack("添加成功")
+        } else if (pageState.value.submitStatus is ActionStatus.Failed) {
+            appScaffoldViewModel.showSnackbar("添加失败")
         }
     }
-
-    Scaffold(
-        modifier = Modifier.systemBarsPadding(),
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "训练日志") },
-                colors = TopAppBarDefaults.smallTopAppBarColors(),
-                navigationIcon = {
-                    BackButton(icon = Icons.Default.Close)
-                },
-                actions = {
-                    TextButton(
-                        onClick = { viewModel.reduce(SubmitIntent) },
-                        enabled = pageState.value.valid
-                    ) {
-                        Text(text = "SAVE")
-                    }
-                }
-            )
-        },
-    ) {
-        AddDailyTrainPage(pageState = pageState.value, paddingValues = it, onIntent = { viewModel.reduce(it) })
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.topAction.collect {
+            if (it.actionType is PageHandleAction && it.actionType.type == PageHandleType.SAVE) {
+                viewModel.reduce(SubmitIntent)
+            }
+        }
     }
+    AddDailyTrainPage(pageState = pageState.value, paddingValues = paddingValues, onIntent = { viewModel.reduce(it) })
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)

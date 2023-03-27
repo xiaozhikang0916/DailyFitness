@@ -1,24 +1,33 @@
 package site.xiaozk.dailyfitness
 
-import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
@@ -32,16 +41,18 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem.addDailyBodyDetailNav
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav
-import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
 import site.xiaozk.dailyfitness.nav.AppRootNav
 import site.xiaozk.dailyfitness.nav.AppRootNav.appRootGraph
-import site.xiaozk.dailyfitness.nav.AppScaffoldState
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.IScaffoldState
+import site.xiaozk.dailyfitness.nav.IconType
+import site.xiaozk.dailyfitness.nav.PageHandleAction
+import site.xiaozk.dailyfitness.nav.RouteAction
+import site.xiaozk.dailyfitness.nav.TextButtonType
 import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup.trainingDayGraph
-import site.xiaozk.dailyfitness.nav.provides
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
+import site.xiaozk.dailyfitness.widget.BackButton
 
 /**
  * @author: xiaozhikang
@@ -53,17 +64,66 @@ import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
  * Root compose call site of the app,
  * called in MainActivity
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppHost() {
     val hostNavController = rememberNavController()
-
+    val entry = hostNavController.currentBackStackEntryAsState().value
+    val appScaffoldViewModel = entry?.let { hiltViewModel<AppScaffoldViewModel>(it) }
+    val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
+    LaunchedEffect(key1 = appScaffoldViewModel) {
+        appScaffoldViewModel?.routeAction?.collect {
+            if (it.isBack) {
+                hostNavController.popBackStack()
+            } else {
+                hostNavController.navigate(it.route)
+            }
+        }
+    }
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
+    LaunchedEffect(key1 = appScaffoldViewModel) {
+        appScaffoldViewModel?.snackbarFlow?.collect {
+            snackbarHostState.showSnackbar(it.message)
+        }
+    }
     DailyFitnessTheme(darkTheme = false) {
-        CompositionLocalProvider(
-            hostNavController.provides()
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                AnimatedTopBar(
+                    hostNavController = hostNavController,
+                    appScaffoldViewModel = appScaffoldViewModel,
+                )
+            },
+            bottomBar = {
+                BottomNavBar(
+                    navController = hostNavController,
+                    appScaffoldViewModel = appScaffoldViewModel,
+                )
+            },
+            floatingActionButton = {
+                if (scaffoldState?.value?.showFab == true) {
+                    FloatingActionButton(onClick = {
+                        /* TODO */
+                    }) {
+                        Image(
+                            painter = rememberVectorPainter(image = Icons.Default.Add),
+                            contentDescription = null
+                        )
+                    }
+                }
+            },
+            snackbarHost = {
+                SnackbarHost(snackbarHostState)
+            }
         ) {
             NavHost(
                 navController = hostNavController,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it),
                 startDestination = AppRootNav.route
             ) {
                 appRootGraph()
@@ -75,76 +135,83 @@ fun AppHost() {
     }
 }
 
-
-/**
- * Serve as homepage of the app,
- * host a bottom nav bar
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppHome(bottomNavController: NavHostController) {
-    val current = bottomNavController.currentBackStackEntryFlow.collectAsState(initial = null).value
-    val rootEntry = if (current != null) {
-        remember(current) {
-            bottomNavController.getBackStackEntry(AppHomeRootNav.route)
-        }
-    } else {
-        null
+@OptIn(ExperimentalMaterial3Api::class)
+private fun AnimatedTopBar(
+    hostNavController: NavHostController,
+    appScaffoldViewModel: AppScaffoldViewModel?,
+) {
+    val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
+    var rememberedState by remember {
+        mutableStateOf<IScaffoldState?>(null)
     }
-    val appScaffoldState = if (rootEntry != null) {
-        hiltViewModel<AppScaffoldViewModel>(rootEntry).scaffoldState.collectAsState().value
-    } else {
-        AppScaffoldState()
+    if (scaffoldState?.value != null) {
+        rememberedState = scaffoldState.value
     }
-    LaunchedEffect(key1 = appScaffoldState) {
-        Log.i("HostPage", "Current app state $appScaffoldState")
-    }
-    CompositionLocalProvider(
-        bottomNavController.provides()
+    AnimatedVisibility(
+        visible = scaffoldState?.value != null,
+        enter = fadeIn(),
+        exit = fadeOut(),
     ) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            bottomBar = {
-                BottomNavBar(
-                    navController = bottomNavController,
-                    showNavBar = appScaffoldState.showBottomNavBar
-                )
-            },
-            floatingActionButton = {
-                val nav = LocalNavController.current
-                if (appScaffoldState.showFab) {
-                    FloatingActionButton(onClick = {
-                        nav?.navigate(
-                            appScaffoldState.fabRoute
-                        )
-                    }) {
-                        Image(
-                            painter = rememberVectorPainter(image = Icons.Default.Add),
-                            contentDescription = null
-                        )
+        rememberedState?.let { state ->
+            TopAppBar(
+                title = {
+                    Text(state.title, modifier = Modifier.fillMaxWidth(), textAlign = state.titleAlign)
+                },
+                colors = state.topAppBarColors,
+                navigationIcon = {
+                    state.backIcon?.let {
+                        BackButton(icon = it) {
+                            hostNavController.popBackStack()
+                        }
+                    }
+                },
+                actions = {
+                    state.actionItems.forEach {
+                        val onClick: () -> Unit = remember(it.actionType) {
+                            {
+                                when (it.actionType) {
+                                    is PageHandleAction -> appScaffoldViewModel?.onTopAction(it)
+                                    is RouteAction -> appScaffoldViewModel?.onRoute(it.actionType.route)
+                                }
+                            }
+                        }
+                        when (it.displayType) {
+                            is TextButtonType -> TextButton(onClick = onClick, enabled = it.valid) {
+                                Text(text = it.displayType.text)
+                            }
+
+                            is IconType -> {
+                                val icon = it.displayType
+                                IconButton(onClick = onClick, enabled = it.valid) {
+                                    Icon(painter = rememberVectorPainter(image = icon.icon), contentDescription = icon.actionDesc)
+                                }
+                            }
+                        }
                     }
                 }
-            },
-        ) {
-            NavHost(
-                navController = bottomNavController,
-                modifier = Modifier.padding(it),
-                startDestination = AppHomeRootNav.route
-            ) {
-                homeGraph()
-            }
+            )
         }
     }
 }
 
 @Composable
-fun BottomNavBar(navController: NavController, showNavBar: Boolean) {
+fun BottomNavBar(
+    navController: NavController,
+    appScaffoldViewModel: AppScaffoldViewModel?,
+) {
+    val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
+    val showNavBar = scaffoldState?.value?.showBottomNavBar ?: false
     val bottomList = remember {
         AppHomeRootNav.AppHomePage.all()
     }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    if (showNavBar) {
+    AnimatedVisibility(
+        visible = showNavBar,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
         NavigationBar {
             bottomList.forEach {
                 NavigationBarItem(

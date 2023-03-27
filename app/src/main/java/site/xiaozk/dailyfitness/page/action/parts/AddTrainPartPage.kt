@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import javax.inject.Inject
@@ -46,24 +46,30 @@ fun AddTrainPartPage(partId: Int = 0) {
     val viewModel: AddTrainPartViewModel = hiltViewModel()
     viewModel.loadPart(partId = partId)
     val state = viewModel.status.collectAsState()
-    val nav = LocalNavController.current
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = state.value) {
         if (state.value.submitStatus == ActionStatus.Done) {
-            nav?.popBackStack()
+             appScaffoldViewModel.showSnackbarAndBack("添加成功")
+        } else if (state.value.submitStatus is ActionStatus.Failed) {
+            appScaffoldViewModel.showSnackbar("添加失败")
         }
     }
     var name by remember(state.value.part) {
         mutableStateOf(state.value.part.partName)
     }
     AlertDialog(
-        onDismissRequest = { nav?.popBackStack() },
+        onDismissRequest = {
+            appScaffoldViewModel.back()
+        },
         confirmButton = {
             TextButton(onClick = { viewModel.addPart(name) }) {
                 Text(text = "保存")
             }
         },
         dismissButton = {
-            TextButton(onClick = { nav?.popBackStack() }) {
+            TextButton(onClick = {
+                appScaffoldViewModel.back()
+            }) {
                 Text(text = "取消")
             }
         },

@@ -7,7 +7,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import site.xiaozk.dailyfitness.nav.LocalNavController
 
 /**
  * @author: xiaozhikang
@@ -16,9 +15,8 @@ import site.xiaozk.dailyfitness.nav.LocalNavController
  */
 
 @Composable
-fun BackButton(icon: ImageVector = Icons.Default.KeyboardArrowLeft) {
-    val nav = LocalNavController.current
-    IconButton(onClick = { nav?.popBackStack() }) {
+fun BackButton(icon: ImageVector = Icons.Default.KeyboardArrowLeft, onBackClick: () -> Unit = {}) {
+    IconButton(onClick = onBackClick) {
         Icon(painter = rememberVectorPainter(image = icon), contentDescription = "back")
     }
 }

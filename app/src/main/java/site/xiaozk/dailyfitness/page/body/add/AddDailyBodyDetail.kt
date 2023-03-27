@@ -7,21 +7,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,8 +27,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.widget.BackButton
+import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.PageHandleAction
+import site.xiaozk.dailyfitness.nav.PageHandleType
+import site.xiaozk.dailyfitness.nav.RouteAction
+import site.xiaozk.dailyfitness.nav.TopAction
 
 /**
  * @author: xiaozhikang
@@ -42,33 +40,46 @@ import site.xiaozk.dailyfitness.widget.BackButton
  * @create: 2023/2/27
  */
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddDailyBodyDetail() {
+fun AddDailyBodyDetail(padding: PaddingValues = PaddingValues()) {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
-    val nav = LocalNavController.current
-    LaunchedEffect(key1 = pageState.value.submitStatus) {
-        if (pageState.value.submitStatus == ActionStatus.Done) {
-            nav?.popBackStack()
-        }
+
+    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.scaffoldState.emit(
+            FullDialogScaffoldState(
+                title = "记录身体数据",
+                actionItems = listOf(
+                    TopAction.textPageAction(
+                        text = "SAVE",
+                        type = PageHandleType.SAVE,
+                    )
+                )
+            )
+        )
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "记录身体数据") },
-                navigationIcon = { BackButton(Icons.Default.Close) },
-                actions = {
-                    TextButton(onClick = { viewModel.reduce(SubmitBodyIntent) }) {
-                        Text(text = "SAVE")
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.topAction.collect { intent ->
+            when (intent.actionType) {
+                is PageHandleAction -> {
+                    when (intent.actionType.type) {
+                        PageHandleType.SAVE -> viewModel.reduce(SubmitBodyIntent)
                     }
                 }
-            )
-        },
-        modifier = Modifier.systemBarsPadding(),
-    ) {
-        AddDailyBodyDetail(pageState.value, padding = it, viewModel::reduce)
+
+                is RouteAction -> {}
+            }
+        }
     }
+    LaunchedEffect(key1 = pageState.value.submitStatus) {
+        if (pageState.value.submitStatus == ActionStatus.Done) {
+            appScaffoldViewModel.showSnackbarAndBack("记录添加成功")
+        } else if (pageState.value.submitStatus is ActionStatus.Failed) {
+            appScaffoldViewModel.showSnackbar("记录添加失败")
+        }
+    }
+    AddDailyBodyDetail(pageState.value, padding = padding, viewModel::reduce)
 }
 
 @Composable
