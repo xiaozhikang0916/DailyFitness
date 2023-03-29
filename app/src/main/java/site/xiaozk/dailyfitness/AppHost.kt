@@ -39,6 +39,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem.addDailyBodyDetailNav
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav
 import site.xiaozk.dailyfitness.nav.AppRootNav
@@ -48,6 +50,7 @@ import site.xiaozk.dailyfitness.nav.IScaffoldState
 import site.xiaozk.dailyfitness.nav.IconType
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.RouteAction
+import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.TextButtonType
 import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup.trainingDayGraph
@@ -83,9 +86,19 @@ fun AppHost() {
     val snackbarHostState = remember {
         SnackbarHostState()
     }
+    // redirect snackbar flow from view model, which is changing in page switching
+    val snackbarFlow = remember {
+        MutableStateFlow<SnackbarData?>(null)
+    }
     LaunchedEffect(key1 = appScaffoldViewModel) {
         appScaffoldViewModel?.snackbarFlow?.collect {
-            snackbarHostState.showSnackbar(it.message)
+            snackbarFlow.emit(it)
+        }
+    }
+    // now show-snack-bar will not re-launch if page is changed
+    LaunchedEffect(key1 = Unit) {
+        snackbarFlow.filterNotNull().collect {
+            snackbarHostState.showSnackbar(message = it.message, withDismissAction = true)
         }
     }
     DailyFitnessTheme(darkTheme = false) {
