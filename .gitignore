@@ -89,5 +89,4 @@ lint/tmp/
 */.DS_Store
 
 # idea shelf
-/.idea/shelf/Changes/
-/.idea/shelf/Changes.xml
+/.idea/shelf/*
