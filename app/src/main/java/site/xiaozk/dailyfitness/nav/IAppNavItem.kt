@@ -200,8 +200,8 @@ object TrainPartGraph {
         override val route: String
             get() = "train_part/add_action?partId={partId}&actionId={actionId}"
 
-        fun getRoute(part: TrainPart, action: TrainActionWithPart? = null): String {
-            return "train_part/add_action?partId=${part.id}&actionId=${action?.id ?: 0}"
+        fun getRoute(part: TrainPart? = null, action: TrainActionWithPart? = null): String {
+            return "train_part/add_action?partId=${part?.id ?: 0}&actionId=${action?.id ?: 0}"
         }
 
         fun partIdFromArgument(argument: Bundle?): Int {

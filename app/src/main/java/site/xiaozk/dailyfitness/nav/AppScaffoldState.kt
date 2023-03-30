@@ -28,6 +28,8 @@ sealed interface IScaffoldState {
     val titleAlign: TextAlign
         get() = TextAlign.Start
     val showBottomNavBar: Boolean
+    val showTopBar: Boolean
+        get() = true
 
     @get:Composable
     val topAppBarColors: TopAppBarColors

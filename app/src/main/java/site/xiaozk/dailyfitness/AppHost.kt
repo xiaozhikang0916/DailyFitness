@@ -3,14 +3,11 @@ package site.xiaozk.dailyfitness
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -56,6 +53,7 @@ import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup.trainingDayGraph
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 import site.xiaozk.dailyfitness.widget.BackButton
+import site.xiaozk.dailyfitness.widget.HostFab
 
 /**
  * @author: xiaozhikang
@@ -73,7 +71,12 @@ fun AppHost() {
     val hostNavController = rememberNavController()
     val entry = hostNavController.currentBackStackEntryAsState().value
     val appScaffoldViewModel = entry?.let { hiltViewModel<AppScaffoldViewModel>(it) }
-    val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
+    val scaffoldState = remember {
+        mutableStateOf<IScaffoldState?>(null)
+    }
+    appScaffoldViewModel?.scaffoldState?.collectAsState()?.value?.let {
+        scaffoldState.value = it
+    }
     LaunchedEffect(key1 = appScaffoldViewModel) {
         appScaffoldViewModel?.routeAction?.collect {
             if (it.isBack) {
@@ -103,7 +106,7 @@ fun AppHost() {
     }
     DailyFitnessTheme(darkTheme = false) {
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().systemBarsPadding(),
             topBar = {
                 AnimatedTopBar(
                     hostNavController = hostNavController,
@@ -117,15 +120,8 @@ fun AppHost() {
                 )
             },
             floatingActionButton = {
-                if (scaffoldState?.value?.showFab == true) {
-                    FloatingActionButton(onClick = {
-                        /* TODO */
-                    }) {
-                        Image(
-                            painter = rememberVectorPainter(image = Icons.Default.Add),
-                            contentDescription = null
-                        )
-                    }
+                HostFab(scaffoldState.value) {
+                    appScaffoldViewModel?.onRoute(it)
                 }
             },
             snackbarHost = {
@@ -162,7 +158,7 @@ private fun AnimatedTopBar(
         rememberedState = scaffoldState.value
     }
     AnimatedVisibility(
-        visible = scaffoldState?.value != null,
+        visible = rememberedState?.showTopBar == true,
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
@@ -214,7 +210,13 @@ fun BottomNavBar(
     appScaffoldViewModel: AppScaffoldViewModel?,
 ) {
     val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
-    val showNavBar = scaffoldState?.value?.showBottomNavBar ?: false
+    var rememberedState by remember {
+        mutableStateOf<IScaffoldState?>(null)
+    }
+    if (scaffoldState?.value != null) {
+        rememberedState = scaffoldState.value
+    }
+    val showNavBar = rememberedState?.showBottomNavBar ?: false
     val bottomList = remember {
         AppHomeRootNav.AppHomePage.all()
     }
