@@ -75,9 +75,9 @@ class AddTrainActionReducer @Inject constructor(
                                 id = id,
                                 partId = state.part?.id ?: 0,
                                 actionName = actionName,
-                                isTimedAction = isTimedAction,
-                                isWeightedAction = isWeightedAction,
-                                isCountedAction = isCountedAction,
+                                isTimedAction = state.isTimed,
+                                isWeightedAction = state.isWeighted,
+                                isCountedAction = state.isCounted,
                             )
                         )
                     } ?: throw NullPointerException("Input action is null")
