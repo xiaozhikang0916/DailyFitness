@@ -31,6 +31,12 @@ class TrainingHomeViewModel @Inject constructor(
     }
 
     fun getHomePageData(user: User): Flow<WorkoutDayList> {
-        return homeRepo.getWorkoutDayList(user, LocalDate.now().withDayOfMonth(1), LocalDate.now().withDayOfMonth(30))
+        return homeRepo.getWorkoutDayList(
+            user = user,
+            // from the first day of this month
+            from = LocalDate.now().withDayOfMonth(1),
+            // to the last day of this month
+            to = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1)
+        )
     }
 }

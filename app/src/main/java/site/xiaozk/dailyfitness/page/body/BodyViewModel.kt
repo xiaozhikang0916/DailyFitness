@@ -32,8 +32,10 @@ class BodyViewModel @Inject constructor(
         emitAll(
             bodyRepo.getPersonDailyDataFlow(
                 user,
+                // from the first day of this month
                 LocalDate.now().withDayOfMonth(1),
-                LocalDate.now().withDayOfMonth(30)
+                // to the last day of this month
+                LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1)
             )
         )
     }
