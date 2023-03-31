@@ -153,11 +153,13 @@ fun TrainPartCard(
     Card(
         modifier = modifier.then(
             if (onClicked != null) {
-                Modifier.clip(shape).clickable(onClick = onClicked)
+                Modifier
+                    .clip(shape)
+                    .clickable(onClick = onClicked)
             } else {
                 Modifier
             }
-        ),        shape = shape,
+        ), shape = shape,
         colors = colors,
         elevation = elevation,
         border = border
@@ -173,13 +175,23 @@ fun TrainPartCard(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text(text = trainPartStaticPage.trainPart.partName, style = MaterialTheme.typography.titleMedium)
-                Text(text = "${trainPartStaticPage.actionCount}个动作", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = trainPartStaticPage.trainPart.partName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+                Text(
+                    text = "${trainPartStaticPage.actionCount}个动作",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(IntrinsicSize.Min),
+                    .width(IntrinsicSize.Max),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -190,16 +202,36 @@ fun TrainPartCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "部位训练数", style = MaterialTheme.typography.labelMedium)
-                    Text(text = trainPartStaticPage.partWorkoutCount.toString(), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = "部位训练数",
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Text(
+                        text = trainPartStaticPage.partWorkoutCount.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
                 Divider(modifier = Modifier.padding(horizontal = 4.dp), color = MaterialTheme.colorScheme.outline)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "训练总组数", style = MaterialTheme.typography.labelMedium)
-                    Text(text = trainPartStaticPage.workoutCount.toString(), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = "训练总组数",
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Text(
+                        text = trainPartStaticPage.workoutCount.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
             }
         }
@@ -221,7 +253,9 @@ fun TrainActionCard(
     Card(
         modifier = modifier.then(
             if (onClicked != null) {
-                Modifier.clip(shape).clickable(onClick = onClicked)
+                Modifier
+                    .clip(shape)
+                    .clickable(onClick = onClicked)
             } else {
                 Modifier
             }
@@ -265,7 +299,7 @@ fun TrainActionCard(
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(IntrinsicSize.Min)
+                    .width(IntrinsicSize.Max)
                     .padding(end = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
