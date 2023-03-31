@@ -9,10 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -40,7 +41,6 @@ import site.xiaozk.dailyfitness.nav.IScaffoldState
 import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import java.time.LocalDate
 import kotlin.math.max
 import kotlin.math.min
 
@@ -49,16 +49,20 @@ import kotlin.math.min
  * @create: 2023/3/30
  */
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HostFab(scaffoldState: IScaffoldState?, onRoute: (Route) -> Unit) {
+fun HostFab(scaffoldState: IScaffoldState?, topAppBarState: TopAppBarState? = null, onRoute: (Route) -> Unit) {
     var showFabMenu by remember {
         mutableStateOf(false)
     }
     if (scaffoldState?.showFab == true) {
         Box {
-            FloatingActionButton(onClick = {
-                showFabMenu = !showFabMenu
-            }) {
+            FloatingActionButtonShowHide(
+                onClick = {
+                    showFabMenu = !showFabMenu
+                },
+                topAppBarState = topAppBarState
+            ) {
                 Image(
                     painter = rememberVectorPainter(image = Icons.Default.Add),
                     contentDescription = null
@@ -91,7 +95,7 @@ fun HostFab(scaffoldState: IScaffoldState?, onRoute: (Route) -> Unit) {
                                 icon = Icons.Default.Add,
                                 text = "新增训练",
                             ) {
-                                onRoute(Route(TrainingDayGroup.TrainDayNavItem.getRoute(LocalDate.now())))
+                                onRoute(Route(TrainingDayGroup.TrainDayAddActionNavItem.route))
                                 showFabMenu = false
                             }
                             FloatingActionListButton(text = "新增身体数据") {

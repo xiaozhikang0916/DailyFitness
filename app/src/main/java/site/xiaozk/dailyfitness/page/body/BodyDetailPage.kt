@@ -4,9 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,11 +25,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import java.time.LocalDate
@@ -46,7 +46,7 @@ import java.time.format.FormatStyle
  */
 
 @Composable
-fun BodyDetailPage(padding: PaddingValues = PaddingValues()) {
+fun BodyDetailPage() {
     val viewModel: BodyViewModel = hiltViewModel()
 
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
@@ -60,7 +60,7 @@ fun BodyDetailPage(padding: PaddingValues = PaddingValues()) {
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
     }
-    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value, padding = padding) {
+    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value) {
         deleteBodyDialog = it
     }
 
@@ -101,30 +101,30 @@ fun BodyDetailPage(padding: PaddingValues = PaddingValues()) {
 }
 
 @Composable
-fun BodyDetailPage(data: BodyDataWithDate, padding: PaddingValues, onCardLongClick: (BodyDataRecord) -> Unit) {
+fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> Unit) {
     val dates =
         data.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
 
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = padding,
-        ) {
-            itemsIndexed(dates) { index, it ->
-                BodyDetailDaily(day = it.first, data = it.second, format = formatter, onCardLongClick = onCardLongClick)
-                if (index != dates.size - 1) {
-                    Divider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                    )
-                }
+    val scaffoldProperty = LocalScaffoldProperty.current
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 12.dp)
+            .nestedScroll(scaffoldProperty.scrollConnection),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = scaffoldProperty.padding,
+    ) {
+        itemsIndexed(dates) { index, it ->
+            BodyDetailDaily(day = it.first, data = it.second, format = formatter, onCardLongClick = onCardLongClick)
+            if (index != dates.size - 1) {
+                Divider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                )
             }
         }
     }

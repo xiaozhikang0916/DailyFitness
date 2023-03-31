@@ -5,7 +5,6 @@ package site.xiaozk.dailyfitness.page.action.parts
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.TopAction
@@ -48,7 +49,7 @@ import javax.inject.Inject
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainActionPage(partId: Int, actionId: Int = 0, padding: PaddingValues = PaddingValues()) {
+fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
     LaunchedEffect(key1 = Unit) {
         viewModel.initData(partId, actionId)
@@ -85,11 +86,13 @@ fun AddTrainActionPage(partId: Int, actionId: Int = 0, padding: PaddingValues = 
             }
         }
     }
+    val scaffoldProperty = LocalScaffoldProperty.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(padding)
+            .padding(scaffoldProperty.padding)
             .padding(horizontal = 12.dp)
+            .nestedScroll(scaffoldProperty.scrollConnection),
     ) {
 
         OutlinedTextField(

@@ -3,7 +3,6 @@
 package site.xiaozk.dailyfitness.page.body.add
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.RouteAction
@@ -41,7 +42,7 @@ import site.xiaozk.dailyfitness.nav.TopAction
  */
 
 @Composable
-fun AddDailyBodyDetail(padding: PaddingValues = PaddingValues()) {
+fun AddDailyBodyDetail() {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
@@ -79,17 +80,19 @@ fun AddDailyBodyDetail(padding: PaddingValues = PaddingValues()) {
             appScaffoldViewModel.showSnackbar("记录添加失败")
         }
     }
-    AddDailyBodyDetail(pageState.value, padding = padding, viewModel::reduce)
+    AddDailyBodyDetail(pageState.value, viewModel::reduce)
 }
 
 @Composable
-fun AddDailyBodyDetail(state: AddDailyBodyState, padding: PaddingValues = PaddingValues(), onIntent: (IDailyBodyIntent) -> Unit) {
+fun AddDailyBodyDetail(state: AddDailyBodyState, onIntent: (IDailyBodyIntent) -> Unit) {
+    val scaffoldProperty = LocalScaffoldProperty.current
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp),
-        contentPadding = padding,
+            .padding(horizontal = 12.dp)
+            .nestedScroll(scaffoldProperty.scrollConnection),
+        contentPadding = scaffoldProperty.padding,
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {

@@ -1,13 +1,14 @@
 package site.xiaozk.dailyfitness.nav
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TopAppBarColors
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,8 +32,7 @@ sealed interface IScaffoldState {
     val showTopBar: Boolean
         get() = true
 
-    @get:Composable
-    val topAppBarColors: TopAppBarColors
+    val topAppBarCentered: Boolean
     val actionItems: List<TopAction>
     val backIcon: ImageVector?
     val showFab: Boolean
@@ -47,8 +47,7 @@ data class HomepageScaffoldState(
     override val title: String = "",
 ) : IScaffoldState {
     override val showBottomNavBar: Boolean = true
-    override val topAppBarColors: TopAppBarColors
-        @Composable get() = TopAppBarDefaults.centerAlignedTopAppBarColors()
+    override val topAppBarCentered: Boolean = true
     override val actionItems: List<TopAction>
         get() = emptyList()
     override val backIcon: ImageVector?
@@ -62,29 +61,25 @@ data class HomepageScaffoldState(
 /**
  * Scaffold state in subpage, with title in left and bottom bar hidden
  */
-@OptIn(ExperimentalMaterial3Api::class)
 data class SubpageScaffoldState(
     override val title: String = "",
     override val actionItems: List<TopAction> = emptyList(),
 ) : IScaffoldState {
     override val showBottomNavBar: Boolean = false
-    override val topAppBarColors: TopAppBarColors
-        @Composable get() = TopAppBarDefaults.smallTopAppBarColors()
+    override val topAppBarCentered: Boolean = false
     override val backIcon: ImageVector
         get() = Icons.Default.KeyboardArrowLeft
 }
 
 /**
- *
+ * Scaffold state in dialog, with title in left and bottom bar hidden
  */
-@OptIn(ExperimentalMaterial3Api::class)
 data class FullDialogScaffoldState(
     override val title: String = "",
     override val actionItems: List<TopAction> = emptyList(),
 ) : IScaffoldState {
     override val showBottomNavBar: Boolean = false
-    override val topAppBarColors: TopAppBarColors
-        @Composable get() = TopAppBarDefaults.smallTopAppBarColors()
+    override val topAppBarCentered: Boolean = false
     override val backIcon: ImageVector
         get() = Icons.Default.Close
 }
@@ -149,3 +144,13 @@ class AppScaffoldViewModel @Inject constructor() : ViewModel() {
         back()
     }
 }
+
+@Immutable
+class ScaffoldProperty(
+    val padding: PaddingValues,
+    val scrollConnection: NestedScrollConnection,
+)
+
+private object EmptyScrollConnection : NestedScrollConnection
+
+val LocalScaffoldProperty = compositionLocalOf { ScaffoldProperty(PaddingValues(), EmptyScrollConnection) }

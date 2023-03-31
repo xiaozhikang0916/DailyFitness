@@ -6,7 +6,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -28,10 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
@@ -51,7 +52,6 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TrainingDayDetailPage(
     date: LocalDate,
-    padding: PaddingValues = PaddingValues(),
 ) {
     val viewModel: TrainingDayDetailViewModel = hiltViewModel()
     val data = viewModel.getTrainingData(date)
@@ -72,7 +72,6 @@ fun TrainingDayDetailPage(
     }
     TrainingDayDetail(
         data = data.collectAsState(initial = null).value ?: DailyWorkout(date),
-        padding = padding,
         onTrainingActionDeleted = {
             deleteActionDialog = it
         }
@@ -122,17 +121,17 @@ fun TrainingDayDetailPage(
 fun TrainingDayDetail(
     data: DailyWorkout,
     modifier: Modifier = Modifier,
-    padding: PaddingValues = PaddingValues(),
     onTrainingActionDeleted: (DailyWorkoutAction) -> Unit = {},
 ) {
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
-
+    val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 12.dp)
+            .nestedScroll(scaffoldProperty.scrollConnection),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = padding,
+        contentPadding = scaffoldProperty.padding,
     ) {
         item {
             Text(

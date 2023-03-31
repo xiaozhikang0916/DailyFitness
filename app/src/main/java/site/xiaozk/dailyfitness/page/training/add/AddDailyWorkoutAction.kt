@@ -4,7 +4,6 @@ package site.xiaozk.dailyfitness.page.training.add
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,6 +30,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.TopAction
@@ -46,7 +46,7 @@ import site.xiaozk.dailyfitness.widget.SegmentedControl
  */
 
 @Composable
-fun AddDailyWorkoutAction(paddingValues: PaddingValues = PaddingValues()) {
+fun AddDailyWorkoutAction() {
     val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
@@ -75,21 +75,21 @@ fun AddDailyWorkoutAction(paddingValues: PaddingValues = PaddingValues()) {
             }
         }
     }
-    AddDailyTrainPage(pageState = pageState.value, paddingValues = paddingValues, onIntent = { viewModel.reduce(it) })
+    AddDailyTrainPage(pageState = pageState.value, onIntent = { viewModel.reduce(it) })
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddDailyTrainPage(
     pageState: AddDailyWorkoutPageState,
-    paddingValues: PaddingValues = PaddingValues(),
     onIntent: (IDailyTrainIntent) -> Unit,
 ) {
+    val scaffoldProperty = LocalScaffoldProperty.current
     val allParts = pageState.allParts
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
+            .padding(scaffoldProperty.padding),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
@@ -100,7 +100,7 @@ fun AddDailyTrainPage(
             label = "训练部位",
             expended = pageState.showPartMenuState,
             items = allParts,
-            onItemSelected = { it ->
+            onItemSelected = {
                 onIntent(SelectPartIntent(it))
             },
             itemToString = { it.part.partName },

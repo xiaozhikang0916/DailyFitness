@@ -2,7 +2,6 @@ package site.xiaozk.dailyfitness.page.action.parts
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,9 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,6 +22,7 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
@@ -40,12 +38,11 @@ import javax.inject.Inject
  * @create: 2023/2/27
  */
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrainPartDetail(trainPartId: Int, padding: PaddingValues = PaddingValues()) {
+fun TrainPartDetail(trainPartId: Int) {
     val viewModel: TrainPartDetailViewModel = hiltViewModel()
     val trainPart = viewModel.getPartDetail(trainPartId).collectAsState(TrainPartGroup()).value
-
+    val scaffoldProperty = LocalScaffoldProperty.current
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = trainPart) {
         appScaffoldViewModel.scaffoldState.emit(
@@ -61,13 +58,12 @@ fun TrainPartDetail(trainPartId: Int, padding: PaddingValues = PaddingValues()) 
             )
         )
     }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     if (trainPart.part.id != 0) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .nestedScroll(scaffoldProperty.scrollConnection),
+            contentPadding = scaffoldProperty.padding,
         ) {
             item {
                 Text(

@@ -1,6 +1,5 @@
 package site.xiaozk.dailyfitness.page.training
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,11 +13,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
@@ -56,12 +57,16 @@ fun TrainingHome(data: WorkoutDayList, onNav: (String) -> Unit) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(dates) {
-                HomePageTrainedDay(day = it, format = formatter) { trainDay ->
-                    onNav(TrainingDayGroup.TrainDayNavItem.getRoute(trainDay.date))
-                }
+    val scaffoldProperty = LocalScaffoldProperty.current
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scaffoldProperty.scrollConnection),
+        contentPadding = scaffoldProperty.padding,
+    ) {
+        items(dates) {
+            HomePageTrainedDay(day = it, format = formatter) { trainDay ->
+                onNav(TrainingDayGroup.TrainDayNavItem.getRoute(trainDay.date))
             }
         }
     }

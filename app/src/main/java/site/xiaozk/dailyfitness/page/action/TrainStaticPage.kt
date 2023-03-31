@@ -17,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -60,7 +62,12 @@ fun TrainPartPage(
     onCardClick: (TrainPartGroup) -> Unit,
     onCardLongClick: (TrainPartGroup) -> Unit,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    val scaffoldProperty = LocalScaffoldProperty.current
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scaffoldProperty.scrollConnection), contentPadding = scaffoldProperty.padding
+    ) {
         items(page.allParts) {
             TrainPart(part = it, onCardClick, onCardLongClick)
         }

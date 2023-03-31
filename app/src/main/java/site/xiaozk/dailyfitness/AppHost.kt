@@ -3,10 +3,11 @@ package site.xiaozk.dailyfitness
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,7 +19,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,7 +36,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -45,8 +48,11 @@ import site.xiaozk.dailyfitness.nav.AppRootNav.appRootGraph
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.IScaffoldState
 import site.xiaozk.dailyfitness.nav.IconType
+import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
+import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.RouteAction
+import site.xiaozk.dailyfitness.nav.ScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.TextButtonType
 import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
@@ -104,14 +110,19 @@ fun AppHost() {
             snackbarHostState.showSnackbar(message = it.message, withDismissAction = true)
         }
     }
+    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     DailyFitnessTheme(darkTheme = false) {
         Scaffold(
-            modifier = Modifier.fillMaxSize().systemBarsPadding(),
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding(),
             topBar = {
                 AnimatedTopBar(
-                    hostNavController = hostNavController,
                     appScaffoldViewModel = appScaffoldViewModel,
-                )
+                    scrollBehavior = scroll
+                ) {
+                    appScaffoldViewModel?.onRoute(it)
+                }
             },
             bottomBar = {
                 BottomNavBar(
@@ -120,7 +131,7 @@ fun AppHost() {
                 )
             },
             floatingActionButton = {
-                HostFab(scaffoldState.value) {
+                HostFab(scaffoldState = scaffoldState.value, topAppBarState = scroll.state) {
                     appScaffoldViewModel?.onRoute(it)
                 }
             },
@@ -128,17 +139,21 @@ fun AppHost() {
                 SnackbarHost(snackbarHostState)
             }
         ) {
-            NavHost(
-                navController = hostNavController,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it),
-                startDestination = AppRootNav.route
+            CompositionLocalProvider(
+                LocalScaffoldProperty provides ScaffoldProperty(it, scroll.nestedScrollConnection)
             ) {
-                appRootGraph()
-                addDailyBodyDetailNav()
-                trainPartGraph()
-                trainingDayGraph()
+
+                NavHost(
+                    navController = hostNavController,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    startDestination = AppRootNav.route
+                ) {
+                    appRootGraph()
+                    addDailyBodyDetailNav()
+                    trainPartGraph()
+                    trainingDayGraph()
+                }
             }
         }
     }
@@ -147,8 +162,9 @@ fun AppHost() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun AnimatedTopBar(
-    hostNavController: NavHostController,
     appScaffoldViewModel: AppScaffoldViewModel?,
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    onRoute: (Route) -> Unit,
 ) {
     val scaffoldState = appScaffoldViewModel?.scaffoldState?.collectAsState()
     var rememberedState by remember {
@@ -163,43 +179,45 @@ private fun AnimatedTopBar(
         exit = fadeOut(),
     ) {
         rememberedState?.let { state ->
-            TopAppBar(
-                title = {
-                    Text(state.title, modifier = Modifier.fillMaxWidth(), textAlign = state.titleAlign)
-                },
-                colors = state.topAppBarColors,
-                navigationIcon = {
-                    state.backIcon?.let {
-                        BackButton(icon = it) {
-                            hostNavController.popBackStack()
+            val title: @Composable () -> Unit = {
+                Text(state.title, modifier = Modifier.fillMaxWidth(), textAlign = state.titleAlign)
+            }
+            val navigation: @Composable () -> Unit = {
+                state.backIcon?.let {
+                    BackButton(icon = it) {
+                        onRoute(Route.BACK)
+                    }
+                }
+            }
+            val actions: @Composable RowScope.() -> Unit = {
+                state.actionItems.forEach {
+                    val onClick: () -> Unit = remember(it.actionType) {
+                        {
+                            when (it.actionType) {
+                                is PageHandleAction -> appScaffoldViewModel?.onTopAction(it)
+                                is RouteAction -> appScaffoldViewModel?.onRoute(it.actionType.route)
+                            }
                         }
                     }
-                },
-                actions = {
-                    state.actionItems.forEach {
-                        val onClick: () -> Unit = remember(it.actionType) {
-                            {
-                                when (it.actionType) {
-                                    is PageHandleAction -> appScaffoldViewModel?.onTopAction(it)
-                                    is RouteAction -> appScaffoldViewModel?.onRoute(it.actionType.route)
-                                }
-                            }
+                    when (it.displayType) {
+                        is TextButtonType -> TextButton(onClick = onClick, enabled = it.valid) {
+                            Text(text = it.displayType.text)
                         }
-                        when (it.displayType) {
-                            is TextButtonType -> TextButton(onClick = onClick, enabled = it.valid) {
-                                Text(text = it.displayType.text)
-                            }
 
-                            is IconType -> {
-                                val icon = it.displayType
-                                IconButton(onClick = onClick, enabled = it.valid) {
-                                    Icon(painter = rememberVectorPainter(image = icon.icon), contentDescription = icon.actionDesc)
-                                }
+                        is IconType -> {
+                            val icon = it.displayType
+                            IconButton(onClick = onClick, enabled = it.valid) {
+                                Icon(painter = rememberVectorPainter(image = icon.icon), contentDescription = icon.actionDesc)
                             }
                         }
                     }
                 }
-            )
+            }
+            if (state.topAppBarCentered) {
+                CenterAlignedTopAppBar(title = title, navigationIcon = navigation, actions = actions, scrollBehavior = scrollBehavior)
+            } else {
+                TopAppBar(title = title, navigationIcon = navigation, actions = actions, scrollBehavior = scrollBehavior)
+            }
         }
     }
 }
