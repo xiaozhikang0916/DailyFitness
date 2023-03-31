@@ -3,6 +3,7 @@ package site.xiaozk.dailyfitness.page.action
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,15 +28,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
+import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.widget.SmallChip
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * @author: xiaozhikang
@@ -140,14 +144,20 @@ fun TrainPartCard(
     trainPartStaticPage: TrainPartStaticPage,
     modifier: Modifier = Modifier,
     isHead: Boolean = false,
+    onClicked: (() -> Unit)? = null,
 ) {
     val shape: Shape = if (isHead) CardDefaults.shape else CardDefaults.outlinedShape
     val colors: CardColors = if (isHead) CardDefaults.cardColors() else CardDefaults.outlinedCardColors()
     val elevation: CardElevation = if (isHead) CardDefaults.cardElevation() else CardDefaults.outlinedCardElevation()
     val border: BorderStroke? = if (isHead) null else CardDefaults.outlinedCardBorder()
     Card(
-        modifier = modifier,
-        shape = shape,
+        modifier = modifier.then(
+            if (onClicked != null) {
+                Modifier.clip(shape).clickable(onClick = onClicked)
+            } else {
+                Modifier
+            }
+        ),        shape = shape,
         colors = colors,
         elevation = elevation,
         border = border
@@ -189,7 +199,7 @@ fun TrainPartCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(text = "训练总组数", style = MaterialTheme.typography.labelMedium)
-                    Text(text = trainPartStaticPage.partWorkoutCount.toString(), style = MaterialTheme.typography.labelLarge)
+                    Text(text = trainPartStaticPage.workoutCount.toString(), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
@@ -201,6 +211,7 @@ fun TrainActionCard(
     actionPage: TrainActionStaticPage,
     modifier: Modifier = Modifier,
     isHead: Boolean = false,
+    onClicked: (() -> Unit)? = null,
 ) {
     val action = actionPage.action
     val shape: Shape = if (isHead) CardDefaults.shape else CardDefaults.outlinedShape
@@ -208,7 +219,13 @@ fun TrainActionCard(
     val elevation: CardElevation = if (isHead) CardDefaults.cardElevation() else CardDefaults.outlinedCardElevation()
     val border: BorderStroke? = if (isHead) null else CardDefaults.outlinedCardBorder()
     Card(
-        modifier = modifier,
+        modifier = modifier.then(
+            if (onClicked != null) {
+                Modifier.clip(shape).clickable(onClick = onClicked)
+            } else {
+                Modifier
+            }
+        ),
         shape = shape,
         colors = colors,
         elevation = elevation,
@@ -281,7 +298,7 @@ fun TrainActionCard(
 fun TrainActionWorkoutCard(
     workout: DailyWorkoutAction,
     modifier: Modifier = Modifier,
-    format: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault()),
+    format: DateTimeFormatter = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault()),
     onCardLongClick: (DailyWorkoutAction) -> Unit = {},
 ) {
     Row(

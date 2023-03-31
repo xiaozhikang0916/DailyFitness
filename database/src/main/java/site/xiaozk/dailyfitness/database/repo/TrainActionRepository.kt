@@ -1,16 +1,22 @@
 package site.xiaozk.dailyfitness.database.repo
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.model.toDbEntity
+import site.xiaozk.dailyfitness.database.model.toHomeTrainPartPage
 import site.xiaozk.dailyfitness.database.model.toRepoEntity
+import site.xiaozk.dailyfitness.database.model.toTrainActionStatics
+import site.xiaozk.dailyfitness.database.model.toTrainPartStaticPage
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
+import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
-import site.xiaozk.dailyfitness.repository.model.TrainPartPage
+import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import javax.inject.Inject
 
 /**
@@ -21,11 +27,28 @@ import javax.inject.Inject
 class TrainActionRepository @Inject constructor(
     private val trainDao: TrainDao,
 ) : ITrainActionRepository {
-    override fun getAllActions(): Flow<TrainPartPage> {
-        return trainDao.getAllTrainPartWithAction().map { map ->
-            TrainPartPage(map.entries.map {
-                it.toRepoEntity()
-            })
+    override fun getAllTrainPartStatics(): Flow<HomeTrainPartPage> {
+        return trainDao.getAllTrainActionWithWorkout().map {
+            trainDao.getAllTrainPart().map { part ->
+                part to it.filterKeys { it.partId == part.id }
+            }.associate { entry ->
+                entry.first to entry.second.toMap()
+            }.toHomeTrainPartPage()
+        }
+    }
+
+    override fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage> {
+        return trainDao.getTrainActionWithWorkoutOfPart(partId).map {
+            val part = trainDao.getTrainPart(partId).first()
+            part to it
+        }.map {
+            it.toTrainPartStaticPage()
+        }
+    }
+
+    override fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage> {
+        return trainDao.getTrainActionWithWorkout(actionId).map {
+            it.firstNotNullOf { it.takeIf { it.key.id == actionId } }.toPair().toTrainActionStatics()
         }
     }
 

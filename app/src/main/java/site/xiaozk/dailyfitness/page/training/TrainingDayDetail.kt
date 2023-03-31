@@ -40,9 +40,11 @@ import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
+import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * @author: xiaozhikang
@@ -106,7 +108,7 @@ fun TrainingDayDetailPage(
                 Text(text = "删除动作记录")
             },
             text = {
-                val dateTimeFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
+                val dateTimeFormat = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
                     text = "你将要删除记录于${dateTimeFormat.format(it.instant)}的动作记录${it.action.actionName} ${
                         it.displayText.joinToString(" ")
@@ -123,7 +125,7 @@ fun TrainingDayDetail(
     modifier: Modifier = Modifier,
     onTrainingActionDeleted: (DailyWorkoutAction) -> Unit = {},
 ) {
-    val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
+    val dateFormat = getLocalDateFormatter()
     val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = modifier

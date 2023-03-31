@@ -48,7 +48,7 @@ class TrainPartStaticPageProvider: PreviewParameterProvider<TrainPartStaticPage>
         get() {
             val actionStatic: Map<TrainAction, List<TrainActionStaticPage>> = TrainActionStaticPageProvider().values.groupBy { it.action }
             return TrainPartProvider().values.map {
-                TrainPartStaticPage(it.part, it.actions.flatMap { actionStatic[it.action].orEmpty() }, 5, 10)
+                TrainPartStaticPage(it.part, it.actions.flatMap { actionStatic[it.action].orEmpty() })
             }
         }
 }

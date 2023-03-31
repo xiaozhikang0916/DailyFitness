@@ -34,10 +34,12 @@ import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
+import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 /**
  * @author: xiaozhikang
@@ -91,7 +93,7 @@ fun BodyDetailPage() {
                 Text(text = "删除身体数据记录")
             },
             text = {
-                val format = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.systemDefault())
+                val format = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
                     text = "你将要删除记录于${format.format(it.instant)}的身体数据记录。"
                 )

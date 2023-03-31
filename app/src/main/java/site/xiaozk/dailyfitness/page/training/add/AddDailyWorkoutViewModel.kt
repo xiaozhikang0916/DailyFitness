@@ -65,7 +65,7 @@ data class AddDailyWorkoutPageState(
         if (selectedAction != null && valid) {
             return DailyWorkoutAction(
                 instant = instant,
-                action = selectedAction,
+                action = selectedAction.action,
                 takenCount = count.toIntOrNull() ?: 0,
                 takenDuration = duration.toFloatOrNull()?.let { RecordedDuration(it, timeUnit) },
                 takenWeight = weight.toFloatOrNull()?.let { RecordedWeight(it, weightUnit) },

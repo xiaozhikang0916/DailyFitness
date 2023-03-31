@@ -8,6 +8,10 @@ import androidx.room.PrimaryKey
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
+import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
+import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
+import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
@@ -141,25 +145,46 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toTrainingD
             }
         }
     }.map {
-        DailyWorkoutAction(
-            id = it.second.second.actionId,
-            instant = it.second.second.actionTime,
-            action = it.second.first.toRepoEntity(it.first),
-            takenDuration = it.second.second.recordedDuration?.toRepoEntity(),
-            takenWeight = it.second.second.recordedWeight?.toRepoEntity(),
-            takenCount = it.second.second.takenCount ?: 0,
-            note = it.second.second.note ?: ""
-        )
-    }.groupBy({ it.instant.atZone(zone).toLocalDate() }) {
-        it.action to it
+        it.second.toDailyWorkoutAction() to it.first.toRepoEntity()
+    }.groupBy({ it.first.instant.atZone(zone).toLocalDate() }) {
+        it.first.action to it
     }.entries.map { entry ->
-        entry.key to entry.value.groupBy({ it.first }) { it.second }
+        entry.key to entry.value.groupBy({ it.first to it.second.second }) { it.second.first }
     }.map {
-        it.first to it.second.entries.map { entry -> DailyWorkoutListActionPair(entry.toPair()) }
+        it.first to it.second.entries.map { entry -> DailyWorkoutListActionPair(TrainActionWithPart(entry.key.second, entry.key.first), entry.value) }
     }.associate {
         it.first to DailyWorkout(it)
     }.let {
         WorkoutDayList(it)
     }
+}
 
+fun Pair<DBTrainAction, DBDailyWorkoutAction>.toDailyWorkoutAction(): DailyWorkoutAction {
+    return DailyWorkoutAction(
+        id = second.actionId,
+        instant = second.actionTime,
+        action = first.toRepoAction(),
+        takenDuration = second.recordedDuration?.toRepoEntity(),
+        takenWeight = second.recordedWeight?.toRepoEntity(),
+        takenCount = second.takenCount ?: 0,
+        note = second.note ?: ""
+    )
+}
+
+fun Pair<DBTrainAction, List<DBDailyWorkoutAction>>.toTrainActionStatics(): TrainActionStaticPage {
+    return TrainActionStaticPage(
+        action = first.toRepoAction(),
+        workouts = second.map { first to it }.map { it.toDailyWorkoutAction() }
+    )
+}
+fun Pair<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toTrainPartStaticPage(): TrainPartStaticPage {
+    return TrainPartStaticPage(
+        trainPart = first.toRepoEntity(),
+        actions = second.map { it.toPair().toTrainActionStatics() }
+    )
+}
+fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toHomeTrainPartPage(): HomeTrainPartPage {
+    return HomeTrainPartPage(
+        parts = this.map { it.toPair().toTrainPartStaticPage() }
+    )
 }

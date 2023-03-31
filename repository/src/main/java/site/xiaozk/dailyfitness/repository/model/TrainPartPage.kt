@@ -7,7 +7,7 @@ import java.time.ZoneId
  * @create: 2023/3/19
  */
 data class HomeTrainPartPage(
-    val parts: List<TrainPartStaticPage>
+    val parts: List<TrainPartStaticPage> = emptyList()
 ) {
     val partCount = parts.size
     val actionCount = parts.sumOf { it.actionCount }
@@ -18,17 +18,16 @@ data class HomeTrainPartPage(
 data class TrainPartStaticPage(
     val trainPart: TrainPart = TrainPart(),
     val actions: List<TrainActionStaticPage> = emptyList(),
-    val partWorkoutCount: Int = 0,
-    val workoutCount: Int = 0,
 ) {
     val actionCount: Int = actions.size
+    val partWorkoutCount: Int = actions.flatMap { it.workouts.map { it.instant.atZone(ZoneId.systemDefault()).toLocalDate() } }.distinct().size
+    val workoutCount: Int = actions.sumOf { it.workoutCount }
 }
 
 data class TrainActionStaticPage(
     val action: TrainAction = TrainAction(),
     val workouts: List<DailyWorkoutAction> = emptyList(),
 ) {
-
     val workoutCount: Int = workouts.size
     val workoutDays: Int = workouts.map { it.instant.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct().size
 }

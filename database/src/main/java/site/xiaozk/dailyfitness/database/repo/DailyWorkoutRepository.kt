@@ -39,7 +39,7 @@ class DailyWorkoutRepository @Inject constructor(
             to.getEndEpochMillis()
         ).map {
             val actions = it.keys.map { it.id }.toIntArray()
-            val parts = dailyDao.getTrainPartOfAction(actions)
+            val parts = trainDao.getTrainPartOfAction(actions)
             it.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
                 entry.toPair()
             }.mapNotNull { entry ->

@@ -1,10 +1,12 @@
 package site.xiaozk.dailyfitness.repository
 
 import kotlinx.coroutines.flow.Flow
+import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainAction
+import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
-import site.xiaozk.dailyfitness.repository.model.TrainPartPage
+import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 
 /**
  * @author: xiaozhikang
@@ -12,7 +14,11 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartPage
  * @create: 2023/2/26
  */
 interface ITrainActionRepository {
-    fun getAllActions(): Flow<TrainPartPage>
+    fun getAllTrainPartStatics(): Flow<HomeTrainPartPage>
+
+    fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage>
+
+    fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage>
 
     fun getActionsOfPart(partId: Int): Flow<TrainPartGroup>
 

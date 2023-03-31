@@ -13,7 +13,7 @@ import java.time.LocalDate
 data class DailyWorkoutAction(
     val id: Int = 0,
     val instant: Instant,
-    val action: TrainActionWithPart,
+    val action: TrainAction,
     val takenDuration: RecordedDuration?,
     val takenWeight: RecordedWeight?,
     val takenCount: Int,
@@ -46,23 +46,11 @@ data class DailyWorkout(
 }
 
 @JvmInline
-value class DailyWorkoutListPartPair(
-    val map: Pair<TrainPart, List<DailyWorkoutListActionPair>>,
-) {
-
-    constructor(trainPart: TrainPart, actions: List<DailyWorkoutListActionPair>): this(Pair(trainPart, actions))
-
-    val trainPart: TrainPart
-        get() = map.first
-
-    val actions: List<DailyWorkoutListActionPair>
-        get() = map.second
-}
-
-@JvmInline
 value class DailyWorkoutListActionPair(
     val map: Pair<TrainActionWithPart, List<DailyWorkoutAction>>,
 ) {
+    constructor(action: TrainActionWithPart, actions: List<DailyWorkoutAction>): this(Pair(action, actions))
+
     val action: TrainActionWithPart
         get() = map.first
 

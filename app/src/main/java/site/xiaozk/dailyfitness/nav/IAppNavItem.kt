@@ -14,20 +14,22 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
+import site.xiaozk.dailyfitness.page.action.TrainActionPage
 import site.xiaozk.dailyfitness.page.action.TrainPartPage
+import site.xiaozk.dailyfitness.page.action.TrainStaticPage
 import site.xiaozk.dailyfitness.page.action.parts.AddTrainActionPage
 import site.xiaozk.dailyfitness.page.action.parts.AddTrainPartPage
-import site.xiaozk.dailyfitness.page.action.parts.TrainPartDetail
 import site.xiaozk.dailyfitness.page.body.BodyDetailPage
 import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.TrainingHome
 import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * @author: xiaozhikang
@@ -111,7 +113,7 @@ object AppHomeRootNav : IAppNavGraphItem {
                 }
 
                 composable(TrainPartNavItem.route) {
-                    TrainPartPage()
+                    TrainStaticPage()
                 }
             }
         }
@@ -123,7 +125,7 @@ object TrainingDayGroup {
         override val route: String
             get() = "train_day/day?date={date}"
 
-        private val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
+        private val dateFormat = getLocalDateFormatter().withZone(ZoneId.systemDefault())
         fun getRoute(date: LocalDate): String {
             return "train_day/day?date=${dateFormat.format(date)}"
         }
@@ -195,6 +197,20 @@ object TrainPartGraph {
         }
     }
 
+    object TrainActionDetailNavItem : IAppNavItem {
+
+        override val route: String
+            get() = "train_part/action?actionId={actionId}"
+
+        fun getRoute(action: TrainAction): String {
+            return "train_part/action?actionId=${action.id}"
+        }
+
+        fun fromArgument(argument: Bundle?): Int {
+            return argument?.getInt("actionId", 0) ?: 0
+        }
+    }
+
     object AddTrainActionNavItem : IAppNavItem {
 
         override val route: String
@@ -233,8 +249,19 @@ object TrainPartGraph {
                 type = NavType.IntType
             })
         ) {
-            TrainPartDetail(
-                trainPartId = TrainPartDetailNavItem.fromArgument(it.arguments),
+            TrainPartPage(
+                partId = TrainPartDetailNavItem.fromArgument(it.arguments),
+            )
+        }
+        composable(
+            TrainActionDetailNavItem.route,
+            arguments = listOf(navArgument("actionId") {
+                nullable = false
+                type = NavType.IntType
+            })
+        ) {
+            TrainActionPage(
+                actionId = TrainActionDetailNavItem.fromArgument(it.arguments),
             )
         }
         composable(
