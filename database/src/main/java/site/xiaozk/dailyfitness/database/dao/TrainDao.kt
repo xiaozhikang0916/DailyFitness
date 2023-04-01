@@ -30,13 +30,13 @@ interface TrainDao {
     @Query("SELECT * FROM train_part LEFT JOIN train_action ON train_part.id = train_action.partId")
     fun getAllTrainPartWithAction(): Flow<Map<DBTrainPart, List<DBTrainAction>?>>
 
-    @Query("SELECT * FROM daily_train_action JOIN train_action ON train_action.id = daily_train_action.usingActionId JOIN train_part ON train_action.partId = train_part.id")
+    @Query("SELECT * FROM train_action LEFT JOIN daily_train_action ON train_action.id = daily_train_action.usingActionId JOIN train_part ON train_action.partId = train_part.id")
     fun getAllTrainActionWithWorkout(): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
 
-    @Query("SELECT * FROM daily_train_action LEFT JOIN train_action ON train_action.id = daily_train_action.usingActionId WHERE train_action.partId = :partId")
+    @Query("SELECT * FROM train_action LEFT JOIN daily_train_action ON train_action.id = daily_train_action.usingActionId WHERE train_action.partId = :partId")
     fun getTrainActionWithWorkoutOfPart(partId: Int): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
 
-    @Query("SELECT * FROM daily_train_action LEFT JOIN train_action ON train_action.id = daily_train_action.usingActionId WHERE train_action.id = :actionId")
+    @Query("SELECT * FROM train_action LEFT JOIN daily_train_action ON train_action.id = daily_train_action.usingActionId WHERE train_action.id = :actionId")
     fun getTrainActionWithWorkout(actionId: Int): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
 
     @Insert
