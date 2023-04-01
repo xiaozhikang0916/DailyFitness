@@ -24,6 +24,7 @@ import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.TrainingHome
 import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
+import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
@@ -144,6 +145,19 @@ object TrainingDayGroup {
             get() = "train_day/new_action"
     }
 
+    object DeleteWorkoutNavItem : IAppNavItem {
+        override val route: String
+            get() = "train_day/delete_workout?workoutId={workoutId}"
+
+        fun getRoute(workoutId: Int): String {
+            return "train_day/delete_workout?workoutId=${workoutId}"
+        }
+
+        fun fromArgument(argument: Bundle?): Int {
+            return argument?.getInt("workoutId", -1) ?: -1
+        }
+    }
+
     fun NavGraphBuilder.trainingDayGraph() {
         composable(
             TrainDayNavItem.route,
@@ -153,6 +167,16 @@ object TrainingDayGroup {
         }
         composable(TrainDayAddActionNavItem.route) {
             AddDailyWorkoutAction()
+        }
+        dialog(
+            route = DeleteWorkoutNavItem.route,
+            arguments = listOf(navArgument("workoutId") {
+                nullable = false
+                type = NavType.IntType
+                defaultValue = -1
+            })
+        ) {
+            DeleteDailyWorkout(workoutId = DeleteWorkoutNavItem.fromArgument(it.arguments))
         }
     }
 }

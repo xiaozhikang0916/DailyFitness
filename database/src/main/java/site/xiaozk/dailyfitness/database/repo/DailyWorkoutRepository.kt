@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import site.xiaozk.dailyfitness.database.dao.DailyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
+import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.database.model.toRepoEntity
 import site.xiaozk.dailyfitness.database.model.toTrainingDayList
@@ -12,8 +13,8 @@ import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.User
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -46,6 +47,10 @@ class DailyWorkoutRepository @Inject constructor(
                 entry.key?.let { key -> key to entry.value.toMap() }
             }.toMap().toTrainingDayList()
         }
+    }
+
+    override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction {
+        return dailyDao.getDailyWorkout(user.uid, workoutId).filter { it.value.actionId == workoutId }.map { it.toPair().toDailyWorkoutAction() }.first()
     }
 
     override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) {

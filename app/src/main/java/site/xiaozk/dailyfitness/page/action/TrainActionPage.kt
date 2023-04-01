@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
+import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 
@@ -39,7 +40,9 @@ fun TrainActionPage(actionId: Int) {
     TrainActionPage(
         actionStaticPage = actionState
     ) {
-        // TODO delete workout record from action detail
+        appScaffoldViewModel.onRoute(
+            TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
+        )
     }
 }
 

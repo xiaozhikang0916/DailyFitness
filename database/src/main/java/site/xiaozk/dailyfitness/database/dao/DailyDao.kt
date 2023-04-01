@@ -37,6 +37,9 @@ interface DailyDao {
         return getPersonDailyDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
     }
 
+    @Query("SELECT * FROM daily_train_action LEFT JOIN train_action on usingActionId = train_action.id WHERE userId = :userId AND actionId = :workoutId")
+    suspend fun getDailyWorkout(userId: Int, workoutId: Int): Map<DBTrainAction, DBDailyWorkoutAction>
+
     @Query(
         """
             SELECT * from daily_train_action 

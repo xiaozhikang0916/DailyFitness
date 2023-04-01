@@ -1,7 +1,6 @@
 package site.xiaozk.dailyfitness.page.training
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,17 +13,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -41,10 +35,7 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
-import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.LocalDate
-import java.time.ZoneId
-import java.util.Locale
 
 /**
  * @author: xiaozhikang
@@ -69,54 +60,14 @@ fun TrainingDayDetailPage(
             )
         )
     }
-    var deleteActionDialog by remember {
-        mutableStateOf<DailyWorkoutAction?>(null)
-    }
     TrainingDayDetail(
         data = data.collectAsState(initial = null).value ?: DailyWorkout(date),
         onTrainingActionDeleted = {
-            deleteActionDialog = it
+            appScaffoldViewModel.onRoute(
+                TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
+            )
         }
     )
-
-    deleteActionDialog?.let {
-        val dismiss = {
-            deleteActionDialog = null
-        }
-        AlertDialog(
-            onDismissRequest = dismiss,
-            confirmButton = {
-                Text(
-                    text = "删除",
-                    modifier = Modifier
-                        .clickable {
-                            viewModel.removeTrainAction(it)
-                            dismiss()
-                        },
-                    textAlign = TextAlign.Center
-                )
-            },
-            dismissButton = {
-                Text(
-                    text = "取消",
-                    modifier = Modifier
-                        .clickable { dismiss() },
-                    textAlign = TextAlign.Center
-                )
-            },
-            title = {
-                Text(text = "删除动作记录")
-            },
-            text = {
-                val dateTimeFormat = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
-                Text(
-                    text = "你将要删除记录于${dateTimeFormat.format(it.instant)}的动作记录${it.action.actionName} ${
-                        it.displayText.joinToString(" ")
-                    }"
-                )
-            }
-        )
-    }
 }
 
 @Composable

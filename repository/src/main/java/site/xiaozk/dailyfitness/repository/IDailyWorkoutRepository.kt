@@ -21,6 +21,8 @@ interface IDailyWorkoutRepository {
         return getWorkoutDayList(user, day, day).map { it.trainedDate[day] }
     }
 
+    suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction
+
     suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction)
 
     suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction)

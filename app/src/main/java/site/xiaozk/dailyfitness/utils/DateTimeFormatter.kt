@@ -12,7 +12,7 @@ import java.util.Locale
 fun getLocalDateTimeFormatter(locale: Locale) = DateTimeFormatterBuilder()
     .parseCaseInsensitive()
     .append(DateTimeFormatter.ISO_LOCAL_DATE)
-    .appendLiteral('T')
+    .appendLiteral(' ')
     .append(DateTimeFormatter.ISO_LOCAL_TIME).toFormatter(locale)
 
 
