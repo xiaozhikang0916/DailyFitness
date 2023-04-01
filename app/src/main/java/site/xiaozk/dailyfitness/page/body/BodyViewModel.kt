@@ -30,13 +30,13 @@ class BodyViewModel @Inject constructor(
     val bodyDetail: Flow<BodyDataWithDate> = flow {
         val user = userRepo.getCurrentUser()
         emitAll(
-            bodyRepo.getPersonDailyDataFlow(
-                user,
-                // from the first day of this month
-                LocalDate.now().withDayOfMonth(1),
-                // to the last day of this month
-                LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1)
-            )
+            LocalDate.now().let {
+                bodyRepo.getPersonDailyDataFlow(
+                    user,
+                    it.withDayOfMonth(1),
+                    it.withDayOfMonth(it.dayOfMonth)
+                )
+            }
         )
     }
 

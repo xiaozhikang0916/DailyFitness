@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import site.xiaozk.dailyfitness.repository.model.User
+import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -31,12 +31,14 @@ class TrainingHomeViewModel @Inject constructor(
     }
 
     fun getHomePageData(user: User): Flow<WorkoutDayList> {
-        return homeRepo.getWorkoutDayList(
-            user = user,
-            // from the first day of this month
-            from = LocalDate.now().withDayOfMonth(1),
-            // to the last day of this month
-            to = LocalDate.now().plusMonths(1).withDayOfMonth(1).minusDays(1)
-        )
+        return LocalDate.now().let {
+            homeRepo.getWorkoutDayList(
+                user = user,
+                // from the first day of this month
+                from = it.withDayOfMonth(1),
+                // to the last day of this month
+                to = it.withDayOfMonth(it.dayOfMonth)
+            )
+        }
     }
 }
