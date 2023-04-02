@@ -3,6 +3,7 @@ package site.xiaozk.calendar.display
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -41,11 +42,15 @@ fun CalendarHeader(
     onNext: () -> Unit,
     onPrev: () -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             text = dateTimeFormatter.format(month),
             modifier = Modifier
-                .align(Alignment.CenterVertically)
                 .padding(start = 24.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
@@ -54,7 +59,6 @@ fun CalendarHeader(
                 modifier = Modifier
                     .padding(end = 12.dp)
                     .padding(vertical = 4.dp)
-                    .align(Alignment.CenterVertically)
             ) {
                 IconButton(onClick = onPrev) {
                     Icon(

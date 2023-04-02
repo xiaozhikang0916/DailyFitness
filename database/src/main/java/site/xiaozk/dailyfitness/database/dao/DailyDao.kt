@@ -37,6 +37,12 @@ interface DailyDao {
         return getPersonDailyDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
     }
 
+    /**
+     * get the last body record of user [userId] with specific [column] is not null
+     */
+    @Query("SELECT * from daily_body_data WHERE userId = :userId AND :column IS NOT NULL ORDER BY recordTime DESC LIMIT 1")
+    suspend fun getLastBodyDataWithColumn(userId: Int, column: String): DBDailyBodyData?
+
     @Query("SELECT * FROM daily_train_action LEFT JOIN train_action on usingActionId = train_action.id WHERE userId = :userId AND actionId = :workoutId")
     suspend fun getDailyWorkout(userId: Int, workoutId: Int): Map<DBTrainAction, DBDailyWorkoutAction>
 

@@ -34,10 +34,11 @@ fun Calendar(
     modifier: Modifier = Modifier,
     firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY,
     showOverlappingDays: Boolean = true,
+    showMonthNavigator: Boolean = true,
     onPrevClick: () -> Unit = {},
     onNextClick: () -> Unit = {},
     calendarHeader: @Composable () -> Unit = {
-        CalendarHeader(month = displayMonth.yearMonth, onNext = onNextClick, onPrev = onPrevClick)
+        CalendarHeader(month = displayMonth.yearMonth, showNavigator = showMonthNavigator, onNext = onNextClick, onPrev = onPrevClick)
     },
     weekdayIndicator: @Composable () -> Unit = {
         WeekdayIndicator(firstDayOfWeek)
@@ -50,10 +51,15 @@ fun Calendar(
     Surface(
         shape = MaterialTheme.shapes.medium,
         modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box(modifier = Modifier.padding(horizontal = 12.dp)) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                calendarHeader()
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    calendarHeader()
+                }
                 weekdayIndicator()
                 CompositionLocalProvider(
                     LocalContentColor provides MaterialTheme.colorScheme.onSurface,

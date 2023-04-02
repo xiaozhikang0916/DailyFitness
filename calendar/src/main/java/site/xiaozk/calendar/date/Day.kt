@@ -16,9 +16,10 @@ interface IDay {
     val isCurrentWeek: Boolean
     val isCurrentMonth: Boolean
 }
+
 data class Day(
     override val date: LocalDate,
-): IDay, Comparable<IDay> {
+) : IDay, Comparable<IDay> {
     companion object {
         val Today: Day
             get() = Day(LocalDate.now())
@@ -67,7 +68,7 @@ interface IDaysCollection<D : IDay> {
     val days: ArrayList<D>
 }
 
-interface IWeek<D: IDay>: IDaysCollection<D> {
+interface IWeek<D : IDay> : IDaysCollection<D> {
     val isCurrentWeek: Boolean
     val isCurrentMonth: Boolean
 }
@@ -88,7 +89,7 @@ data class Week(
         get() = days.any { it.isCurrentMonth }
 }
 
-interface IMonth<D: IDay, W: IWeek<out D>> : IDaysCollection<D> {
+interface IMonth<D : IDay, W : IWeek<out D>> : IDaysCollection<D> {
     val yearMonth: YearMonth
     fun getWeeks(firstDayOfWeek: DayOfWeek): List<W>
 }
@@ -100,6 +101,12 @@ data class Month(
         val CurrentMonth: Month
             get() = Day.Today.getMonth()
     }
+
+    constructor(month: YearMonth) : this(month.atDay(1).let {
+        (0 until it.lengthOfMonth()).map { offset ->
+            Day(it.plusDays(offset.toLong()))
+        }.let(::ArrayList)
+    })
 
     val isCurrentMonth: Boolean
         get() = days.any { it.isCurrentMonth }

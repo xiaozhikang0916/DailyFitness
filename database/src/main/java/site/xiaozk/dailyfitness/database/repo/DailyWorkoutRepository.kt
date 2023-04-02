@@ -11,11 +11,15 @@ import site.xiaozk.dailyfitness.database.model.toTrainingDayList
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
 import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
+import site.xiaozk.dailyfitness.repository.model.BodyStatic
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.HomeWorkoutPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.User
 import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import javax.inject.Inject
 
 /**
@@ -28,6 +32,38 @@ class DailyWorkoutRepository @Inject constructor(
     private val trainDao: TrainDao,
 ) : IDailyWorkoutRepository {
     private var lastWorkout: DailyWorkoutAction? = null
+
+    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutPage> {
+        return dailyDao.getDailyWorkoutActions(
+            user.uid,
+            month.atDay(1).getStartEpochMillis(),
+            month.atEndOfMonth().getEndEpochMillis(),
+        ).map {
+            val actions = it.keys.map { it.id }.toIntArray()
+            val parts = trainDao.getTrainPartOfAction(actions)
+            it.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
+                entry.toPair()
+            }.mapNotNull { entry ->
+                entry.key?.let { key -> key to entry.value.toMap() }
+            }.toMap().toTrainingDayList()
+        }.map {
+            val weight = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "weight")
+            val bustSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "bustSize")
+            val waistSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "waistSize")
+            val hipSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "hipSize")
+            val bodyFat = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "bodyFat")
+            HomeWorkoutPage(
+                month = month,
+                workoutDays = it,
+                weight = weight?.let { BodyStatic(it.recordTime, it.weight) },
+                    bustSize = bustSize?.let { BodyStatic(it.recordTime, it.bustSize) },
+                    waistSize = waistSize?.let { BodyStatic(it.recordTime, it.waistSize) },
+                    hipSize = hipSize?.let { BodyStatic(it.recordTime, it.hipSize) },
+                    bodyFat = bodyFat?.let { BodyStatic(it.recordTime, it.bodyFat) },
+            )
+        }
+
+    }
 
     override fun getWorkoutDayList(
         user: User,

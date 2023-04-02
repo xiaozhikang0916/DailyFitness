@@ -1,13 +1,11 @@
 package site.xiaozk.dailyfitness.page.training
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,14 +13,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.repository.model.DailyWorkout
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import site.xiaozk.dailyfitness.repository.model.HomeWorkoutPage
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -47,55 +45,98 @@ fun TrainingHome() {
             )
         )
     }
-    val workoutDayList = homeViewModel.pageData.collectAsState(initial = WorkoutDayList())
+    val workoutDayList = homeViewModel.pageData.collectAsState(initial = HomeWorkoutPage(YearMonth.from(LocalDate.now())))
     TrainingHome(data = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
 }
 
 @Composable
-fun TrainingHome(data: WorkoutDayList, onNav: (String) -> Unit) {
-    val dates = data.trainedDate.values.sortedBy { it.date }
+fun TrainingHome(data: HomeWorkoutPage, onNav: (String) -> Unit) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
     val scaffoldProperty = LocalScaffoldProperty.current
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
+            .padding(horizontal = 12.dp)
             .nestedScroll(scaffoldProperty.scrollConnection),
         contentPadding = scaffoldProperty.padding,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(dates) {
-            HomePageTrainedDay(day = it, format = formatter) { trainDay ->
-                onNav(TrainingDayGroup.TrainDayNavItem.getRoute(trainDay.date))
+        item(key = "calendar", span = { GridItemSpan(2) }) {
+            Calendar(
+                displayMonth = data.displayMonth,
+                showOverlappingDays = false,
+                showMonthNavigator = false,
+            ) {
+                DayWithWorkout(day = it, showOverlappingDays = false, workout = data[it.date])
             }
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HomePageTrainedDay(
-    day: DailyWorkout,
-    format: DateTimeFormatter,
-    onCardClick: (DailyWorkout) -> Unit,
-) {
-    Card(
-        onClick = { onCardClick(day) },
-        modifier = Modifier
-            .padding(all = 6.dp)
-            .fillMaxWidth(),
-    ) {
-        Text(
-            text = format.format(day.date),
-            fontSize = 14.sp,
-        )
-
-//        day.maxTrainedParts?.let {
-//            Text(
-//                text = it,
-//                modifier = Modifier.padding(top = 4.dp),
-//                fontSize = 12.sp,
-//            )
-//        }
+        item(key = "month") {
+            HomeWorkoutStaticsCard(
+                title = "本月训练",
+                content = data.monthTrainedDay.toString(),
+                subContent = "次"
+            )
+        }
+        item(key = "week") {
+            HomeWorkoutStaticsCard(
+                title = "本周训练",
+                content = data.getWeekTrainedDay().toString(),
+                subContent = "次"
+            )
+        }
+        data.weight?.let {
+            item(key = "weight") {
+                HomeWorkoutStaticsCard(
+                    title = "最近体重",
+                    content = it.data.second.toString(),
+                    subContent = "kg",
+                    bottom = it.data.first.format(formatter)
+                )
+            }
+        }
+        data.bustSize?.let {
+            item(key = "bust") {
+                HomeWorkoutStaticsCard(
+                    title = "最近胸围",
+                    content = it.data.second.toString(),
+                    subContent = "cm",
+                    bottom = it.data.first.format(formatter)
+                )
+            }
+        }
+        data.waistSize?.let {
+            item(key = "waist") {
+                HomeWorkoutStaticsCard(
+                    title = "最近腰围",
+                    content = it.data.second.toString(),
+                    subContent = "cm",
+                    bottom = it.data.first.format(formatter)
+                )
+            }
+        }
+        data.hipSize?.let {
+            item(key = "hip") {
+                HomeWorkoutStaticsCard(
+                    title = "最近臀围",
+                    content = it.data.second.toString(),
+                    subContent = "cm",
+                    bottom = it.data.first.format(formatter)
+                )
+            }
+        }
+        data.bodyFat?.let {
+            item(key = "fat") {
+                HomeWorkoutStaticsCard(
+                    title = "最近体脂率",
+                    content = it.data.second.toString(),
+                    subContent = "%",
+                    bottom = it.data.first.format(formatter)
+                )
+            }
+        }
     }
 }

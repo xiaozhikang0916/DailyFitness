@@ -36,7 +36,9 @@ data class DailyWorkoutAction(
 @JvmInline
 value class WorkoutDayList(
     val trainedDate: Map<LocalDate, DailyWorkout> = emptyMap(),
-)
+) {
+    operator fun get(date: LocalDate): DailyWorkout? = trainedDate[date]
+}
 
 data class DailyWorkout(
     val date: LocalDate,
