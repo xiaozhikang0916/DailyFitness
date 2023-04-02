@@ -64,4 +64,5 @@ dependencies {
     implementation libs.androidx.navigation.compose.hilt
     implementation project(":repository")
     implementation project(":database")
+    implementation project(":calendar")
 }

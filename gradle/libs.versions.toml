@@ -59,7 +59,6 @@ androidx-composeUiTooling = { module = "androidx.compose.ui:ui-tooling", version
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-navigation-compose-hilt = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "navigation-compose-hilt" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]

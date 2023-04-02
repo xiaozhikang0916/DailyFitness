@@ -37,6 +37,5 @@ dependencies {
     implementation libs.android.hilt.lib
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
-    implementation libs.material
     implementation libs.coroutine.core
 }

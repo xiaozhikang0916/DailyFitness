@@ -17,3 +17,4 @@ rootProject.name = "DailyFitness"
 include ':app'
 include ':database'
 include ':repository'
+include ':calendar'
