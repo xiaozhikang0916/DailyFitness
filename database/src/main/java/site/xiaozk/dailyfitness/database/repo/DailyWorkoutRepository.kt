@@ -2,8 +2,9 @@ package site.xiaozk.dailyfitness.database.repo
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import site.xiaozk.dailyfitness.database.dao.DailyDao
+import site.xiaozk.dailyfitness.database.dao.BodyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
+import site.xiaozk.dailyfitness.database.dao.WorkoutDao
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.database.model.toRepoEntity
@@ -13,7 +14,7 @@ import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.model.BodyStatic
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.HomeWorkoutPage
+import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.User
 import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
@@ -28,13 +29,14 @@ import javax.inject.Inject
  * @create: 2023/3/1
  */
 class DailyWorkoutRepository @Inject constructor(
-    private val dailyDao: DailyDao,
+    private val workoutDao: WorkoutDao,
+    private val bodyDao: BodyDao,
     private val trainDao: TrainDao,
 ) : IDailyWorkoutRepository {
     private var lastWorkout: DailyWorkoutAction? = null
 
-    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutPage> {
-        return dailyDao.getDailyWorkoutActions(
+    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutStatic> {
+        return workoutDao.getDailyWorkoutActions(
             user.uid,
             month.atDay(1).getStartEpochMillis(),
             month.atEndOfMonth().getEndEpochMillis(),
@@ -46,20 +48,20 @@ class DailyWorkoutRepository @Inject constructor(
             }.mapNotNull { entry ->
                 entry.key?.let { key -> key to entry.value.toMap() }
             }.toMap().toTrainingDayList()
-        }.map {
-            val weight = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "weight")
-            val bustSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "bustSize")
-            val waistSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "waistSize")
-            val hipSize = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "hipSize")
-            val bodyFat = dailyDao.getLastBodyDataWithColumn(userId = user.uid, column = "bodyFat")
-            HomeWorkoutPage(
+        }.map { workout ->
+            val weight = bodyDao.getLastBodyDataWithWeight(userId = user.uid)
+            val bustSize = bodyDao.getLastBodyDataWithBustSize(userId = user.uid)
+            val waistSize = bodyDao.getLastBodyDataWithWaistSize(userId = user.uid)
+            val hipSize = bodyDao.getLastBodyDataWithHipSize(userId = user.uid)
+            val bodyFat = bodyDao.getLastBodyDataWithBodyFat(userId = user.uid)
+            HomeWorkoutStatic(
                 month = month,
-                workoutDays = it,
+                workoutDays = workout,
                 weight = weight?.let { BodyStatic(it.recordTime, it.weight) },
-                    bustSize = bustSize?.let { BodyStatic(it.recordTime, it.bustSize) },
-                    waistSize = waistSize?.let { BodyStatic(it.recordTime, it.waistSize) },
-                    hipSize = hipSize?.let { BodyStatic(it.recordTime, it.hipSize) },
-                    bodyFat = bodyFat?.let { BodyStatic(it.recordTime, it.bodyFat) },
+                bustSize = bustSize?.let { BodyStatic(it.recordTime, it.bustSize) },
+                waistSize = waistSize?.let { BodyStatic(it.recordTime, it.waistSize) },
+                hipSize = hipSize?.let { BodyStatic(it.recordTime, it.hipSize) },
+                bodyFat = bodyFat?.let { BodyStatic(it.recordTime, it.bodyFat) },
             )
         }
 
@@ -70,7 +72,7 @@ class DailyWorkoutRepository @Inject constructor(
         from: LocalDate,
         to: LocalDate,
     ): Flow<WorkoutDayList> {
-        return dailyDao.getDailyWorkoutActions(
+        return workoutDao.getDailyWorkoutActions(
             user.uid,
             from.getStartEpochMillis(),
             to.getEndEpochMillis()
@@ -86,17 +88,17 @@ class DailyWorkoutRepository @Inject constructor(
     }
 
     override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction {
-        return dailyDao.getDailyWorkout(user.uid, workoutId).filter { it.value.actionId == workoutId }.map { it.toPair().toDailyWorkoutAction() }.first()
+        return workoutDao.getDailyWorkout(user.uid, workoutId).filter { it.value.actionId == workoutId }.map { it.toPair().toDailyWorkoutAction() }.first()
     }
 
     override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) {
         val workout = action.toDbEntity(user.uid)
-        dailyDao.addDailyWorkoutAction(workout)
+        workoutDao.addDailyWorkoutAction(workout)
         lastWorkout = action
     }
 
     override suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction) {
-        dailyDao.deleteDailyWorkoutAction(action.toDbEntity(user.uid))
+        workoutDao.deleteDailyWorkoutAction(action.toDbEntity(user.uid))
     }
 
     override fun getAllTrainParts(): Flow<List<TrainPartGroup>> {

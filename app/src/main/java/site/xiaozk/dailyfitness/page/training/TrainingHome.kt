@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.page.training
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,12 +16,10 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.calendar.Calendar
+import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.repository.model.HomeWorkoutPage
-import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -45,23 +44,27 @@ fun TrainingHome() {
             )
         )
     }
-    val workoutDayList = homeViewModel.pageData.collectAsState(initial = HomeWorkoutPage(YearMonth.from(LocalDate.now())))
-    TrainingHome(data = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
+    val workoutDayList = homeViewModel.pageData.collectAsState()
+    TrainingHome(state = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
 }
 
 @Composable
-fun TrainingHome(data: HomeWorkoutPage, onNav: (String) -> Unit) {
+fun TrainingHome(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
     val scaffoldProperty = LocalScaffoldProperty.current
+    val data = state.homePageState
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp)
             .nestedScroll(scaffoldProperty.scrollConnection),
-        contentPadding = scaffoldProperty.padding,
+        contentPadding = PaddingValues(
+            top = scaffoldProperty.padding.calculateTopPadding(),
+            bottom = scaffoldProperty.padding.calculateBottomPadding() + 12.dp
+        ),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -74,19 +77,21 @@ fun TrainingHome(data: HomeWorkoutPage, onNav: (String) -> Unit) {
                 DayWithWorkout(day = it, showOverlappingDays = false, workout = data[it.date])
             }
         }
-        item(key = "month") {
-            HomeWorkoutStaticsCard(
-                title = "本月训练",
-                content = data.monthTrainedDay.toString(),
-                subContent = "次"
-            )
-        }
-        item(key = "week") {
-            HomeWorkoutStaticsCard(
-                title = "本周训练",
-                content = data.getWeekTrainedDay().toString(),
-                subContent = "次"
-            )
+        if (state.loadStatus != ActionStatus.Idle) {
+            item(key = "month") {
+                HomeWorkoutStaticsCard(
+                    title = "本月训练",
+                    content = data.monthTrainedDay.toString(),
+                    subContent = "次"
+                )
+            }
+            item(key = "week") {
+                HomeWorkoutStaticsCard(
+                    title = "本周训练",
+                    content = data.getWeekTrainedDay().toString(),
+                    subContent = "次"
+                )
+            }
         }
         data.weight?.let {
             item(key = "weight") {

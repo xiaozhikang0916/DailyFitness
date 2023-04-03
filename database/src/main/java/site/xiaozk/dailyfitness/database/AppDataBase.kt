@@ -5,7 +5,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
-import site.xiaozk.dailyfitness.database.dao.DailyDao
+import site.xiaozk.dailyfitness.database.dao.BodyDao
+import site.xiaozk.dailyfitness.database.dao.WorkoutDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.UserDao
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
@@ -38,9 +39,10 @@ import java.time.Instant
 )
 @TypeConverters(InstantConverter::class)
 abstract class AppDataBase : RoomDatabase() {
-    abstract fun dailyDao(): DailyDao
+    abstract fun dailyDao(): WorkoutDao
     abstract fun trainDao(): TrainDao
     abstract fun userDao(): UserDao
+    abstract fun bodyDao(): BodyDao
 }
 
 class InstantConverter {

@@ -10,7 +10,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import site.xiaozk.dailyfitness.database.AppDataBase
-import site.xiaozk.dailyfitness.database.dao.DailyDao
+import site.xiaozk.dailyfitness.database.dao.BodyDao
+import site.xiaozk.dailyfitness.database.dao.WorkoutDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.UserDao
 import java.util.Optional
@@ -28,7 +29,7 @@ import javax.inject.Singleton
 class DaoProvider {
 
     @Provides
-    fun provideDailyDao(db: AppDataBase): DailyDao {
+    fun provideDailyDao(db: AppDataBase): WorkoutDao {
         return db.dailyDao()
     }
     @Provides
@@ -38,6 +39,10 @@ class DaoProvider {
     @Provides
     fun provideUserDao(db: AppDataBase): UserDao {
         return db.userDao()
+    }
+    @Provides
+    fun provideBodyDao(db: AppDataBase): BodyDao {
+        return db.bodyDao()
     }
 
     @Provides

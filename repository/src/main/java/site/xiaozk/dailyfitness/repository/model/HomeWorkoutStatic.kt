@@ -11,7 +11,7 @@ import java.time.ZoneId
  * @author: xiaozhikang
  * @create: 2023/4/2
  */
-data class HomeWorkoutPage(
+data class HomeWorkoutStatic(
     val month: YearMonth,
     val workoutDays: WorkoutDayList = WorkoutDayList(emptyMap()),
     val weight: BodyStatic? = null,
