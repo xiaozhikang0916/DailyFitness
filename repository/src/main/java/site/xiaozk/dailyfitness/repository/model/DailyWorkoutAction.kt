@@ -33,18 +33,18 @@ data class DailyWorkoutAction(
         }
 }
 
-@JvmInline
-value class WorkoutDayList(
-    val trainedDate: Map<LocalDate, DailyWorkout> = emptyMap(),
-) {
-    operator fun get(date: LocalDate): DailyWorkout? = trainedDate[date]
-}
-
 data class DailyWorkout(
     val date: LocalDate,
     val actions: List<DailyWorkoutListActionPair> = emptyList(),
 ) {
     constructor(pair: Pair<LocalDate, List<DailyWorkoutListActionPair>>) : this(pair.first, pair.second)
+}
+
+@JvmInline
+value class DailyWorkoutMap(
+    val trainedDate: HashMap<LocalDate, DailyWorkout> = HashMap(),
+) {
+    operator fun get(date: LocalDate): DailyWorkout? = trainedDate[date]
 }
 
 @JvmInline

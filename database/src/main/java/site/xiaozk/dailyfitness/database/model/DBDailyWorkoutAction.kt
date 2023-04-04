@@ -8,17 +8,20 @@ import androidx.room.PrimaryKey
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import site.xiaozk.dailyfitness.repository.model.WorkoutDaySummaryMap
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
 import java.time.Instant
 import java.time.ZoneId
+import java.util.TreeMap
 
 
 /**
@@ -136,7 +139,7 @@ enum class DBTimeUnit(val repoUnit: TimeUnit) {
     }
 }
 
-fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toTrainingDayList(): WorkoutDayList {
+fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutDailyMap(): DailyWorkoutMap {
     val zone = ZoneId.systemDefault()
     return this.flatMap { outMap ->
         outMap.value.flatMap { innerMap ->
@@ -155,8 +158,12 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toTrainingD
     }.associate {
         it.first to DailyWorkout(it)
     }.let {
-        WorkoutDayList(it)
+        DailyWorkoutMap(HashMap(it))
     }
+}
+
+fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutSummary(): WorkoutDaySummaryMap {
+    return WorkoutDaySummaryMap(TreeMap(this.toWorkoutDailyMap().trainedDate.mapValues { kv -> DailyWorkoutSummary(kv.value) }))
 }
 
 fun Pair<DBTrainAction, DBDailyWorkoutAction>.toDailyWorkoutAction(): DailyWorkoutAction {

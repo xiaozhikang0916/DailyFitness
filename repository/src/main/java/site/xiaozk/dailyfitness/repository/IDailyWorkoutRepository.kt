@@ -5,8 +5,9 @@ import kotlinx.coroutines.flow.map
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
+import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -18,9 +19,11 @@ import java.time.YearMonth
  * @create: 2023/2/23
  */
 interface IDailyWorkoutRepository {
-    fun getHomeWorkoutStatics(user: User, month: YearMonth = YearMonth.now(), firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutStatic>
+    fun getMonthWorkoutStatic(user: User, month: YearMonth = YearMonth.now(), firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Flow<MonthWorkoutStatic>
 
-    fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<WorkoutDayList>
+    fun getHomeWorkoutStatics(user: User, month: YearMonth = YearMonth.now(), firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Flow<HomeWorkoutStatic>
+
+    fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<DailyWorkoutMap>
 
     fun getWorkoutOfDayFlow(user: User, day: LocalDate): Flow<DailyWorkout?> {
         return getWorkoutDayList(user, day, day).map { it.trainedDate[day] }

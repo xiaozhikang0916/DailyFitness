@@ -57,6 +57,7 @@ import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.TextButtonType
 import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup.trainingDayGraph
+import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup.workoutStaticGraph
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 import site.xiaozk.dailyfitness.widget.BackButton
 import site.xiaozk.dailyfitness.widget.HostFab
@@ -153,6 +154,7 @@ fun AppHost() {
                     addDailyBodyDetailNav()
                     trainPartGraph()
                     trainingDayGraph()
+                    workoutStaticGraph()
                 }
             }
         }

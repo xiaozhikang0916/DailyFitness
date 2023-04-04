@@ -26,7 +26,7 @@ import javax.inject.Inject
  * @create: 2023/2/25
  */
 @HiltViewModel
-class TrainingHomeViewModel @Inject constructor(
+class HomeWorkoutPageViewModel @Inject constructor(
     private val homeRepo: IDailyWorkoutRepository,
     private val userRepository: IUserRepository,
 ) : ViewModel() {

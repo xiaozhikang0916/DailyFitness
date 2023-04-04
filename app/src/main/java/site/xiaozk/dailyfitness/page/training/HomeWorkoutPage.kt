@@ -1,5 +1,6 @@
 package site.xiaozk.dailyfitness.page.training
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -34,8 +36,8 @@ import java.time.format.FormatStyle
  * Display the list of daily training page,
  */
 @Composable
-fun TrainingHome() {
-    val homeViewModel: TrainingHomeViewModel = hiltViewModel()
+fun HomeWorkoutPage() {
+    val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
@@ -45,16 +47,18 @@ fun TrainingHome() {
         )
     }
     val workoutDayList = homeViewModel.pageData.collectAsState()
-    TrainingHome(state = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
+    HomeWorkoutPage(state = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
 }
 
 @Composable
-fun TrainingHome(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
+fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
     val scaffoldProperty = LocalScaffoldProperty.current
     val data = state.homePageState
+    val monthData = data.monthStatic
+    val routeToMonthSummary = Modifier.clickable { onNav(WorkoutStaticGroup.WorkoutMonthNavItem.getRoute(monthData.month)) }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -70,25 +74,27 @@ fun TrainingHome(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
     ) {
         item(key = "calendar", span = { GridItemSpan(2) }) {
             Calendar(
-                displayMonth = data.displayMonth,
+                displayMonth = monthData.displayMonth,
+                modifier = routeToMonthSummary,
                 showOverlappingDays = false,
                 showMonthNavigator = false,
             ) {
-                DayWithWorkout(day = it, showOverlappingDays = false, workout = data[it.date])
+                DayWithWorkout(day = it, workout = monthData[it.date])
             }
         }
         if (state.loadStatus != ActionStatus.Idle) {
             item(key = "month") {
                 HomeWorkoutStaticsCard(
                     title = "本月训练",
-                    content = data.monthTrainedDay.toString(),
-                    subContent = "次"
+                    content = monthData.monthTrainedDay.toString(),
+                    subContent = "次",
+                    modifier = routeToMonthSummary
                 )
             }
             item(key = "week") {
                 HomeWorkoutStaticsCard(
                     title = "本周训练",
-                    content = data.getWeekTrainedDay().toString(),
+                    content = monthData.getWeekTrainedDay().toString(),
                     subContent = "次"
                 )
             }

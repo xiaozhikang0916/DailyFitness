@@ -21,8 +21,9 @@ import site.xiaozk.dailyfitness.page.action.parts.AddTrainActionPage
 import site.xiaozk.dailyfitness.page.action.parts.AddTrainPartPage
 import site.xiaozk.dailyfitness.page.body.BodyDetailPage
 import site.xiaozk.dailyfitness.page.body.add.AddDailyBodyDetail
+import site.xiaozk.dailyfitness.page.training.HomeWorkoutPage
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
-import site.xiaozk.dailyfitness.page.training.TrainingHome
+import site.xiaozk.dailyfitness.page.training.WorkoutMonthlyPage
 import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
 import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainAction
@@ -30,6 +31,7 @@ import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 
 /**
@@ -106,7 +108,7 @@ object AppHomeRootNav : IAppNavGraphItem {
         fun NavGraphBuilder.homeGraph() {
             navigation(route = AppHomeRootNav.route, startDestination = startWith) {
                 composable(TrainingHomeNavItem.route) {
-                    TrainingHome()
+                    HomeWorkoutPage()
                 }
 
                 composable(BodyDetailNavItem.route) {
@@ -117,6 +119,37 @@ object AppHomeRootNav : IAppNavGraphItem {
                     TrainStaticPage()
                 }
             }
+        }
+    }
+}
+
+object WorkoutStaticGroup {
+    object WorkoutMonthNavItem : IAppNavItem {
+        override val route: String
+            get() = "workout/month?date={date}"
+
+        fun getRoute(month: YearMonth = YearMonth.now()): String {
+            return "workout/month?year_month=$month"
+        }
+
+        fun fromArgument(arg: String): YearMonth {
+            return YearMonth.parse(arg)
+        }
+
+        fun fromArgument(argument: Bundle?): YearMonth {
+            return argument?.getString("year_month")?.let(this::fromArgument) ?: YearMonth.now()
+        }
+    }
+
+    fun NavGraphBuilder.workoutStaticGraph() {
+        composable(
+            WorkoutMonthNavItem.route,
+            arguments = listOf(navArgument("year_month") {
+                type = NavType.StringType
+                nullable = true
+            })
+        ) {
+            WorkoutMonthlyPage(WorkoutMonthNavItem.fromArgument(it.arguments))
         }
     }
 }

@@ -8,16 +8,18 @@ import site.xiaozk.dailyfitness.database.dao.WorkoutDao
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.database.model.toRepoEntity
-import site.xiaozk.dailyfitness.database.model.toTrainingDayList
+import site.xiaozk.dailyfitness.database.model.toWorkoutDailyMap
+import site.xiaozk.dailyfitness.database.model.toWorkoutSummary
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
 import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.model.BodyStatic
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
+import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.User
-import site.xiaozk.dailyfitness.repository.model.WorkoutDayList
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -35,7 +37,7 @@ class DailyWorkoutRepository @Inject constructor(
 ) : IDailyWorkoutRepository {
     private var lastWorkout: DailyWorkoutAction? = null
 
-    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutStatic> {
+    override fun getMonthWorkoutStatic(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<MonthWorkoutStatic> {
         return workoutDao.getDailyWorkoutActions(
             user.uid,
             month.atDay(1).getStartEpochMillis(),
@@ -47,16 +49,21 @@ class DailyWorkoutRepository @Inject constructor(
                 entry.toPair()
             }.mapNotNull { entry ->
                 entry.key?.let { key -> key to entry.value.toMap() }
-            }.toMap().toTrainingDayList()
+            }.toMap().toWorkoutSummary()
         }.map { workout ->
+            MonthWorkoutStatic(month, workout)
+        }
+    }
+
+    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutStatic> {
+        return getMonthWorkoutStatic(user, month, firstDayOfWeek).map { it ->
             val weight = bodyDao.getLastBodyDataWithWeight(userId = user.uid)
             val bustSize = bodyDao.getLastBodyDataWithBustSize(userId = user.uid)
             val waistSize = bodyDao.getLastBodyDataWithWaistSize(userId = user.uid)
             val hipSize = bodyDao.getLastBodyDataWithHipSize(userId = user.uid)
             val bodyFat = bodyDao.getLastBodyDataWithBodyFat(userId = user.uid)
             HomeWorkoutStatic(
-                month = month,
-                workoutDays = workout,
+                monthStatic = it,
                 weight = weight?.let { BodyStatic(it.recordTime, it.weight) },
                 bustSize = bustSize?.let { BodyStatic(it.recordTime, it.bustSize) },
                 waistSize = waistSize?.let { BodyStatic(it.recordTime, it.waistSize) },
@@ -71,7 +78,7 @@ class DailyWorkoutRepository @Inject constructor(
         user: User,
         from: LocalDate,
         to: LocalDate,
-    ): Flow<WorkoutDayList> {
+    ): Flow<DailyWorkoutMap> {
         return workoutDao.getDailyWorkoutActions(
             user.uid,
             from.getStartEpochMillis(),
@@ -83,7 +90,7 @@ class DailyWorkoutRepository @Inject constructor(
                 entry.toPair()
             }.mapNotNull { entry ->
                 entry.key?.let { key -> key to entry.value.toMap() }
-            }.toMap().toTrainingDayList()
+            }.toMap().toWorkoutDailyMap()
         }
     }
 
