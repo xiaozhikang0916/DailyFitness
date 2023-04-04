@@ -2,8 +2,8 @@ package site.xiaozk.calendar.display
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import site.xiaozk.calendar.date.Day
-import site.xiaozk.calendar.date.Week
+import site.xiaozk.calendar.date.IWeek
 
 /**
  * @author: xiaozhikang
@@ -30,14 +30,13 @@ import site.xiaozk.calendar.date.Week
 
 @Composable
 fun DisplayWeek(
-    displayWeek: Week,
+    displayWeek: IWeek<Day>,
     modifier: Modifier = Modifier,
     showOverlappingDays: Boolean = true,
-    day: @Composable RowScope.(Day) -> Unit = {
+    day: @Composable BoxScope.(Day) -> Unit = {
         DisplayDay(
             displayDay = it,
             modifier = Modifier,
-            showOverlappingDays = showOverlappingDays
         )
     },
 ) {
@@ -46,32 +45,44 @@ fun DisplayWeek(
             .fillMaxWidth()
             .height(DefaultCalendarRowHeight)
     ) {
+        with(displayWeek) {
+            days.forEach {
+                val container = if (it.isToday) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    Color.Transparent
+                }
+                val color = if (it.isToday) {
+                    contentColorFor(backgroundColor = container)
+                } else if (it.inCurrentRange()) {
+                    LocalContentColor.current
+                } else {
+                    LocalContentColor.current.copy(alpha = DisabledContentAlpha)
+                }
+                CompositionLocalProvider(LocalContentColor provides color) {
+                    if (it.inCurrentRange() || showOverlappingDays) {
+                        Box(
+                            modifier = modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            day(it)
+                        }
+                    } else {
+                        Box(modifier = Modifier.weight(1f)) {}
 
-        displayWeek.days.forEach {
-            val container = if (it.isToday) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                Color.Transparent
-            }
-            val color = if (it.isToday) {
-                contentColorFor(backgroundColor = container)
-            } else if (it.isCurrentMonth) {
-                LocalContentColor.current
-            } else {
-                LocalContentColor.current.copy(alpha = DisabledContentAlpha)
-            }
-            CompositionLocalProvider(LocalContentColor provides color) {
-                day(it)
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun RowScope.DisplayDay(
+fun DisplayDay(
     displayDay: Day,
     modifier: Modifier = Modifier,
-    showOverlappingDays: Boolean = true,
 ) {
     val container = if (displayDay.isToday) {
         MaterialTheme.colorScheme.primary
@@ -85,20 +96,11 @@ fun RowScope.DisplayDay(
     }
     Box(
         modifier = modifier
-            .weight(1f)
-            .fillMaxHeight(),
+            .heightIn(max = 40.dp)
+            .aspectRatio(1f, true)
+            .then(background),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .heightIn(max = 40.dp)
-                .aspectRatio(1f, true)
-                .then(background),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (showOverlappingDays || displayDay.isCurrentMonth) {
-                Text(text = displayDay.date.dayOfMonth.toString())
-            }
-        }
+        Text(text = displayDay.date.dayOfMonth.toString())
     }
 }

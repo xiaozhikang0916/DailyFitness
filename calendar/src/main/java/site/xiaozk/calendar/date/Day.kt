@@ -3,7 +3,6 @@ package site.xiaozk.calendar.date
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.temporal.ChronoField
 
 /**
  * @author: xiaozhikang
@@ -13,8 +12,6 @@ import java.time.temporal.ChronoField
 interface IDay {
     val date: LocalDate
     val isToday: Boolean
-    val isCurrentWeek: Boolean
-    val isCurrentMonth: Boolean
 }
 
 data class Day(
@@ -27,14 +24,6 @@ data class Day(
 
     override val isToday: Boolean
         get() = date == LocalDate.now()
-    override val isCurrentMonth: Boolean
-        get() = LocalDate.now().let {
-            it.month == this.date.month && it.year == this.date.year
-        }
-    override val isCurrentWeek: Boolean
-        get() = LocalDate.now().let {
-            it.get(ChronoField.ALIGNED_WEEK_OF_YEAR) == this.date.get(ChronoField.ALIGNED_WEEK_OF_YEAR) && it.year == this.date.year
-        }
 
     fun getWeek(firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Week {
         val firstDay = this.date.with(firstDayOfWeek).let {
@@ -56,9 +45,6 @@ data class Day(
         }.let(::ArrayList).let(::Month)
     }
 
-    fun isSameMonth(other: IDay): Boolean =
-        this.date.month == other.date.month && this.date.year == other.date.year
-
     override fun compareTo(other: IDay): Int {
         return this.date.compareTo(other.date)
     }
@@ -66,27 +52,30 @@ data class Day(
 
 interface IDaysCollection<D : IDay> {
     val days: ArrayList<D>
+
+    /**
+     * check if a day is belonging to this collection.
+     * E.g. a day in [OverlappingMonth.prevDays] is NOT in this collection
+     * @return
+     */
+    fun IDay.inCurrentRange(): Boolean = true
 }
 
-interface IWeek<D : IDay> : IDaysCollection<D> {
-    val isCurrentWeek: Boolean
-    val isCurrentMonth: Boolean
-}
+interface IWeek<D : IDay> : IDaysCollection<D>
 
 data class Week(
     override val days: ArrayList<Day>,
-) : IWeek<Day> {
-    companion object {
-        val CurrentWeek: Week
-            get() = Day.Today.getWeek()
+) : IWeek<Day>
+
+data class WeekOfMonth(
+    val month: Month,
+    override val days: ArrayList<Day>,
+): IWeek<Day> {
+    override fun IDay.inCurrentRange(): Boolean {
+        return with(month) {
+            this@inCurrentRange.inCurrentRange()
+        }
     }
-
-    // TODO use binary search
-    override val isCurrentWeek: Boolean
-        get() = days.any { it.isToday }
-
-    override val isCurrentMonth: Boolean
-        get() = days.any { it.isCurrentMonth }
 }
 
 interface IMonth<D : IDay, W : IWeek<out D>> : IDaysCollection<D> {
@@ -96,7 +85,7 @@ interface IMonth<D : IDay, W : IWeek<out D>> : IDaysCollection<D> {
 
 data class Month(
     override val days: ArrayList<Day>,
-) : IMonth<Day, Week> {
+) : IMonth<Day, WeekOfMonth> {
     companion object {
         val CurrentMonth: Month
             get() = Day.Today.getMonth()
@@ -107,9 +96,6 @@ data class Month(
             Day(it.plusDays(offset.toLong()))
         }.let(::ArrayList)
     })
-
-    val isCurrentMonth: Boolean
-        get() = days.any { it.isCurrentMonth }
 
     override val yearMonth: YearMonth
         get() = YearMonth.from(days.first().date)
@@ -140,8 +126,12 @@ data class Month(
         return OverlappingMonth(this, prevDays, nextDays)
     }
 
-    override fun getWeeks(firstDayOfWeek: DayOfWeek): List<Week> {
+    override fun getWeeks(firstDayOfWeek: DayOfWeek): List<WeekOfMonth> {
         return getOverlappingMonth(firstDayOfWeek).getWeeks(firstDayOfWeek)
+    }
+
+    override fun IDay.inCurrentRange(): Boolean {
+        return this.date >= days.first().date && this.date <= days.last().date
     }
 }
 
@@ -149,16 +139,22 @@ data class OverlappingMonth(
     val currentMonth: Month,
     val prevDays: ArrayList<Day>,
     val nextDays: ArrayList<Day>,
-) : IMonth<Day, Week> by currentMonth {
+) : IMonth<Day, WeekOfMonth> by currentMonth {
     override val days: ArrayList<Day> = ArrayList(prevDays + currentMonth.days + nextDays)
 
     val firstDayOfWeek: DayOfWeek = days.first().date.dayOfWeek
 
-    override fun getWeeks(firstDayOfWeek: DayOfWeek): List<Week> {
+    override fun getWeeks(firstDayOfWeek: DayOfWeek): List<WeekOfMonth> {
         return if (firstDayOfWeek == this.firstDayOfWeek) {
-            days.chunked(7).map { Week(ArrayList(it)) }
+            days.chunked(7).map { WeekOfMonth(currentMonth, ArrayList(it)) }
         } else {
             currentMonth.getOverlappingMonth(firstDayOfWeek).getWeeks(firstDayOfWeek)
+        }
+    }
+
+    override fun IDay.inCurrentRange(): Boolean {
+        return with(currentMonth) {
+            this@inCurrentRange.inCurrentRange()
         }
     }
 }

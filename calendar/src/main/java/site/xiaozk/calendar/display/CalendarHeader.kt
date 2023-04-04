@@ -38,9 +38,8 @@ private val DefaultYeadMonthFormatter: DateTimeFormatter
 fun CalendarHeader(
     month: YearMonth,
     dateTimeFormatter: DateTimeFormatter = DefaultYeadMonthFormatter,
-    showNavigator: Boolean = true,
-    onNext: () -> Unit,
-    onPrev: () -> Unit,
+    onMonthChanged: ((YearMonth) -> Unit)? = null,
+    showNavigator: Boolean = onMonthChanged != null,
 ) {
     Row(
         modifier = Modifier
@@ -60,13 +59,17 @@ fun CalendarHeader(
                     .padding(end = 12.dp)
                     .padding(vertical = 4.dp)
             ) {
-                IconButton(onClick = onPrev) {
+                IconButton(onClick = {
+                    onMonthChanged?.invoke(month.minusMonths(1))
+                }) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Last month"
                     )
                 }
-                IconButton(onClick = onNext) {
+                IconButton(onClick = {
+                    onMonthChanged?.invoke(month.plusMonths(1))
+                }) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowRight,
                         contentDescription = "Next month"

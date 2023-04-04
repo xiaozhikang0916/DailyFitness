@@ -2,8 +2,8 @@ package site.xiaozk.calendar
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
@@ -21,6 +21,7 @@ import site.xiaozk.calendar.display.DisplayDay
 import site.xiaozk.calendar.display.DisplayWeek
 import site.xiaozk.calendar.display.WeekdayIndicator
 import java.time.DayOfWeek
+import java.time.YearMonth
 
 /**
  * @author: xiaozhikang
@@ -34,18 +35,17 @@ fun Calendar(
     modifier: Modifier = Modifier,
     firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY,
     showOverlappingDays: Boolean = true,
-    showMonthNavigator: Boolean = true,
-    onPrevClick: () -> Unit = {},
-    onNextClick: () -> Unit = {},
+    onMonthChanged: ((YearMonth) -> Unit)? = null,
+    showMonthNavigator: Boolean = onMonthChanged != null,
     calendarHeader: @Composable () -> Unit = {
-        CalendarHeader(month = displayMonth.yearMonth, showNavigator = showMonthNavigator, onNext = onNextClick, onPrev = onPrevClick)
+        CalendarHeader(month = displayMonth.yearMonth, showNavigator = showMonthNavigator, onMonthChanged = onMonthChanged)
     },
     weekdayIndicator: @Composable () -> Unit = {
         WeekdayIndicator(firstDayOfWeek)
     },
     onDayClick: (Day) -> Unit = {},
-    displayDay: @Composable RowScope.(Day) -> Unit = {
-        DisplayDay(it, modifier = Modifier.clickable { onDayClick(it) }, showOverlappingDays = showOverlappingDays)
+    displayDay: @Composable BoxScope.(Day) -> Unit = {
+        DisplayDay(it, modifier = Modifier.clickable { onDayClick(it) })
     },
 ) {
     Surface(

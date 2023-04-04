@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import java.time.DayOfWeek
@@ -24,13 +25,25 @@ import java.util.Locale
 @Composable
 fun WeekdayIndicator(
     firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY,
-    dateTimeFormatter: DateTimeFormatter = DateTimeFormatterBuilder().appendText(ChronoField.DAY_OF_WEEK, TextStyle.NARROW).toFormatter(Locale.getDefault()),
+    dateTimeFormatter: DateTimeFormatter = remember {
+        DateTimeFormatterBuilder()
+            .appendText(ChronoField.DAY_OF_WEEK, TextStyle.NARROW)
+            .toFormatter(Locale.getDefault())
+    },
 ) {
-    Row(modifier = Modifier.fillMaxWidth().height(DefaultCalendarRowHeight)) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(DefaultCalendarRowHeight)
+    ) {
         (0..6).map {
             firstDayOfWeek.plus(it.toLong())
         }.forEach {
-            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
                 Text(
                     text = dateTimeFormatter.format(it),
                     modifier = Modifier
