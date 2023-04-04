@@ -129,15 +129,19 @@ object WorkoutStaticGroup {
             get() = "workout/month?date={date}"
 
         fun getRoute(month: YearMonth = YearMonth.now()): String {
-            return "workout/month?year_month=$month"
+            return "workout/month?date=${parseArgument(month)}"
+        }
+
+        fun parseArgument(month: YearMonth): String {
+            return month.toString()
         }
 
         fun fromArgument(arg: String): YearMonth {
-            return YearMonth.parse(arg)
-        }
-
-        fun fromArgument(argument: Bundle?): YearMonth {
-            return argument?.getString("year_month")?.let(this::fromArgument) ?: YearMonth.now()
+            return try {
+                YearMonth.parse(arg)
+            } catch (e: Exception) {
+                YearMonth.now()
+            }
         }
     }
 
@@ -149,7 +153,7 @@ object WorkoutStaticGroup {
                 nullable = true
             })
         ) {
-            WorkoutMonthlyPage(WorkoutMonthNavItem.fromArgument(it.arguments))
+            WorkoutMonthlyPage()
         }
     }
 }

@@ -21,11 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -40,6 +40,7 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
@@ -59,12 +60,9 @@ import javax.inject.Inject
  */
 
 @Composable
-fun WorkoutMonthlyPage(initMonth: YearMonth = YearMonth.now()) {
+fun WorkoutMonthlyPage() {
     val viewModel: WorkoutMonthlyPageViewModel = hiltViewModel()
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
-    LaunchedEffect(key1 = initMonth) {
-        viewModel.month.emit(initMonth)
-    }
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(
@@ -81,8 +79,7 @@ fun WorkoutMonthlyPage(initMonth: YearMonth = YearMonth.now()) {
     WorkoutMonthlyPage(
         page = page.value.monthData,
         onMonthChanged = {
-            val result = viewModel.month.tryEmit(it)
-            Log.i("WorkoutMonthlyPage", "change month to $it, result $result")
+            viewModel.month = (it)
         },
         onNav = { appScaffoldViewModel.onRoute(it) }
     )
@@ -164,11 +161,21 @@ private fun WorkoutDailyDetailCard(
 class WorkoutMonthlyPageViewModel @Inject constructor(
     private val homeRepo: IDailyWorkoutRepository,
     private val userRepository: IUserRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val month: MutableStateFlow<YearMonth> = MutableStateFlow(YearMonth.now())
+    private val _month: StateFlow<YearMonth> = savedStateHandle.getStateFlow("date", "")
+        .map {
+            WorkoutStaticGroup.WorkoutMonthNavItem.fromArgument(it)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, YearMonth.now())
+
+    var month: YearMonth
+        get() = _month.value
+        set(value) {
+            savedStateHandle["date"] = WorkoutStaticGroup.WorkoutMonthNavItem.parseArgument(value)
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val workoutMonthPageState: StateFlow<MonthWorkoutPageState> = month.transformLatest {
+    val workoutMonthPageState: StateFlow<MonthWorkoutPageState> = _month.transformLatest {
         Log.i("WorkoutMonthlyPage", "new month collected $it")
         val user = userRepository.getCurrentUser()
         emit(MonthWorkoutPageState(month = it, loadStatus = ActionStatus.Loading))
