@@ -41,6 +41,8 @@ import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPart
+import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
+import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
 import javax.inject.Inject
 
 /**
@@ -53,7 +55,6 @@ import javax.inject.Inject
 fun AddTrainActionPage() {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState().value
-    val part = state.part
     val status = state.status
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = state.inputValid) {
@@ -93,15 +94,19 @@ fun AddTrainActionPage() {
             .nestedScroll(scaffoldProperty.scrollConnection),
     ) {
 
-        OutlinedTextField(
-            value = part?.partName ?: "",
-            onValueChange = { },
+        LargeDropdownMenu(
+            label = "训练部位",
             modifier = Modifier
                 .fillMaxWidth(),
-            readOnly = true,
-            label = {
-                Text(text = "训练部位")
-            }
+            items = state.allPart,
+            onItemSelected = { _, it ->
+                viewModel.reduce(SetTrainPartIntent(it.part))
+            },
+            expended = false,
+            selectedIndex = state.selectedPartIndex,
+            itemToString = {
+                it.part.partName
+            },
         )
 
         OutlinedTextField(
@@ -194,6 +199,7 @@ class AddTrainActionViewModel @Inject constructor(
 }
 
 data class AddTrainActionState(
+    val allPart: List<TrainPartGroup> = emptyList(),
     val part: TrainPart? = null,
     val action: TrainAction? = null,
     val status: ActionStatus = ActionStatus.Idle,
@@ -204,4 +210,6 @@ data class AddTrainActionState(
     val inputValid = name.isNotBlank() && part != null
     val name: String
         get() = action?.actionName ?: ""
+
+    val selectedPartIndex: Int = allPart.indexOfFirst { it.part == this.part }
 }

@@ -3,7 +3,6 @@ package site.xiaozk.dailyfitness.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
@@ -33,8 +32,6 @@ interface IDailyWorkoutRepository {
     suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction)
 
     suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction)
-
-    fun getAllTrainParts(): Flow<List<TrainPartGroup>>
 
     suspend fun getLastWorkout(date: LocalDate = LocalDate.now()): DailyWorkoutAction?
 }

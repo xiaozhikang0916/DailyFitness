@@ -10,6 +10,7 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
+import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -59,12 +60,13 @@ typealias AddDailyTrainResult = IntentResult<AddDailyWorkoutPageState, IDailyTra
 class DailyWorkoutReducer
 @Inject constructor(
     private val repo: IDailyWorkoutRepository,
+    private val trainRepo: ITrainActionRepository,
     private val userRepo: IUserRepository,
 ) {
     fun reduce(state: AddDailyWorkoutPageState, intent: IDailyTrainIntent): AddDailyTrainResult {
         return when (intent) {
             LoadPartIntent -> AddDailyTrainResult(state = state.copy()) {
-                emitAll(repo.getAllTrainParts().map { PartLoadedIntent(it) })
+                emitAll(trainRepo.getAllTrainParts().map { PartLoadedIntent(it) })
             }
 
             is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyWorkoutPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false))

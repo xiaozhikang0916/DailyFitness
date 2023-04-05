@@ -97,7 +97,7 @@ fun <T> LargeDropdownMenu(
             onClick = onClick,
         )
     },
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit = {},
 ) {
     var expanded by remember(expended) { mutableStateOf(expended) }
     val dismiss by rememberUpdatedState {

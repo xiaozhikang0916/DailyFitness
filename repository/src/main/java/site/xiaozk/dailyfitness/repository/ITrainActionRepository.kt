@@ -20,6 +20,8 @@ interface ITrainActionRepository {
 
     fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage>
 
+    fun getAllTrainParts(): Flow<List<TrainPartGroup>>
+
     fun getActionsOfPart(partId: Int): Flow<TrainPartGroup>
 
     suspend fun addTrainPart(part: TrainPart)

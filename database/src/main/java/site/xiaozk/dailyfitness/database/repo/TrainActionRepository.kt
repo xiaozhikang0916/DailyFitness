@@ -52,6 +52,12 @@ class TrainActionRepository @Inject constructor(
         }
     }
 
+    override fun getAllTrainParts(): Flow<List<TrainPartGroup>> {
+        return trainDao.getAllTrainPartWithAction().map {
+            it.map { group -> group.toRepoEntity() }
+        }
+    }
+
     override fun getActionsOfPart(partId: Int): Flow<TrainPartGroup> {
         return trainDao.getAllTrainActionOnPart(partId).mapNotNull { map ->
             map.entries.filter { it.key.id == partId }.map {

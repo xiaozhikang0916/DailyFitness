@@ -7,7 +7,6 @@ import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.WorkoutDao
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDbEntity
-import site.xiaozk.dailyfitness.database.model.toRepoEntity
 import site.xiaozk.dailyfitness.database.model.toWorkoutDailyMap
 import site.xiaozk.dailyfitness.database.model.toWorkoutSummary
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
@@ -18,7 +17,6 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
-import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.LocalDate
 import java.time.YearMonth
@@ -70,7 +68,6 @@ class DailyWorkoutRepository @Inject constructor(
                 bodyFat = bodyFat?.let { BodyStatic(it.recordTime, it.bodyFat) },
             )
         }
-
     }
 
     override fun getWorkoutDayList(
@@ -79,9 +76,7 @@ class DailyWorkoutRepository @Inject constructor(
         to: LocalDate,
     ): Flow<DailyWorkoutMap> {
         return workoutDao.getDailyWorkoutActions(
-            user.uid,
-            from.getStartEpochMillis(),
-            to.getEndEpochMillis()
+            user.uid, from.getStartEpochMillis(), to.getEndEpochMillis()
         ).map {
             val actions = it.keys.map { it.id }.toIntArray()
             val parts = trainDao.getTrainPartOfAction(actions)
@@ -94,7 +89,9 @@ class DailyWorkoutRepository @Inject constructor(
     }
 
     override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction {
-        return workoutDao.getDailyWorkout(user.uid, workoutId).filter { it.value.actionId == workoutId }.map { it.toPair().toDailyWorkoutAction() }.first()
+        return workoutDao.getDailyWorkout(user.uid, workoutId)
+            .filter { it.value.actionId == workoutId }.map { it.toPair().toDailyWorkoutAction() }
+            .first()
     }
 
     override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) {
@@ -105,12 +102,6 @@ class DailyWorkoutRepository @Inject constructor(
 
     override suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction) {
         workoutDao.deleteDailyWorkoutAction(action.toDbEntity(user.uid))
-    }
-
-    override fun getAllTrainParts(): Flow<List<TrainPartGroup>> {
-        return trainDao.getAllTrainPartWithAction().map {
-            it.map { group -> group.toRepoEntity() }
-        }
     }
 
     override suspend fun getLastWorkout(date: LocalDate): DailyWorkoutAction? {

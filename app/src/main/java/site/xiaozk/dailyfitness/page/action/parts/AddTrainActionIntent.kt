@@ -2,6 +2,7 @@ package site.xiaozk.dailyfitness.page.action.parts
 
 import android.util.Log
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
@@ -9,6 +10,7 @@ import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
+import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import javax.inject.Inject
 
 /**
@@ -17,6 +19,7 @@ import javax.inject.Inject
  */
 sealed interface IAddTrainActionIntent : IIntent
 data class InitLoadIntent(val partId: Int, val actionId: Int) : IAddTrainActionIntent
+data class SetTrainPartListIntent(val allParts: List<TrainPartGroup>) : IAddTrainActionIntent
 data class SetTrainPartIntent(val trainPart: TrainPart) : IAddTrainActionIntent
 data class SetTrainActionIntent(val action: TrainAction) : IAddTrainActionIntent
 data class SetNameIntent(val name: String) : IAddTrainActionIntent
@@ -38,19 +41,31 @@ class AddTrainActionReducer @Inject constructor(
     ): AddTrainResult {
         return when (intent) {
             is InitLoadIntent -> AddTrainResult(state = state.copy()) {
-                repo.getActionsOfPart(intent.partId).map {
-                    if (intent.actionId != 0) {
-                        it.actions.find { action -> action.id == intent.actionId }
-                    } else {
-                        null
-                    } ?: TrainActionWithPart(part = it.part)
+                repo.getAllTrainParts().onEach {
+                    emit(SetTrainPartListIntent(it))
+                }.map { groupList ->
+                    groupList.find { it.part.id == intent.partId }?.let {
+                        it.takeIf { intent.actionId != 0 }
+                            ?.actions
+                            ?.find { action -> action.id == intent.actionId }
+                            ?: TrainActionWithPart(part = it.part)
+                    }
                 }.collect { actionWithPart ->
-                    emit(SetTrainPartIntent(actionWithPart.part))
-                    emit(SetTrainActionIntent(actionWithPart.action))
+                    if (actionWithPart != null) {
+                        emit(SetTrainPartIntent(actionWithPart.part))
+                        emit(SetTrainActionIntent(actionWithPart.action))
+                    }
                 }
             }
 
-            is SetTrainPartIntent -> AddTrainResult(state = state.copy(part = intent.trainPart, action = null))
+            is SetTrainPartListIntent -> AddTrainResult(state = state.copy(allPart = intent.allParts))
+            is SetTrainPartIntent -> AddTrainResult(
+                state = state.copy(
+                    part = intent.trainPart,
+                    action = TrainAction(partId = intent.trainPart.id)
+                )
+            )
+
             is SetTrainActionIntent -> AddTrainResult(
                 state = if (intent.action.partId == state.part?.id) {
                     state.copy(
@@ -62,7 +77,14 @@ class AddTrainActionReducer @Inject constructor(
                 } else state.copy()
             )
 
-            is SetNameIntent -> AddTrainResult(state = state.copy(action = state.action?.copy(actionName = intent.name)))
+            is SetNameIntent -> AddTrainResult(
+                state = state.copy(
+                    action = state.action?.copy(
+                        actionName = intent.name
+                    )
+                )
+            )
+
             is SetTimedIntent -> AddTrainResult(state = state.copy(isTimed = intent.isTimed))
             is SetCountedIntent -> AddTrainResult(state = state.copy(isCounted = intent.isCounted))
             is SetWeightedIntent -> AddTrainResult(state = state.copy(isWeighted = intent.isWeighted))
@@ -89,7 +111,13 @@ class AddTrainActionReducer @Inject constructor(
             }
 
             is SubmitFinishedIntent -> AddTrainResult(state = state.copy(status = ActionStatus.Done))
-            is SubmitFailedIntent -> AddTrainResult(state = state.copy(status = ActionStatus.Failed(intent.e)))
+            is SubmitFailedIntent -> AddTrainResult(
+                state = state.copy(
+                    status = ActionStatus.Failed(
+                        intent.e
+                    )
+                )
+            )
         }
     }
 }
