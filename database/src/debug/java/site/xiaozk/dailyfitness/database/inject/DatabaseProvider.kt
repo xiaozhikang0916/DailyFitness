@@ -23,11 +23,19 @@ class DatabaseProvider {
     @Provides
     @Singleton
     @DebugDatabaseBuilder
-    fun provideDatabase(@ApplicationContext context: Context, builder: RoomDatabase.Builder<AppDataBase>): RoomDatabase.Builder<AppDataBase> {
-        return builder.setQueryCallback(queryCallback = object : RoomDatabase.QueryCallback {
-            override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
-                Log.d("Database", "Querying $sqlQuery, args ${bindArgs.joinToString { it.toString() }}")
-            }
-        }, executor = ContextCompat.getMainExecutor(context))
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+        builder: RoomDatabase.Builder<AppDataBase>,
+    ): RoomDatabase.Builder<AppDataBase> {
+        return builder
+            .createFromAsset("fitness.db")
+            .setQueryCallback(queryCallback = object : RoomDatabase.QueryCallback {
+                override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
+                    Log.d(
+                        "Database",
+                        "Querying $sqlQuery, args ${bindArgs.joinToString { it.toString() }}"
+                    )
+                }
+            }, executor = ContextCompat.getMainExecutor(context))
     }
 }
