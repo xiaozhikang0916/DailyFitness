@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,11 +50,8 @@ import javax.inject.Inject
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainActionPage(partId: Int, actionId: Int = 0) {
+fun AddTrainActionPage() {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
-    LaunchedEffect(key1 = Unit) {
-        viewModel.initData(partId, actionId)
-    }
     val state = viewModel.state.collectAsState().value
     val part = state.part
     val status = state.status
@@ -162,17 +160,23 @@ private fun CheckedIcon() {
         modifier = Modifier.size(18.dp),
         contentDescription = null,
     )
-
 }
 
 @HiltViewModel
 class AddTrainActionViewModel @Inject constructor(
     private val reducer: AddTrainActionReducer,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AddTrainActionState())
     val state = _state.asStateFlow()
 
-    fun initData(partId: Int, actionId: Int = 0) {
+    val partId: Int
+        get() = savedStateHandle["partId"] ?: -1
+
+    val actionId: Int
+        get() = savedStateHandle["actionId"] ?: -1
+
+    init {
         Log.i("AddTrainAction", "Load action with part id $partId, action id $actionId")
         reduce(InitLoadIntent(partId = partId, actionId = actionId))
     }

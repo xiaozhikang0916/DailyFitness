@@ -26,9 +26,9 @@ import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
  */
 
 @Composable
-fun TrainActionPage(actionId: Int) {
+fun TrainActionPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
-    val actionState = viewModel.getTrainActionStatic(actionId).collectAsState(initial = TrainActionStaticPage()).value
+    val actionState = viewModel.trainActionStatic.collectAsState(initial = TrainActionStaticPage()).value
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = actionState) {
         appScaffoldViewModel.scaffoldState.emit(

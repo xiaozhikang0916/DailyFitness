@@ -1,5 +1,6 @@
 package site.xiaozk.dailyfitness.page.action
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -17,8 +18,21 @@ import javax.inject.Inject
 @HiltViewModel
 class TrainPartViewModel @Inject constructor(
     private val trainRepo: ITrainActionRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val homeTrainPartStatic: Flow<HomeTrainPartPage> = trainRepo.getAllTrainPartStatics()
-    fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage> = trainRepo.getTrainPartStatic(partId = partId)
-    fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage> = trainRepo.getTrainActionStatic(actionId = actionId)
+
+    val partId: Int
+        get() = savedStateHandle["partId"] ?: -1
+
+    val actionId: Int
+        get() = savedStateHandle["actionId"] ?: -1
+    val trainPartStatic: Flow<TrainPartStaticPage> by lazy {
+        trainRepo.getTrainPartStatic(partId = partId)
+    }
+    val trainActionStatic: Flow<TrainActionStaticPage> by lazy {
+        trainRepo.getTrainActionStatic(
+            actionId = actionId
+        )
+    }
 }

@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,17 +35,13 @@ import javax.inject.Inject
  */
 
 @Composable
-fun DeleteDailyWorkout(workoutId: Int) {
+fun DeleteDailyWorkout() {
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     val viewModel: DeleteDailyWorkoutViewModel = hiltViewModel()
     val dismiss = remember {
         {
             appScaffoldViewModel.back()
         }
-    }
-
-    LaunchedEffect(key1 = Unit) {
-        viewModel.getWorkout(workoutId)
     }
     val state = viewModel.flow.collectAsState(initial = null).value
     LaunchedEffect(key1 = Unit) {
@@ -87,7 +84,8 @@ fun DeleteDailyWorkout(workoutId: Int) {
                 Text(text = "删除动作记录")
             },
             text = {
-                val dateTimeFormat = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
+                val dateTimeFormat =
+                    getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
                     text = "你将要删除记录于${dateTimeFormat.format(workout.instant)}的动作记录${workout.action.actionName} ${
                         workout.displayText.joinToString(" ")
@@ -102,11 +100,14 @@ fun DeleteDailyWorkout(workoutId: Int) {
 class DeleteDailyWorkoutViewModel @Inject constructor(
     private val trainRepo: IDailyWorkoutRepository,
     private val userRepo: IUserRepository,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+    val workoutId: Int
+        get() = savedStateHandle["workoutId"] ?: -1
     private val _flow = MutableStateFlow(DeleteDailyWorkoutState())
     val flow = _flow.asStateFlow()
 
-    fun getWorkout(workoutId: Int) {
+    init {
         viewModelScope.launch {
             Log.i("DeleteDailyWorkout", "Loading workout id $workoutId")
             _flow.emit(DeleteDailyWorkoutState(loadStatus = ActionStatus.Loading))

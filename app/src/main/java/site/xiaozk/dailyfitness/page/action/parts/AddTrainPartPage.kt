@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,9 +43,8 @@ import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainPartPage(partId: Int = 0) {
+fun AddTrainPartPage() {
     val viewModel: AddTrainPartViewModel = hiltViewModel()
-    viewModel.loadPart(partId = partId)
     val state = viewModel.status.collectAsState()
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = state.value) {
@@ -89,11 +89,14 @@ fun AddTrainPartPage(partId: Int = 0) {
 @HiltViewModel
 class AddTrainPartViewModel @Inject constructor(
     private val repo: ITrainActionRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    val partId: Int
+        get() = savedStateHandle["partId"] ?: -1
     private val _status = MutableStateFlow(AddTrainPartState())
     val status = _status.asStateFlow()
 
-    fun loadPart(partId: Int = 0) {
+    init {
         Log.i("AddTrainPart", "Load part with part id $partId")
         viewModelScope.launch {
             _status.emitAll(

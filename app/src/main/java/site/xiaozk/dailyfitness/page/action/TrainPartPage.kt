@@ -31,9 +31,9 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
  * @create: 2023/3/22
  */
 @Composable
-fun TrainPartPage(partId: Int) {
+fun TrainPartPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
-    val part = viewModel.getTrainPartStatic(partId).collectAsState(initial = TrainPartStaticPage()).value
+    val part = viewModel.trainPartStatic.collectAsState(initial = TrainPartStaticPage()).value
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = part) {
         appScaffoldViewModel.scaffoldState.emit(

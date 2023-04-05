@@ -35,7 +35,6 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
-import java.time.LocalDate
 
 /**
  * @author: xiaozhikang
@@ -43,11 +42,9 @@ import java.time.LocalDate
  * @create: 2023/2/25
  */
 @Composable
-fun TrainingDayDetailPage(
-    date: LocalDate,
-) {
+fun TrainingDayDetailPage() {
     val viewModel: TrainingDayDetailViewModel = hiltViewModel()
-    val data = viewModel.getTrainingData(date)
+    val data = viewModel.trainingData
 
     val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
     LaunchedEffect(key1 = Unit) {
@@ -55,13 +52,17 @@ fun TrainingDayDetailPage(
             SubpageScaffoldState(
                 title = "训练日志",
                 actionItems = listOf(
-                    TopAction.iconRouteAction(Icons.Default.Add, "添加训练动作", Route(TrainingDayGroup.TrainDayAddActionNavItem.route))
+                    TopAction.iconRouteAction(
+                        Icons.Default.Add,
+                        "添加训练动作",
+                        Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                    )
                 )
             )
         )
     }
     TrainingDayDetail(
-        data = data.collectAsState(initial = null).value ?: DailyWorkout(date),
+        data = data.collectAsState(initial = null).value ?: DailyWorkout(viewModel.date),
         onTrainingActionDeleted = {
             appScaffoldViewModel.onRoute(
                 TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
