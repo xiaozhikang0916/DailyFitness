@@ -1,27 +1,36 @@
 package site.xiaozk.dailyfitness.page.training
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -85,7 +94,10 @@ fun TrainingDayDetail(
             .padding(horizontal = 12.dp)
             .nestedScroll(scaffoldProperty.scrollConnection),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = scaffoldProperty.padding,
+        contentPadding = PaddingValues(
+            top = scaffoldProperty.padding.calculateTopPadding(),
+            bottom = scaffoldProperty.padding.calculateBottomPadding() + 12.dp
+        ),
     ) {
         item {
             Text(
@@ -96,48 +108,89 @@ fun TrainingDayDetail(
                 style = MaterialTheme.typography.titleLarge
             )
         }
-        itemsIndexed(data.actions) { index, it ->
+        items(data.actions, key = ::key) {
             DailyTrainingAction(action = it, onActionDelete = onTrainingActionDeleted)
-            if (index != data.actions.size - 1) {
-                Divider(modifier = Modifier.fillMaxWidth())
-            }
         }
     }
 }
 
+private fun key(item: DailyWorkoutListActionPair): String {
+    return item.action.id.toString()
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DailyTrainingAction(action: DailyWorkoutListActionPair, onActionDelete: (DailyWorkoutAction) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.fillMaxWidth()) {
+private fun DailyTrainingAction(
+    action: DailyWorkoutListActionPair,
+    onActionDelete: (DailyWorkoutAction) -> Unit,
+) {
+    var expended by rememberSaveable(key(action)) {
+        mutableStateOf(true)
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape = MaterialTheme.shapes.medium)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = MaterialTheme.shapes.medium
+            ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color = MaterialTheme.colorScheme.surfaceVariant)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                .clickable { expended = !expended }
+                .padding(all = 12.dp)
+        ) {
             Text(
                 text = action.action.actionName,
-                modifier = Modifier.align(Alignment.TopStart),
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Text(
+                text = "${action.trainAction.size}组",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        AnimatedVisibility(expended) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(top = 18.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.End,
+                    .fillMaxWidth()
+                    .padding(vertical = 11.dp)
             ) {
                 action.trainAction.forEach { action ->
+                    val string = buildAnnotatedString {
+                        append(action.displayText.joinToString(separator = " "))
+                        if (action.note.isNotBlank()) {
+                            append('\n')
+                            pushStyle(MaterialTheme.typography.bodySmall.toSpanStyle())
+                            append(action.note)
+                            pop()
+                        }
+                    }
                     Text(
-                        text = action.displayText.joinToString(separator = " "),
+                        text = string,
                         modifier = Modifier
                             .combinedClickable(
                                 onLongClick = {
                                     onActionDelete(action)
                                 }
                             ) {}
-                            .padding(vertical = 1.dp)
+                            .padding(vertical = 1.dp, horizontal = 12.dp)
+                            .fillMaxWidth()
                             .heightIn(24.dp),
                         style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.End,
                     )
                 }
-
             }
         }
     }
