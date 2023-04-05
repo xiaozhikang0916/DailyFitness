@@ -20,7 +20,6 @@ import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -37,7 +36,7 @@ class DailyWorkoutRepository @Inject constructor(
 ) : IDailyWorkoutRepository {
     private var lastWorkout: DailyWorkoutAction? = null
 
-    override fun getMonthWorkoutStatic(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<MonthWorkoutStatic> {
+    override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> {
         return workoutDao.getDailyWorkoutActions(
             user.uid,
             month.atDay(1).getStartEpochMillis(),
@@ -55,8 +54,8 @@ class DailyWorkoutRepository @Inject constructor(
         }
     }
 
-    override fun getHomeWorkoutStatics(user: User, month: YearMonth, firstDayOfWeek: DayOfWeek): Flow<HomeWorkoutStatic> {
-        return getMonthWorkoutStatic(user, month, firstDayOfWeek).map { it ->
+    override fun getHomeWorkoutStatics(user: User, month: YearMonth): Flow<HomeWorkoutStatic> {
+        return getMonthWorkoutStatic(user, month).map { it ->
             val weight = bodyDao.getLastBodyDataWithWeight(userId = user.uid)
             val bustSize = bodyDao.getLastBodyDataWithBustSize(userId = user.uid)
             val waistSize = bodyDao.getLastBodyDataWithWaistSize(userId = user.uid)

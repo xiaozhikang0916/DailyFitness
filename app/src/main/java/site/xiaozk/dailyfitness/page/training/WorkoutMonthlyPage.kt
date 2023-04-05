@@ -45,7 +45,6 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
-import java.time.DayOfWeek
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -183,7 +182,6 @@ class WorkoutMonthlyPageViewModel @Inject constructor(
             homeRepo.getMonthWorkoutStatic(
                 user = user,
                 month = it,
-                firstDayOfWeek = DayOfWeek.SUNDAY,
             ).catch { e ->
                 Log.e("WorkoutMonthlyPage", "load month summary of $it failed", e)
                 emit(MonthWorkoutPageState(month = it, loadStatus = ActionStatus.Failed(e)))

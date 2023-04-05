@@ -9,11 +9,11 @@ import java.util.Locale
  * @create: 2023/3/31
  */
 
-fun getLocalDateTimeFormatter(locale: Locale) = DateTimeFormatterBuilder()
+fun getLocalDateTimeFormatter(locale: Locale): DateTimeFormatter = DateTimeFormatterBuilder()
     .parseCaseInsensitive()
     .append(DateTimeFormatter.ISO_LOCAL_DATE)
     .appendLiteral(' ')
     .append(DateTimeFormatter.ISO_LOCAL_TIME).toFormatter(locale)
 
 
-fun getLocalDateFormatter() = DateTimeFormatter.ISO_LOCAL_DATE
+fun getLocalDateFormatter(): DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE

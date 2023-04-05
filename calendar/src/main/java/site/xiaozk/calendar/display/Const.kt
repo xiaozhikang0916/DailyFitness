@@ -8,4 +8,4 @@ import androidx.compose.ui.unit.dp
  */
 
 internal val DefaultCalendarRowHeight = 48.dp
-internal val DisabledContentAlpha = 0.38f
+internal const val DisabledContentAlpha = 0.38f

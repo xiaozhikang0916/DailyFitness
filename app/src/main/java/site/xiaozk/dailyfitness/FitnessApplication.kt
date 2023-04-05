@@ -9,5 +9,4 @@ import dagger.hilt.android.HiltAndroidApp
  * @create: 2023/2/25
  */
 @HiltAndroidApp
-class FitnessApplication: Application() {
-}
+class FitnessApplication: Application()

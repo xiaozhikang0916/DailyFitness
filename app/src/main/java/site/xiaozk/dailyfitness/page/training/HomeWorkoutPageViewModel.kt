@@ -16,7 +16,6 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.DayOfWeek
 import java.time.YearMonth
 import javax.inject.Inject
 
@@ -44,7 +43,6 @@ class HomeWorkoutPageViewModel @Inject constructor(
             homeRepo.getHomeWorkoutStatics(
                 user = user,
                 month = YearMonth.now(),
-                firstDayOfWeek = DayOfWeek.SUNDAY,
             ).catch {
                 emit(HomeWorkoutPageState(loadStatus = ActionStatus.Failed(it)))
             }.map {

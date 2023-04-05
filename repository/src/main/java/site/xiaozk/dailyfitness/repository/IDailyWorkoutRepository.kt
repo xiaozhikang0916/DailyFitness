@@ -9,7 +9,6 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -19,9 +18,9 @@ import java.time.YearMonth
  * @create: 2023/2/23
  */
 interface IDailyWorkoutRepository {
-    fun getMonthWorkoutStatic(user: User, month: YearMonth = YearMonth.now(), firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Flow<MonthWorkoutStatic>
+    fun getMonthWorkoutStatic(user: User, month: YearMonth = YearMonth.now()): Flow<MonthWorkoutStatic>
 
-    fun getHomeWorkoutStatics(user: User, month: YearMonth = YearMonth.now(), firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Flow<HomeWorkoutStatic>
+    fun getHomeWorkoutStatics(user: User, month: YearMonth = YearMonth.now()): Flow<HomeWorkoutStatic>
 
     fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<DailyWorkoutMap>
 
