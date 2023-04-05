@@ -1,7 +1,7 @@
 package site.xiaozk.dailyfitness.utils
 
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
+import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
@@ -9,11 +9,8 @@ import java.util.Locale
  * @create: 2023/3/31
  */
 
-fun getLocalDateTimeFormatter(locale: Locale): DateTimeFormatter = DateTimeFormatterBuilder()
-    .parseCaseInsensitive()
-    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-    .appendLiteral(' ')
-    .append(DateTimeFormatter.ISO_LOCAL_TIME).toFormatter(locale)
+fun getLocalDateTimeFormatter(locale: Locale = Locale.getDefault()): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale)
 
-
-fun getLocalDateFormatter(): DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+fun getLocalDateFormatter(locale: Locale = Locale.getDefault()): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)

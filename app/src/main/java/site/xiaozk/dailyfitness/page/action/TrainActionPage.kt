@@ -9,6 +9,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,8 @@ import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
+import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 
 /**
  * @author: xiaozhikang
@@ -52,6 +55,12 @@ fun TrainActionPage(
     onWorkoutLongClick: (DailyWorkoutAction) -> Unit = {},
 ) {
     val scaffoldProperty = LocalScaffoldProperty.current
+    val dateTimeFormatter = remember {
+        getLocalDateTimeFormatter()
+    }
+    val dateFormatter = remember {
+        getLocalDateFormatter()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -66,6 +75,7 @@ fun TrainActionPage(
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
                 isHead = true,
+                dateFormatter = dateFormatter,
             )
         }
         itemsIndexed(actionStaticPage.workouts) { index, workout ->
@@ -74,7 +84,8 @@ fun TrainActionPage(
                 modifier = Modifier
                     .padding(horizontal = 4.dp, vertical = 12.dp)
                     .fillMaxWidth(),
-                onCardLongClick = onWorkoutLongClick
+                formatter = dateTimeFormatter,
+                onCardLongClick = onWorkoutLongClick,
             )
             if (index < actionStaticPage.workoutCount - 1) {
                 Divider(modifier = Modifier.padding(horizontal = 4.dp))

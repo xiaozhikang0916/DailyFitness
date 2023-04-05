@@ -9,6 +9,10 @@ data class RecordedWeight(
     val weight: Float = 0f,
     val weightUnit: WeightUnit = WeightUnit.Kg,
 ) : Comparable<RecordedWeight> {
+    companion object {
+        val Zero = RecordedWeight()
+    }
+
     fun uniform(): RecordedWeight {
         return if (weightUnit == WeightUnit.Kg) {
             this

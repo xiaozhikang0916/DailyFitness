@@ -1,5 +1,8 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
+import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
+import java.time.Instant
 import java.time.ZoneId
 
 /**

@@ -19,6 +19,7 @@ data class DailyWorkoutAction(
     val takenCount: Int,
     val note: String,
 ) {
+
     val displayText: List<String>
         get() = buildList {
             if (action.isWeightedAction && takenWeight != null) {

@@ -49,6 +49,7 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
@@ -101,6 +102,13 @@ fun WorkoutMonthlyPage(page: MonthWorkoutStatic, onMonthChanged: (YearMonth) -> 
     val list = remember(page) {
         page.workoutDays.trainedDate.descendingMap().values.toList()
     }
+    val formatter = remember {
+        DateTimeFormatterBuilder()
+            .append(getLocalDateFormatter())
+            .appendLiteral(" ")
+            .appendText(ChronoField.DAY_OF_WEEK, TextStyle.FULL)
+            .toFormatter(Locale.getDefault())
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -122,6 +130,7 @@ fun WorkoutMonthlyPage(page: MonthWorkoutStatic, onMonthChanged: (YearMonth) -> 
             WorkoutDailyDetailCard(
                 data = it,
                 onNav = onNav,
+                dateTimeFormatter = formatter,
             )
         }
     }
@@ -130,13 +139,7 @@ fun WorkoutMonthlyPage(page: MonthWorkoutStatic, onMonthChanged: (YearMonth) -> 
 @Composable
 private fun WorkoutDailyDetailCard(
     data: DailyWorkoutSummary,
-    dateTimeFormatter: DateTimeFormatter = remember {
-        DateTimeFormatterBuilder()
-            .append(DateTimeFormatter.ISO_DATE)
-            .appendLiteral(" ")
-            .appendText(ChronoField.DAY_OF_WEEK, TextStyle.FULL)
-            .toFormatter(Locale.getDefault())
-    },
+    dateTimeFormatter: DateTimeFormatter ,
     onNav: (String) -> Unit,
 ) {
     Column(

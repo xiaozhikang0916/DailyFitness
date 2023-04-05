@@ -9,6 +9,9 @@ data class RecordedDuration(
     val duration: Float = 0f,
     val timeUnit: TimeUnit = TimeUnit.Sec,
 ) : Comparable<RecordedDuration> {
+    companion object {
+        val Zero = RecordedDuration()
+    }
     fun uniform(): RecordedDuration {
         return if (this.timeUnit == TimeUnit.Sec) {
             this

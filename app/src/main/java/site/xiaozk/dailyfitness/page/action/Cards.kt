@@ -332,7 +332,7 @@ fun TrainActionCard(
 fun TrainActionWorkoutCard(
     workout: DailyWorkoutAction,
     modifier: Modifier = Modifier,
-    format: DateTimeFormatter = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault()),
+    formatter: DateTimeFormatter = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault()),
     onCardLongClick: (DailyWorkoutAction) -> Unit = {},
 ) {
     Row(
@@ -341,7 +341,7 @@ fun TrainActionWorkoutCard(
             .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = format.format(workout.instant), style = MaterialTheme.typography.bodyLarge)
+        Text(text = formatter.format(workout.instant), style = MaterialTheme.typography.bodyLarge)
         Text(text = workout.displayText.joinToString(separator = " "), style = MaterialTheme.typography.bodyLarge)
     }
 }
