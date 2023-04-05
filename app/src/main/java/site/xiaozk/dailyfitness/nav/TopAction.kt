@@ -13,7 +13,12 @@ data class TopAction(
     val valid: Boolean = true,
 ) {
     companion object {
-        fun iconRouteAction(icon: ImageVector, actionDesc: String? = null, route: Route, valid: Boolean = true) =
+        fun iconRouteAction(
+            icon: ImageVector,
+            actionDesc: String? = null,
+            route: Route,
+            valid: Boolean = true,
+        ) =
             TopAction(IconType(icon, actionDesc), RouteAction(route), valid)
 
         fun textPageAction(text: String, type: PageHandleType, valid: Boolean = true) =

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,8 +39,10 @@ import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
+import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
@@ -66,6 +70,13 @@ fun WorkoutMonthlyPage() {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(
                 title = "训练月报",
+                actionItems = listOf(
+                    TopAction.iconRouteAction(
+                        Icons.Default.Add,
+                        "添加训练动作",
+                        Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                    )
+                )
             )
         )
     }
