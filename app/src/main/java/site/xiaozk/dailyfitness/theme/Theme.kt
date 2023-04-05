@@ -1,8 +1,5 @@
 package site.xiaozk.dailyfitness.theme
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,11 +9,10 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
-import java.lang.IllegalStateException
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -50,7 +46,6 @@ private val LightColors = lightColorScheme(
     scrim = md_theme_light_scrim,
 )
 
-
 private val DarkColors = darkColorScheme(
     primary = md_theme_dark_primary,
     onPrimary = md_theme_dark_onPrimary,
@@ -83,13 +78,12 @@ private val DarkColors = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
-
 @Composable
 fun DailyFitnessTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -102,11 +96,10 @@ fun DailyFitnessTheme(
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
+        val systemUiController = rememberSystemUiController()
         SideEffect {
-            // TODO window controller
-            val window = view.context.findActivity().window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            systemUiController.setStatusBarColor(Color.Transparent, true)
+            systemUiController.setNavigationBarColor(Color.Transparent)
         }
     }
 
@@ -115,18 +108,4 @@ fun DailyFitnessTheme(
         typography = Typography,
         content = content
     )
-}
-
-private fun Context.findActivity(): Activity {
-    var context: Context = this
-    if (context is Activity) {
-        return context
-    }
-    while (context is ContextWrapper) {
-        context = context.baseContext
-        if (context is Activity) {
-            return context
-        }
-    }
-    throw IllegalStateException()
 }

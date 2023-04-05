@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -115,8 +114,7 @@ fun AppHost() {
     DailyFitnessTheme(darkTheme = false) {
         Scaffold(
             modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding(),
+                .fillMaxSize(),
             topBar = {
                 AnimatedTopBar(
                     appScaffoldViewModel = appScaffoldViewModel,
@@ -209,16 +207,29 @@ private fun AnimatedTopBar(
                         is IconType -> {
                             val icon = it.displayType
                             IconButton(onClick = onClick, enabled = it.valid) {
-                                Icon(painter = rememberVectorPainter(image = icon.icon), contentDescription = icon.actionDesc)
+                                Icon(
+                                    painter = rememberVectorPainter(image = icon.icon),
+                                    contentDescription = icon.actionDesc
+                                )
                             }
                         }
                     }
                 }
             }
             if (state.topAppBarCentered) {
-                CenterAlignedTopAppBar(title = title, navigationIcon = navigation, actions = actions, scrollBehavior = scrollBehavior)
+                CenterAlignedTopAppBar(
+                    title = title,
+                    navigationIcon = navigation,
+                    actions = actions,
+                    scrollBehavior = scrollBehavior
+                )
             } else {
-                TopAppBar(title = title, navigationIcon = navigation, actions = actions, scrollBehavior = scrollBehavior)
+                TopAppBar(
+                    title = title,
+                    navigationIcon = navigation,
+                    actions = actions,
+                    scrollBehavior = scrollBehavior
+                )
             }
         }
     }

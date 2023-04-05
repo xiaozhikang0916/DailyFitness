@@ -60,7 +60,8 @@ dependencies {
     kapt libs.android.hilt.compiler
     implementation platform(libs.androidx.compose.bom)
     implementation libs.bundles.androidx.compose
-    implementation libs.androidx.navigation.compose
+    implementation libs.bundles.accompanist
+    implementation libs.androidx.navigation.compose.core
     implementation libs.androidx.navigation.compose.hilt
     implementation project(":repository")
     implementation project(":database")
