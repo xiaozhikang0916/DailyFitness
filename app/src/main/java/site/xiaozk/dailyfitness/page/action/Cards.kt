@@ -35,6 +35,7 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.widget.SmallChip
 import java.time.ZoneId
@@ -242,6 +243,7 @@ fun TrainPartCard(
 fun TrainActionCard(
     actionPage: TrainActionStaticPage,
     modifier: Modifier = Modifier,
+    dateFormatter: DateTimeFormatter = getLocalDateFormatter().withZone(ZoneId.systemDefault()),
     isHead: Boolean = false,
     onClicked: (() -> Unit)? = null,
 ) {
@@ -275,12 +277,19 @@ fun TrainActionCard(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = action.actionName,
+                Row(
                     modifier = Modifier
                         .padding(top = 16.dp, start = 16.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = action.actionName,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(text = "${actionPage.workoutCount}组", style = MaterialTheme.typography.titleSmall)
+
+                }
                 Row(
                     modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -304,23 +313,29 @@ fun TrainActionCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = "训练总组数", style = MaterialTheme.typography.labelMedium)
-                    Text(text = actionPage.workoutCount.toString(), style = MaterialTheme.typography.labelLarge)
-                }
-                Divider(modifier = Modifier.padding(horizontal = 4.dp), color = MaterialTheme.colorScheme.outline)
-                Row(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .width(IntrinsicSize.Max),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = "训练总天数", style = MaterialTheme.typography.labelMedium)
-                    Text(text = actionPage.workoutDays.toString(), style = MaterialTheme.typography.labelLarge)
+                actionPage.maxList.entries.forEachIndexed { index, dailyWorkoutAction ->
+                    if (index > 0) {
+                        Divider(
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.width(IntrinsicSize.Max),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+
+                        Text(
+                            text = dailyWorkoutAction.key,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Text(
+                            text = dateFormatter.format(dailyWorkoutAction.value),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+
                 }
             }
         }

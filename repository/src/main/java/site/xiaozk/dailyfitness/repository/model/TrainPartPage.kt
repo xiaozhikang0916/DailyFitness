@@ -32,5 +32,26 @@ data class TrainActionStaticPage(
     val workouts: List<DailyWorkoutAction> = emptyList(),
 ) {
     val workoutCount: Int = workouts.size
-    val workoutDays: Int = workouts.map { it.instant.atZone(ZoneId.systemDefault()).toLocalDate() }.distinct().size
+    val maxWeight: DailyWorkoutAction? = if (action.isWeightedAction) workouts.maxBy {
+        it.takenWeight ?: RecordedWeight.Zero
+    } else null
+    val maxCount: DailyWorkoutAction? = if (action.isCountedAction) workouts.maxBy{
+        it.takenCount
+    } else null
+    val maxDuration: DailyWorkoutAction? = if (action.isTimedAction) workouts.maxBy {
+        it.takenDuration ?: RecordedDuration.Zero
+    } else null
+
+    val maxList: Map<String, Instant>
+        get() = listOfNotNull(
+            maxWeight?.let {
+                it.takenWeight.toString() to it.instant
+            },
+            maxCount?.let {
+                "x ${it.takenCount}" to it.instant
+            },
+            maxDuration?.let {
+                it.takenDuration.toString() to it.instant
+            }
+        ).toMap()
 }
