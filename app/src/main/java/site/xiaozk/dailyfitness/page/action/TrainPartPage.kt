@@ -63,7 +63,7 @@ fun TrainPartPage(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(all = 12.dp)
+            .padding(horizontal = 12.dp)
             .nestedScroll(scaffoldProperty.scrollConnection),
         contentPadding = scaffoldProperty.padding,
         verticalArrangement = Arrangement.spacedBy(12.dp)
