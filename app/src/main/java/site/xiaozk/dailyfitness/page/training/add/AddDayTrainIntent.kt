@@ -81,7 +81,11 @@ class DailyWorkoutReducer
                     ActionMenuIntent(show = true)
                 )
             }
-            is SelectActionIntent -> AddDailyTrainResult(state = state.copy(selectedAction = intent.action, showActionMenuState = false, showPartMenuState = false))
+            is SelectActionIntent -> AddDailyTrainResult(state = state.copy(
+                selectedAction = intent.action,
+                showActionMenuState = false,
+                showPartMenuState = false
+            ).cleanInput())
             is InputCountIntent -> AddDailyTrainResult(state = state.copy(count = intent.count))
             is InputNoteIntent -> AddDailyTrainResult(state = state.copy(note = intent.note))
             is InputDurationIntent -> AddDailyTrainResult(state = state.copy(duration = intent.duration, timeUnit = intent.timeUnit))

@@ -100,7 +100,7 @@ fun AddDailyTrainPage(
             label = "训练部位",
             expended = pageState.showPartMenuState,
             items = allParts,
-            onItemSelected = {
+            onItemSelected = { it ->
                 onIntent(SelectPartIntent(it))
             },
             itemToString = { it.part.partName },
@@ -120,9 +120,6 @@ fun AddDailyTrainPage(
                     onIntent(SelectActionIntent(it))
                 },
                 itemToString = { it.actionName },
-                onDismiss = {
-//                    onIntent(ActionMenuIntent(false))
-                },
             )
         }
 
