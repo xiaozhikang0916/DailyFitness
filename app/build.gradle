@@ -66,4 +66,5 @@ dependencies {
     implementation project(":repository")
     implementation project(":database")
     implementation project(":calendar")
+    implementation project(":chart")
 }

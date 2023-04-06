@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,11 +30,16 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.mapNotNull
+import site.xiaozk.chart.LineChart
+import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.SnackbarData
+import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
-import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.LocalDate
 import java.time.ZoneId
@@ -59,10 +65,30 @@ fun BodyDetailPage() {
             )
         )
     }
+    LaunchedEffect(key1 = Unit) {
+        appScaffoldViewModel.snackbarFlow.emitAll(
+            viewModel.deleteAction.mapNotNull {
+                when (it) {
+                    ActionStatus.Done -> {
+                        SnackbarData("删除成功")
+                    }
+
+                    is ActionStatus.Failed -> {
+                        SnackbarData("删除失败", SnackbarStatus.Error)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            }
+        )
+    }
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
     }
-    BodyDetailPage(data = viewModel.bodyDetail.collectAsState(initial = BodyDataWithDate()).value) {
+    val state = viewModel.bodyDetail.collectAsState(initial = BodyDetailPageState()).value
+    BodyDetailPage(data = state) {
         deleteBodyDialog = it
     }
 
@@ -103,9 +129,9 @@ fun BodyDetailPage() {
 }
 
 @Composable
-fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> Unit) {
+fun BodyDetailPage(data: BodyDetailPageState, onCardLongClick: (BodyDataRecord) -> Unit) {
     val dates =
-        data.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
+        data.list.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
 
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
@@ -119,6 +145,9 @@ fun BodyDetailPage(data: BodyDataWithDate, onCardLongClick: (BodyDataRecord) -> 
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = scaffoldProperty.padding,
     ) {
+        item(key = "chart") {
+            LineChart(line = data.chartLine, modifier = Modifier.fillMaxWidth().height(300.dp))
+        }
         itemsIndexed(dates) { index, it ->
             BodyDetailDaily(day = it.first, data = it.second, format = formatter, onCardLongClick = onCardLongClick)
             if (index != dates.size - 1) {

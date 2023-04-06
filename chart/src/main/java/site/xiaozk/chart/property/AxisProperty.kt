@@ -2,6 +2,7 @@ package site.xiaozk.chart.property
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.unit.Dp
 import site.xiaozk.chart.point.Line
 
 /**
@@ -15,6 +16,8 @@ class AxisProperty(
     val xAxisValueRange: AxisValueRange<XAxisValueMapper> = NormalXAxisRange,
     val yAxisValueRange: AxisValueRange<YAxisValueMapper> = NormalYAxisRange,
     val axisLabelPadding: PaddingValues = PaddingValues(),
+    val axisWidth: Dp = Dp.Hairline,
+    val lineWidth: Dp = Dp.Hairline,
 )
 
 /**
