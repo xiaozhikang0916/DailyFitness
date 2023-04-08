@@ -20,6 +20,7 @@ import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -32,7 +33,6 @@ class DailyWorkoutRepository @Inject constructor(
     private val bodyDao: BodyDao,
     private val trainDao: TrainDao,
 ) : IDailyWorkoutRepository {
-    private var lastWorkout: DailyWorkoutAction? = null
 
     override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> {
         return workoutDao.getDailyWorkoutActions(
@@ -97,14 +97,15 @@ class DailyWorkoutRepository @Inject constructor(
     override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) {
         val workout = action.toDbEntity(user.uid)
         workoutDao.addDailyWorkoutAction(workout)
-        lastWorkout = action
     }
 
     override suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction) {
         workoutDao.deleteDailyWorkoutAction(action.toDbEntity(user.uid))
     }
 
-    override suspend fun getLastWorkout(date: LocalDate): DailyWorkoutAction? {
-        return lastWorkout?.takeIf { LocalDate.from(it.instant) == date }
+    override suspend fun getLastWorkout(user: User, date: LocalDate, zoneId: ZoneId): DailyWorkoutAction? {
+        return workoutDao.getLatestWorkout(user.uid).entries.firstOrNull()
+            ?.takeIf { it.value.actionTime.atZone(zoneId).toLocalDate() == date }?.toPair()
+            ?.toDailyWorkoutAction()
     }
 }

@@ -10,6 +10,7 @@ import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 
 /**
  * @author: xiaozhikang
@@ -33,5 +34,5 @@ interface IDailyWorkoutRepository {
 
     suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction)
 
-    suspend fun getLastWorkout(date: LocalDate = LocalDate.now()): DailyWorkoutAction?
+    suspend fun getLastWorkout(user: User, date: LocalDate = LocalDate.now(), zoneId: ZoneId = ZoneId.systemDefault()): DailyWorkoutAction?
 }

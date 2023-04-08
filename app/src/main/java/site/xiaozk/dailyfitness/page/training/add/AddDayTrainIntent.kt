@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTypeInference::class)
-
 package site.xiaozk.dailyfitness.page.training.add
 
 import android.util.Log
@@ -12,13 +10,13 @@ import site.xiaozk.dailyfitness.base.IntentResult
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
 import java.time.Instant
 import javax.inject.Inject
-import kotlin.experimental.ExperimentalTypeInference
 
 /**
  * @author: xiaozhikang
@@ -32,9 +30,13 @@ object LoadPartIntent : IDailyTrainIntent
 
 class PartLoadedIntent(val allParts: List<TrainPartGroup>) : IDailyTrainIntent
 
+object LoadLastWorkoutAction: IDailyTrainIntent
+
+class LastWorkoutLoadedIntent(val action: DailyWorkoutAction): IDailyTrainIntent
+
 class SetInstantIntent(val instant: Instant): IDailyTrainIntent
 
-class SelectPartIntent(val part: TrainPartGroup) : IDailyTrainIntent
+class SelectPartIntent(val part: TrainPartGroup, val openActionSelection: Boolean = true) : IDailyTrainIntent
 
 class PartMenuIntent(val show: Boolean) : IDailyTrainIntent
 
@@ -69,7 +71,38 @@ class DailyWorkoutReducer
                 emitAll(trainRepo.getAllTrainParts().map { PartLoadedIntent(it) })
             }
 
-            is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyWorkoutPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false))
+            is PartLoadedIntent -> AddDailyTrainResult(state = AddDailyWorkoutPageState(allParts = intent.allParts, showPartMenuState = false, showActionMenuState = false)) {
+                emit(LoadLastWorkoutAction)
+            }
+            LoadLastWorkoutAction -> AddDailyTrainResult(state = state.copy()) {
+                try {
+                    repo.getLastWorkout(userRepo.getCurrentUser())?.let {
+                        emit(LastWorkoutLoadedIntent(it))
+                    }
+                } catch (e: Exception) {
+                    Log.e("DailyWorkoutReducer", "Last workout loaded failed", e)
+                }
+            }
+            is LastWorkoutLoadedIntent -> AddDailyTrainResult(state = state.copy()) {
+                val part = state.allParts.find { it.part.id == intent.action.action.partId }
+                val action = part?.actions?.find { it.action.id == intent.action.action.id }
+                if (part != null && action != null) {
+                    emit(SelectPartIntent(part, false))
+                    emit(SelectActionIntent(action))
+                    intent.action.takenCount.takeIf { it > 0 }.let {
+                        emit(InputCountIntent(it.toString()))
+                    }
+                    intent.action.takenDuration?.let {
+                        emit(InputDurationIntent(it.duration.toString(), it.timeUnit))
+                    }
+                    intent.action.takenWeight?.let {
+                        emit(InputWeightIntent(it.weight.toString(), it.weightUnit))
+                    }
+                    intent.action.note.takeIf { it.isNotBlank() }?.let {
+                        emit(InputNoteIntent(it))
+                    }
+                }
+            }
             is SetInstantIntent -> AddDailyTrainResult(
                 state = state.copy(instant = intent.instant)
             )
@@ -79,9 +112,11 @@ class DailyWorkoutReducer
                 showActionMenuState = false,
                 selectedAction = null
             ).cleanInput()) {
-                emit(
-                    ActionMenuIntent(show = true)
-                )
+                if (intent.openActionSelection) {
+                    emit(
+                        ActionMenuIntent(show = true)
+                    )
+                }
             }
             is SelectActionIntent -> AddDailyTrainResult(state = state.copy(
                 selectedAction = intent.action,

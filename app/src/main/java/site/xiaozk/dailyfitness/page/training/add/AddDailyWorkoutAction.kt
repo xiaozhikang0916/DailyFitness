@@ -99,8 +99,9 @@ fun AddDailyTrainPage(
                 .padding(horizontal = 12.dp),
             label = "训练部位",
             expended = pageState.showPartMenuState,
+            selectedIndex = pageState.allParts.indexOf(pageState.selectedPart),
             items = allParts,
-            onItemSelected = { it ->
+            onItemSelected = { _, it ->
                 onIntent(SelectPartIntent(it))
             },
             itemToString = { it.part.partName },
@@ -115,8 +116,9 @@ fun AddDailyTrainPage(
                     .padding(horizontal = 12.dp),
                 label = "训练动作",
                 expended = pageState.showActionMenuState,
+                selectedIndex = selectedPart.actions.indexOf(pageState.selectedAction),
                 items = selectedPart.actions,
-                onItemSelected = { it ->
+                onItemSelected = { _, it ->
                     onIntent(SelectActionIntent(it))
                 },
                 itemToString = { it.actionName },

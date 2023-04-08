@@ -36,4 +36,6 @@ interface WorkoutDao {
     @Delete
     suspend fun deleteDailyWorkoutAction(dailyTrainAction: DBDailyWorkoutAction)
 
+    @Query("SELECT * FROM daily_train_action LEFT JOIN train_action on usingActionId = train_action.id WHERE userId = :userId ORDER BY actionTime DESC LIMIT 1")
+    suspend fun getLatestWorkout(userId: Int): Map<DBTrainAction, DBDailyWorkoutAction>
 }
