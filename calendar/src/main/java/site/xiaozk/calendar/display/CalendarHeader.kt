@@ -2,7 +2,6 @@ package site.xiaozk.calendar.display
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -38,26 +37,22 @@ private val DefaultYeadMonthFormatter: DateTimeFormatter
 @Composable
 fun CalendarHeader(
     month: YearMonth,
+    modifier: Modifier = Modifier,
     dateTimeFormatter: DateTimeFormatter = remember { DefaultYeadMonthFormatter },
     onMonthChanged: ((YearMonth) -> Unit)? = null,
     showNavigator: Boolean = onMonthChanged != null,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
+        modifier = modifier.height(56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = dateTimeFormatter.format(month),
-            modifier = Modifier
-                .padding(start = 24.dp)
         )
         Spacer(modifier = Modifier.weight(1f))
         if (showNavigator) {
             Row(
                 modifier = Modifier
-                    .padding(end = 12.dp)
                     .padding(vertical = 4.dp)
             ) {
                 IconButton(onClick = {

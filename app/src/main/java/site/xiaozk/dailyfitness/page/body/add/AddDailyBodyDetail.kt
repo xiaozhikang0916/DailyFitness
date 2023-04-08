@@ -34,6 +34,7 @@ import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.RouteAction
 import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.repository.model.BodyField
 
 /**
  * @author: xiaozhikang
@@ -96,12 +97,12 @@ fun AddDailyBodyDetail(state: AddDailyBodyState, onIntent: (IDailyBodyIntent) ->
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        val focus = InputField.values().map { FocusRequester() }
+        val focus = BodyField.values().map { FocusRequester() }
         itemsIndexed(
-            InputField.values(),
+            BodyField.values(),
             span = { _, it ->
                 when (it) {
-                    InputField.Weight -> GridItemSpan(2)
+                    BodyField.Weight -> GridItemSpan(2)
                     else -> GridItemSpan(1)
                 }
             }
@@ -125,7 +126,7 @@ fun AddDailyBodyDetail(state: AddDailyBodyState, onIntent: (IDailyBodyIntent) ->
                 },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
-                    imeAction = if (index < InputField.values().size - 1) ImeAction.Next else ImeAction.Done
+                    imeAction = if (index < BodyField.values().size - 1) ImeAction.Next else ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(onNext = { focus.getOrNull(index + 1)?.requestFocus() }),
                 isError = state.bodyField.checkFieldValid(it).not()

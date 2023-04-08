@@ -3,6 +3,7 @@ package site.xiaozk.dailyfitness.page.body
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,8 +14,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.mapNotNull
+import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.chart.LineChart
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
@@ -40,8 +45,10 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
+import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -87,10 +94,13 @@ fun BodyDetailPage() {
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
     }
-    val state = viewModel.bodyDetail.collectAsState(initial = BodyDetailPageState()).value
-    BodyDetailPage(data = state) {
-        deleteBodyDialog = it
-    }
+    val state = viewModel.bodyDetail.collectAsState().value
+    BodyDetailPage(
+        data = state,
+        onCardLongClick = { deleteBodyDialog = it },
+        onMonthChanged = { viewModel.month = it },
+        onFieldFiltered = { viewModel.field = it },
+    )
 
     deleteBodyDialog?.let {
         val dismiss by rememberUpdatedState(newValue = { deleteBodyDialog = null })
@@ -129,7 +139,12 @@ fun BodyDetailPage() {
 }
 
 @Composable
-fun BodyDetailPage(data: BodyDetailPageState, onCardLongClick: (BodyDataRecord) -> Unit) {
+fun BodyDetailPage(
+    data: BodyDetailPageState,
+    onCardLongClick: (BodyDataRecord) -> Unit,
+    onMonthChanged: (YearMonth) -> Unit = {},
+    onFieldFiltered: (BodyField) -> Unit = {},
+) {
     val dates =
         data.list.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
 
@@ -140,21 +155,76 @@ fun BodyDetailPage(data: BodyDetailPageState, onCardLongClick: (BodyDataRecord) 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp)
             .nestedScroll(scaffoldProperty.scrollConnection),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = scaffoldProperty.padding,
     ) {
         item(key = "chart") {
-            LineChart(line = data.chartLine, modifier = Modifier.fillMaxWidth().height(300.dp))
+            BodyChart(
+                data = data,
+                modifier = Modifier.fillMaxWidth(),
+                onMonthChanged = onMonthChanged,
+                onFieldFiltered = onFieldFiltered,
+            )
         }
-        itemsIndexed(dates) { index, it ->
-            BodyDetailDaily(day = it.first, data = it.second, format = formatter, onCardLongClick = onCardLongClick)
+        itemsIndexed(dates, key = { _, item -> item.second.instant }) { index, it ->
+            BodyDetailDaily(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                day = it.first,
+                data = it.second,
+                format = formatter,
+                onCardLongClick = onCardLongClick
+            )
             if (index != dates.size - 1) {
                 Divider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 4.dp)
+                        .padding(horizontal = 12.dp)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BodyChart(
+    data: BodyDetailPageState,
+    modifier: Modifier = Modifier,
+    onMonthChanged: (YearMonth) -> Unit = {},
+    onFieldFiltered: (BodyField) -> Unit = {},
+) {
+    Column(modifier = modifier) {
+        CalendarHeader(
+            month = data.month,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp),
+            onMonthChanged = onMonthChanged
+        )
+        LineChart(
+            line = data.chartLine,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(horizontal = 12.dp),
+            displayMonth = data.month,
+        )
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            BodyField.values().forEach {
+                FilterChip(
+                    selected = data.selectedField == it,
+                    onClick = { onFieldFiltered(it) },
+                    label = {
+                        Text(text = it.label)
+                    },
+                    enabled = data.hasFieldData(it)
                 )
             }
         }
@@ -164,13 +234,14 @@ fun BodyDetailPage(data: BodyDetailPageState, onCardLongClick: (BodyDataRecord) 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BodyDetailDaily(
+    modifier: Modifier,
     day: LocalDate,
     data: BodyDataRecord,
     format: DateTimeFormatter,
     onCardLongClick: (BodyDataRecord) -> Unit,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .combinedClickable(onLongClick = { onCardLongClick(data) }) { }
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)

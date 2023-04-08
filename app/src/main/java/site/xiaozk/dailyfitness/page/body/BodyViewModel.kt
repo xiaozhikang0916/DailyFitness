@@ -5,30 +5,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
-import site.xiaozk.chart.point.IPoint
-import site.xiaozk.chart.point.Line
+import site.xiaozk.chart.BodyChartLine
+import site.xiaozk.chart.BodyChartPoint
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.page.body.add.InputField
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
-import java.text.DecimalFormat
-import java.time.Instant
+import site.xiaozk.dailyfitness.repository.model.BodyField
 import java.time.YearMonth
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import javax.inject.Inject
 
 /**
@@ -44,7 +39,6 @@ class BodyViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val _month: StateFlow<YearMonth> = savedStateHandle.getStateFlow("date", YearMonth.now())
-        .stateIn(viewModelScope, SharingStarted.Eagerly, YearMonth.now())
 
     var month: YearMonth
         get() = _month.value
@@ -52,22 +46,34 @@ class BodyViewModel @Inject constructor(
             savedStateHandle["date"] = value
         }
 
-    val bodyDetail: Flow<BodyDetailPageState> = _month.transformLatest {
+    private val _field: StateFlow<BodyField> = savedStateHandle.getStateFlow("field", BodyField.Weight)
+
+    var field: BodyField
+        get() = _field.value
+        set(value) {
+            savedStateHandle["field"] = value
+        }
+
+    private val bodyDetailFlow: StateFlow<BodyDetailLoadState> = _month.transformLatest { month ->
         val user = userRepo.getCurrentUser()
         emitAll(
             bodyRepo.getPersonDailyDataFlow(
                 user,
-                it.atDay(1),
-                it.atEndOfMonth()
+                month.atDay(1),
+                month.atEndOfMonth()
             ).map { data ->
-                BodyDetailPageState(
-                    list = data,
-                    month = it,
-                    loadStatus = ActionStatus.Done,
-                )
+                BodyDetailLoadState(list = data, loadStatus = ActionStatus.Done, month = month)
             }
         )
-    }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, BodyDetailLoadState())
+
+    val bodyDetail: StateFlow<BodyDetailPageState> = combine(
+        bodyDetailFlow,
+        _field,
+    ) { body, field ->
+        BodyDetailPageState(loadState = body, selectedField = field)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, BodyDetailPageState())
+
 
     private val _deleteAction = MutableStateFlow<ActionStatus>(ActionStatus.Idle)
     val deleteAction = _deleteAction.asStateFlow()
@@ -83,50 +89,35 @@ class BodyViewModel @Inject constructor(
             }
         }
     }
+
 }
 
-data class BodyDetailPageState(
+data class BodyDetailLoadState(
     val list: BodyDataWithDate = BodyDataWithDate(),
-    val month: YearMonth = YearMonth.now(),
     val loadStatus: ActionStatus = ActionStatus.Idle,
-    val selectedField: InputField = InputField.Weight,
+    val month: YearMonth = YearMonth.now(),
+)
+
+data class BodyDetailPageState(
+    val loadState: BodyDetailLoadState = BodyDetailLoadState(),
+    val selectedField: BodyField = BodyField.Weight,
 ) {
-    val chartLine: Line = list.personData.entries.flatMap { it.value }
+    val list: BodyDataWithDate
+        get() = loadState.list
+    val loadStatus: ActionStatus
+        get() = loadState.loadStatus
+    val month: YearMonth
+        get() = loadState.month
+
+    val chartLine: BodyChartLine = list.personData.entries.flatMap { it.value }
         .map {
             BodyChartPoint(
                 it.instant,
-                when (selectedField) {
-                    InputField.Weight ->
-                        it.weight
-
-                    InputField.Bust ->
-                        it.bustSize
-
-                    InputField.Waist ->
-                        it.waistSize
-
-                    InputField.Hip ->
-                        it.hipSize
-
-                    InputField.BodyFat ->
-                        it.bodyFat
-                }
+                selectedField.property(it)
             )
-        }.let(::Line)
-}
+        }.let(::BodyChartLine)
 
-private val bodyChartDateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withZone(ZoneId.systemDefault())
-
-data class BodyChartPoint(
-    val date: Instant,
-    val value: Float,
-) : IPoint {
-    override val xValue: Float
-        get() = date.toEpochMilli().toFloat()
-    override val yValue: Float
-        get() = value
-    override val xDisplay: String
-        get() = bodyChartDateFormat.format(date)
-    override val yDisplay: String
-        get() = DecimalFormat("#.#").format(value)
+    fun hasFieldData(field: BodyField): Boolean {
+        return list.personData.values.any { it.any { v -> field.property(v) > 0 } }
+    }
 }

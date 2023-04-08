@@ -31,6 +31,8 @@ navigation-compose = "2.5.3"
 navigation-compose-hilt = "1.0.0"
 accompanist = "0.28.0"
 
+vico = "1.6.4"
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
@@ -63,6 +65,11 @@ androidx-navigation-compose-hilt = { module = "androidx.hilt:hilt-navigation-com
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist"}
+
+vico-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vico"}
+vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico"}
+vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico"}
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]
 accompanist = ["accompanist-systemuicontroller"]
+vico = ["vico-core", "vico-compose", "vico-compose-m3"]

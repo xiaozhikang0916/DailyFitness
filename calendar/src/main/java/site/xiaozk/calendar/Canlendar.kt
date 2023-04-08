@@ -38,7 +38,12 @@ fun Calendar(
     onMonthChanged: ((YearMonth) -> Unit)? = null,
     showMonthNavigator: Boolean = onMonthChanged != null,
     calendarHeader: @Composable () -> Unit = {
-        CalendarHeader(month = displayMonth.yearMonth, showNavigator = showMonthNavigator, onMonthChanged = onMonthChanged)
+        CalendarHeader(
+            month = displayMonth.yearMonth,
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp),
+            showNavigator = showMonthNavigator,
+            onMonthChanged = onMonthChanged
+        )
     },
     weekdayIndicator: @Composable () -> Unit = {
         WeekdayIndicator(firstDayOfWeek)

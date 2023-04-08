@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
+import site.xiaozk.dailyfitness.repository.model.BodyField
 import java.time.Instant
 import javax.inject.Inject
 
@@ -38,7 +39,7 @@ class AddDailyBodyViewModel @Inject constructor(
 
 data class AddDailyBodyState(
     val submitStatus: ActionStatus = ActionStatus.Idle,
-    val bodyField: BodyField = BodyField(),
+    val bodyField: BodyFieldInput = BodyFieldInput(),
 ) {
 
     val valid: Boolean
@@ -62,25 +63,21 @@ data class AddDailyBodyState(
 }
 
 @JvmInline
-value class BodyField(
-    val valueMap: ArrayMap<InputField, String> = ArrayMap(InputField.values().size),
+value class BodyFieldInput(
+    val valueMap: ArrayMap<BodyField, String> = ArrayMap(BodyField.values().size),
 ) {
-    fun getField(field: InputField): String {
+    fun getField(field: BodyField): String {
         return valueMap[field] ?: ""
     }
 
-    fun checkFieldValid(field: InputField): Boolean {
+    fun checkFieldValid(field: BodyField): Boolean {
         val str = valueMap[field]
         return if (str.isNullOrBlank()) {
             true
         } else {
             val num = str.toFloatOrNull()
             if (num != null) {
-                if (field == InputField.BodyFat) {
-                    num in 0f..100f
-                } else {
-                    num >= 0f
-                }
+                num in field.fieldRange
             } else {
                 false
             }
@@ -88,34 +85,26 @@ value class BodyField(
     }
 
     val weight: String
-        get() = valueMap[InputField.Weight] ?: ""
+        get() = valueMap[BodyField.Weight] ?: ""
     val bustSize: String
-        get() = valueMap[InputField.Bust] ?: ""
+        get() = valueMap[BodyField.Bust] ?: ""
     val waistSize: String
-        get() = valueMap[InputField.Waist] ?: ""
+        get() = valueMap[BodyField.Waist] ?: ""
     val hipSize: String
-        get() = valueMap[InputField.Hip] ?: ""
+        get() = valueMap[BodyField.Hip] ?: ""
     val bodyFat: String
-        get() = valueMap[InputField.BodyFat] ?: ""
+        get() = valueMap[BodyField.BodyFat] ?: ""
 
-    fun copy(mapBuilder: (MutableMap<InputField, String>) -> Unit): BodyField {
-        return BodyField(
+    fun copy(mapBuilder: (MutableMap<BodyField, String>) -> Unit): BodyFieldInput {
+        return BodyFieldInput(
             ArrayMap(this.valueMap).also(mapBuilder)
         )
     }
 
     val valid: Boolean
-        get() = InputField.values().all(::checkFieldValid) &&
+        get() = BodyField.values().all(::checkFieldValid) &&
             valueMap.isNotEmpty() &&
             valueMap.values.any {
                 it.isNullOrBlank().not()
             }
-}
-
-enum class InputField(val label: String, val trailing: String) {
-    Weight("体重", "kg"),
-    Bust("胸围", "cm"),
-    Waist("腰围", "cm"),
-    Hip("臀围", "cm"),
-    BodyFat("体脂率", "%");
 }

@@ -1,13 +1,12 @@
 package site.xiaozk.dailyfitness.page.body.add
 
-import android.content.Context
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
+import site.xiaozk.dailyfitness.repository.model.BodyField
 import javax.inject.Inject
 
 /**
@@ -20,7 +19,7 @@ sealed interface IDailyBodyIntent : IIntent
 
 typealias AddDailyBodyResult = IntentResult<AddDailyBodyState, IDailyBodyIntent>
 
-class InputIntent(val num: String, val field: InputField) : IDailyBodyIntent
+class InputIntent(val num: String, val field: BodyField) : IDailyBodyIntent
 
 object SubmitBodyIntent : IDailyBodyIntent
 

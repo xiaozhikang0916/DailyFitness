@@ -38,3 +38,17 @@ data class BodyDataRecord(
         )
     }
 }
+
+
+enum class BodyField(
+    val label: String,
+    val trailing: String,
+    val property: (BodyDataRecord) -> Float,
+    val fieldRange: ClosedFloatingPointRange<Float> = 0f..Float.MAX_VALUE,
+) {
+    Weight("体重", "kg", BodyDataRecord::weight),
+    Bust("胸围", "cm", BodyDataRecord::bustSize),
+    Waist("腰围", "cm", BodyDataRecord::waistSize),
+    Hip("臀围", "cm", BodyDataRecord::hipSize),
+    BodyFat("体脂率", "%", BodyDataRecord::bodyFat, 0f..100f);
+}
