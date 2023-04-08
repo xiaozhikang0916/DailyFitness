@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
+import java.time.ZoneId
 
 /**
  * @author: xiaozhikang
@@ -86,7 +88,9 @@ fun TrainingDayDetail(
     modifier: Modifier = Modifier,
     onTrainingActionDeleted: (DailyWorkoutAction) -> Unit = {},
 ) {
-    val dateFormat = getLocalDateFormatter()
+    val dateFormat = remember {
+        getLocalDateFormatter().withZone(ZoneId.systemDefault())
+    }
     val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = modifier

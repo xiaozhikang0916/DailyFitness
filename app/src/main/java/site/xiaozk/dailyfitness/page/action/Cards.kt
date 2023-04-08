@@ -30,6 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
@@ -356,7 +359,28 @@ fun TrainActionWorkoutCard(
             .then(modifier),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = formatter.format(workout.instant), style = MaterialTheme.typography.bodyLarge)
-        Text(text = workout.displayText.joinToString(separator = " "), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = formatter.format(workout.instant),
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
+        )
+
+        val string = buildAnnotatedString {
+            append(workout.displayText.joinToString(separator = " "))
+            if (workout.note.isNotBlank()) {
+                append('\n')
+                pushStyle(MaterialTheme.typography.bodySmall.toSpanStyle())
+                append(workout.note)
+                pop()
+            }
+        }
+        Text(
+            text = string,
+            modifier = Modifier.weight(1f, false),
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 2,
+            textAlign = TextAlign.End,
+        )
     }
 }

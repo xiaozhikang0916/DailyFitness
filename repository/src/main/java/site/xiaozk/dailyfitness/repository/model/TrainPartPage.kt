@@ -32,13 +32,13 @@ data class TrainActionStaticPage(
     val workouts: List<DailyWorkoutAction> = emptyList(),
 ) {
     val workoutCount: Int = workouts.size
-    val maxWeight: DailyWorkoutAction? = if (action.isWeightedAction) workouts.maxBy {
+    val maxWeight: DailyWorkoutAction? = if (action.isWeightedAction) workouts.maxByOrNull {
         it.takenWeight ?: RecordedWeight.Zero
     } else null
-    val maxCount: DailyWorkoutAction? = if (action.isCountedAction) workouts.maxBy{
+    val maxCount: DailyWorkoutAction? = if (action.isCountedAction) workouts.maxByOrNull {
         it.takenCount
     } else null
-    val maxDuration: DailyWorkoutAction? = if (action.isTimedAction) workouts.maxBy {
+    val maxDuration: DailyWorkoutAction? = if (action.isTimedAction) workouts.maxByOrNull {
         it.takenDuration ?: RecordedDuration.Zero
     } else null
 

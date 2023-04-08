@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,7 @@ import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
+import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 
 /**
  * @author: xiaozhikang
@@ -60,6 +62,9 @@ fun TrainPartPage(
     onTrainActionClick: (TrainActionStaticPage) -> Unit = {},
 ) {
     val scaffoldProperty = LocalScaffoldProperty.current
+    val dateFormatter = remember {
+        getLocalDateFormatter()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -79,7 +84,8 @@ fun TrainPartPage(
             TrainActionCard(
                 actionPage = it,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                dateFormatter = dateFormatter,
             ) { onTrainActionClick(it) }
         }
     }
