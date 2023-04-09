@@ -45,6 +45,7 @@ import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
@@ -66,7 +67,7 @@ import javax.inject.Inject
 @Composable
 fun WorkoutMonthlyPage() {
     val viewModel: WorkoutMonthlyPageViewModel = hiltViewModel()
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(

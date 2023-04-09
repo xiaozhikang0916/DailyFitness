@@ -18,6 +18,7 @@ import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
@@ -32,7 +33,7 @@ import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 fun TrainActionPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val actionState = viewModel.trainActionStatic.collectAsState(initial = TrainActionStaticPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = actionState) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(

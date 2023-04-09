@@ -24,6 +24,7 @@ import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
@@ -36,7 +37,7 @@ import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 fun TrainPartPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.trainPartStatic.collectAsState(initial = TrainPartStaticPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = part) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(

@@ -31,14 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem.addDailyBodyDetailNav
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav
@@ -52,11 +50,11 @@ import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.RouteAction
 import site.xiaozk.dailyfitness.nav.ScaffoldProperty
-import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.TextButtonType
 import site.xiaozk.dailyfitness.nav.TrainPartGraph.trainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup.trainingDayGraph
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup.workoutStaticGraph
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 import site.xiaozk.dailyfitness.widget.BackButton
 import site.xiaozk.dailyfitness.widget.HostFab
@@ -75,16 +73,15 @@ import site.xiaozk.dailyfitness.widget.HostFab
 @Composable
 fun AppHost() {
     val hostNavController = rememberNavController()
-    val entry = hostNavController.currentBackStackEntryAsState().value
-    val appScaffoldViewModel = entry?.let { hiltViewModel<AppScaffoldViewModel>(it) }
+    val appScaffoldViewModel = localAppScaffoldViewModel()
     val scaffoldState = remember {
         mutableStateOf<IScaffoldState?>(null)
     }
-    appScaffoldViewModel?.scaffoldState?.collectAsState()?.value?.let {
+    appScaffoldViewModel.scaffoldState.collectAsState().value?.let {
         scaffoldState.value = it
     }
     LaunchedEffect(key1 = appScaffoldViewModel) {
-        appScaffoldViewModel?.routeAction?.collect {
+        appScaffoldViewModel.routeAction.collect {
             if (it.isBack) {
                 hostNavController.popBackStack()
             } else {
@@ -95,18 +92,8 @@ fun AppHost() {
     val snackbarHostState = remember {
         SnackbarHostState()
     }
-    // redirect snackbar flow from view model, which is changing in page switching
-    val snackbarFlow = remember {
-        MutableStateFlow<SnackbarData?>(null)
-    }
     LaunchedEffect(key1 = appScaffoldViewModel) {
-        appScaffoldViewModel?.snackbarFlow?.collect {
-            snackbarFlow.emit(it)
-        }
-    }
-    // now show-snack-bar will not re-launch if page is changed
-    LaunchedEffect(key1 = Unit) {
-        snackbarFlow.filterNotNull().collect {
+        appScaffoldViewModel.snackbarFlow.filterNotNull().collect {
             snackbarHostState.showSnackbar(message = it.message, withDismissAction = true)
         }
     }
@@ -120,7 +107,7 @@ fun AppHost() {
                     appScaffoldViewModel = appScaffoldViewModel,
                     scrollBehavior = scroll
                 ) {
-                    appScaffoldViewModel?.onRoute(it)
+                    appScaffoldViewModel.onRoute(it)
                 }
             },
             bottomBar = {
@@ -131,7 +118,7 @@ fun AppHost() {
             },
             floatingActionButton = {
                 HostFab(scaffoldState = scaffoldState.value, topAppBarState = scroll.state) {
-                    appScaffoldViewModel?.onRoute(it)
+                    appScaffoldViewModel.onRoute(it)
                 }
             },
             snackbarHost = {

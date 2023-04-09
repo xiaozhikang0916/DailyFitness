@@ -44,6 +44,7 @@ import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.SnackbarData
 import site.xiaozk.dailyfitness.nav.SnackbarStatus
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
@@ -64,7 +65,7 @@ import java.util.Locale
 fun BodyDetailPage() {
     val viewModel: BodyViewModel = hiltViewModel()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(

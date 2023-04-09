@@ -22,6 +22,7 @@ import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -38,7 +39,7 @@ import java.time.format.FormatStyle
 @Composable
 fun HomeWorkoutPage() {
     val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(

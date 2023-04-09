@@ -34,6 +34,7 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
@@ -50,7 +51,7 @@ fun AddDailyWorkoutAction() {
     val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = pageState.value.valid) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(

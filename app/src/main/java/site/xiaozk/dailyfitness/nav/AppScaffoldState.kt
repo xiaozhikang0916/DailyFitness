@@ -1,15 +1,21 @@
 package site.xiaozk.dailyfitness.nav
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.BufferOverflow
@@ -23,7 +29,6 @@ import javax.inject.Inject
  * @create: 2023/2/28
  */
 
-@OptIn(ExperimentalMaterial3Api::class)
 sealed interface IScaffoldState {
     val title: String
     val titleAlign: TextAlign
@@ -144,6 +149,18 @@ class AppScaffoldViewModel @Inject constructor() : ViewModel() {
         back()
     }
 }
+
+@Composable
+fun localAppScaffoldViewModel(): AppScaffoldViewModel {
+    return hiltViewModel(checkNotNull(LocalContext.current.findActivity()))
+}
+
+private tailrec fun Context.findActivity(): ComponentActivity? =
+    when (this) {
+        is ComponentActivity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
 
 @Immutable
 class ScaffoldProperty(

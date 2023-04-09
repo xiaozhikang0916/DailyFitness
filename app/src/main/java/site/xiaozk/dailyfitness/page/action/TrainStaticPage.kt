@@ -17,6 +17,7 @@ import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 
@@ -30,7 +31,7 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 fun TrainStaticPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.homeTrainPartStatic.collectAsState(initial = HomeTrainPartPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(

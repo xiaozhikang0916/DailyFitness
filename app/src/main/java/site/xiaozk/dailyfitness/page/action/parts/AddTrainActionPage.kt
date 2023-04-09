@@ -40,6 +40,7 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -57,7 +58,7 @@ fun AddTrainActionPage() {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState().value
     val status = state.status
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = state.inputValid) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(

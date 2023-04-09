@@ -34,6 +34,7 @@ import site.xiaozk.dailyfitness.nav.PageHandleAction
 import site.xiaozk.dailyfitness.nav.PageHandleType
 import site.xiaozk.dailyfitness.nav.RouteAction
 import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyField
 
 /**
@@ -47,7 +48,7 @@ fun AddDailyBodyDetail() {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(

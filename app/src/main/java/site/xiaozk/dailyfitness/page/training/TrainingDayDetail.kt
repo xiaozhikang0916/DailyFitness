@@ -41,6 +41,7 @@ import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
@@ -57,7 +58,7 @@ fun TrainingDayDetailPage() {
     val viewModel: TrainingDayDetailViewModel = hiltViewModel()
     val data = viewModel.trainingData
 
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(

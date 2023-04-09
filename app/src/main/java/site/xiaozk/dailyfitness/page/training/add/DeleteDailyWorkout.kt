@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.SnackbarStatus
+import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
@@ -36,7 +37,7 @@ import javax.inject.Inject
 
 @Composable
 fun DeleteDailyWorkout() {
-    val appScaffoldViewModel: AppScaffoldViewModel = hiltViewModel()
+    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     val viewModel: DeleteDailyWorkoutViewModel = hiltViewModel()
     val dismiss = remember {
         {
