@@ -10,8 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -38,22 +40,33 @@ fun TrainPartPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.trainPartStatic.collectAsState(initial = TrainPartStaticPage()).value
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
-    LaunchedEffect(key1 = part) {
-        appScaffoldViewModel.scaffoldState.emit(
-            SubpageScaffoldState(
-                title = "训练动作",
-                actionItems = listOf(
-                    TopAction.iconRouteAction(
-                        icon = Icons.Default.Add,
-                        actionDesc = "add new train action",
-                        route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(part.trainPart)),
+    if (part == null) {
+        SideEffect {
+            appScaffoldViewModel.back()
+        }
+    } else {
+        LaunchedEffect(key1 = part) {
+            appScaffoldViewModel.scaffoldState.emit(
+                SubpageScaffoldState(
+                    title = "训练动作",
+                    actionItems = listOf(
+                        TopAction.iconRouteAction(
+                            icon = Icons.Default.Add,
+                            actionDesc = "add new train action",
+                            route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(part.trainPart)),
+                        ),
+                        TopAction.iconRouteAction(
+                            icon = Icons.Default.Edit,
+                            actionDesc = "edit train group name",
+                            route = Route(TrainPartGraph.AddTrainPartNavItem.getRoute(part.trainPart)),
+                        )
                     )
                 )
             )
-        )
-    }
-    TrainPartPage(trainPartStaticPage = part) {
-        appScaffoldViewModel.onRoute(TrainPartGraph.TrainActionDetailNavItem.getRoute(it.action))
+        }
+        TrainPartPage(trainPartStaticPage = part) {
+            appScaffoldViewModel.onRoute(TrainPartGraph.TrainActionDetailNavItem.getRoute(it.action))
+        }
     }
 }
 

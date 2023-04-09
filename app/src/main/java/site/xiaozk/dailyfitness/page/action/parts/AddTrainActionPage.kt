@@ -59,10 +59,11 @@ fun AddTrainActionPage() {
     val state = viewModel.state.collectAsState().value
     val status = state.status
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = if (state.action?.id != 0) "编辑训练动作" else "新增训练动作"
     LaunchedEffect(key1 = state.inputValid) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(
-                title = "新增训练动作",
+                title = title,
                 actionItems = listOf(
                     TopAction.textPageAction(
                         text = "SAVE",

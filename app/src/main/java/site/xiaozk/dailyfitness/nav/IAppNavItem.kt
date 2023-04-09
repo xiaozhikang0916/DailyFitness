@@ -14,6 +14,7 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
+import site.xiaozk.dailyfitness.page.action.DeleteTrainActionDialog
 import site.xiaozk.dailyfitness.page.action.TrainActionPage
 import site.xiaozk.dailyfitness.page.action.TrainPartPage
 import site.xiaozk.dailyfitness.page.action.TrainStaticPage
@@ -265,6 +266,20 @@ object TrainPartGraph {
         fun getRoute(part: TrainPart? = null, action: TrainActionWithPart? = null): String {
             return "train_part/add_action?partId=${part?.id ?: 0}&actionId=${action?.id ?: 0}"
         }
+
+        fun getRoute(action: TrainAction? = null): String {
+            return "train_part/add_action?partId=${action?.partId ?: 0}&actionId=${action?.id ?: 0}"
+        }
+    }
+
+    object DeleteTrainActionNavItem : IAppNavItem {
+
+        override val route: String
+            get() = "train_part/delete_action?actionId={actionId}"
+
+        fun getRoute(action: TrainAction? = null): String {
+            return "train_part/delete_action?actionId=${action?.id ?: 0}"
+        }
     }
 
     fun NavGraphBuilder.trainPartGraph() {
@@ -310,6 +325,17 @@ object TrainPartGraph {
             )
         ) {
             AddTrainActionPage()
+        }
+        dialog(
+            DeleteTrainActionNavItem.route,
+            arguments = listOf(
+                navArgument("actionId") {
+                    nullable = false
+                    type = NavType.IntType
+                }
+            )
+        ) {
+            DeleteTrainActionDialog()
         }
     }
 }

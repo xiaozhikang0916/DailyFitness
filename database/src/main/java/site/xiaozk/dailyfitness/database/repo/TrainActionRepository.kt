@@ -1,7 +1,7 @@
 package site.xiaozk.dailyfitness.database.repo
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import site.xiaozk.dailyfitness.database.dao.TrainDao
@@ -37,18 +37,20 @@ class TrainActionRepository @Inject constructor(
         }
     }
 
-    override fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage> {
+    override fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage?> {
         return trainDao.getTrainActionWithWorkoutOfPart(partId).map {
-            val part = trainDao.getTrainPart(partId).first()
-            part to it
+            val part = trainDao.getTrainPart(partId).firstOrNull()
+            part?.let { p ->
+                p to it
+            }
         }.map {
-            it.toTrainPartStaticPage()
+            it?.toTrainPartStaticPage()
         }
     }
 
-    override fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage> {
+    override fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage?> {
         return trainDao.getTrainActionWithWorkout(actionId).map {
-            it.firstNotNullOf { it.takeIf { it.key.id == actionId } }.toPair().toTrainActionStatics()
+            it.firstNotNullOfOrNull { it.takeIf { it.key.id == actionId } }?.toPair()?.toTrainActionStatics()
         }
     }
 

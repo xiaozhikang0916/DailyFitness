@@ -58,6 +58,7 @@ fun AddTrainPartPage() {
     var name by remember(state.value.part) {
         mutableStateOf(state.value.part.partName)
     }
+    val title = if (state.value.part.id == 0) "新增训练部位" else "修改训练部位"
     AlertDialog(
         onDismissRequest = {
             appScaffoldViewModel.back()
@@ -74,7 +75,7 @@ fun AddTrainPartPage() {
                 Text(text = "取消")
             }
         },
-        title = { Text(text = "新增训练部位") },
+        title = { Text(text = title) },
         text = {
             OutlinedTextField(
                 value = name,

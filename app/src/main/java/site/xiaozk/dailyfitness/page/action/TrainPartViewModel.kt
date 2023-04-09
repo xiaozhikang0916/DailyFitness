@@ -27,10 +27,10 @@ class TrainPartViewModel @Inject constructor(
 
     val actionId: Int
         get() = savedStateHandle["actionId"] ?: -1
-    val trainPartStatic: Flow<TrainPartStaticPage> by lazy {
+    val trainPartStatic: Flow<TrainPartStaticPage?> by lazy {
         trainRepo.getTrainPartStatic(partId = partId)
     }
-    val trainActionStatic: Flow<TrainActionStaticPage> by lazy {
+    val trainActionStatic: Flow<TrainActionStaticPage?> by lazy {
         trainRepo.getTrainActionStatic(
             actionId = actionId
         )

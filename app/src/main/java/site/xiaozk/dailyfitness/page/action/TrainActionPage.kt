@@ -5,9 +5,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -16,7 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
+import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
@@ -34,19 +41,38 @@ fun TrainActionPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val actionState = viewModel.trainActionStatic.collectAsState(initial = TrainActionStaticPage()).value
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
-    LaunchedEffect(key1 = actionState) {
-        appScaffoldViewModel.scaffoldState.emit(
-            SubpageScaffoldState(
-                title = "训练动作",
+
+    if (actionState == null) {
+        SideEffect {
+            appScaffoldViewModel.back()
+        }
+    } else {
+        LaunchedEffect(key1 = actionState) {
+            appScaffoldViewModel.scaffoldState.emit(
+                SubpageScaffoldState(
+                    title = "训练动作",
+                    actionItems = listOf(
+                        TopAction.iconRouteAction(
+                            icon = Icons.Default.Edit,
+                            actionDesc = "edit train action name",
+                            route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(actionState.action)),
+                        ),
+                        TopAction.iconRouteAction(
+                            icon = Icons.Default.Delete,
+                            actionDesc = "delete train action",
+                            route = Route(TrainPartGraph.DeleteTrainActionNavItem.getRoute(actionState.action)),
+                        )
+                    )
+                )
             )
-        )
-    }
-    TrainActionPage(
-        actionStaticPage = actionState
-    ) {
-        appScaffoldViewModel.onRoute(
-            TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
-        )
+        }
+        TrainActionPage(
+            actionStaticPage = actionState
+        ) {
+            appScaffoldViewModel.onRoute(
+                TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
+            )
+        }
     }
 }
 

@@ -16,9 +16,9 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 interface ITrainActionRepository {
     fun getAllTrainPartStatics(): Flow<HomeTrainPartPage>
 
-    fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage>
+    fun getTrainPartStatic(partId: Int): Flow<TrainPartStaticPage?>
 
-    fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage>
+    fun getTrainActionStatic(actionId: Int): Flow<TrainActionStaticPage?>
 
     fun getAllTrainParts(): Flow<List<TrainPartGroup>>
 
