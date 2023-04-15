@@ -1,5 +1,8 @@
 # 健身日志 app
 
+[Readme English](./README.md)
+[简体中文](./README_cn.md)
+
 此项目是用于记录日常锻炼项目和身体情况测量数据的Android应用。
 
 ## 功能
