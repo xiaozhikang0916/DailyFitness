@@ -22,11 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
+import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
+import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -36,6 +40,8 @@ import site.xiaozk.dailyfitness.nav.RouteAction
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyField
+import site.xiaozk.dailyfitness.utils.label
+import site.xiaozk.dailyfitness.utils.trailing
 
 /**
  * @author: xiaozhikang
@@ -49,13 +55,15 @@ fun AddDailyBodyDetail() {
     val pageState = viewModel.stateFlow.collectAsState()
 
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(id = R.string.title_add_body_data)
+    val actionSave = stringResource(id = R.string.top_action_save)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(
-                title = "记录身体数据",
+                title = title,
                 actionItems = listOf(
                     TopAction.textPageAction(
-                        text = "SAVE",
+                        text = actionSave,
                         type = PageHandleType.SAVE,
                     )
                 )
@@ -77,9 +85,9 @@ fun AddDailyBodyDetail() {
     }
     LaunchedEffect(key1 = pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack("记录添加成功")
+            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("记录添加失败")
+            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
         }
     }
     AddDailyBodyDetail(pageState.value, viewModel::reduce)
@@ -122,7 +130,7 @@ fun AddDailyBodyDetail(state: AddDailyBodyState, onIntent: (IDailyBodyIntent) ->
                 },
                 supportingText = {
                     if (state.bodyField.checkFieldValid(it).not()) {
-                        Text(text = "输入数字有误")
+                        Text(text = stringResource(R.string.hint_invalid_input_num))
                     }
                 },
                 keyboardOptions = KeyboardOptions(

@@ -1,6 +1,9 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import android.content.Context
 import androidx.annotation.FloatRange
+import androidx.annotation.StringRes
+import site.xiaozk.dailyfitness.repository.R
 import java.time.Instant
 
 /**
@@ -41,14 +44,18 @@ data class BodyDataRecord(
 
 
 enum class BodyField(
-    val label: String,
-    val trailing: String,
+    @StringRes val labelRes: Int,
+    @StringRes val trailingRes: Int,
     val property: (BodyDataRecord) -> Float,
     val fieldRange: ClosedFloatingPointRange<Float> = 0f..Float.MAX_VALUE,
 ) {
-    Weight("体重", "kg", BodyDataRecord::weight),
-    Bust("胸围", "cm", BodyDataRecord::bustSize),
-    Waist("腰围", "cm", BodyDataRecord::waistSize),
-    Hip("臀围", "cm", BodyDataRecord::hipSize),
-    BodyFat("体脂率", "%", BodyDataRecord::bodyFat, 0f..100f);
+    Weight(R.string.label_body_weight, R.string.label_weight_unit_kg, BodyDataRecord::weight),
+    Bust(R.string.label_bust_size, R.string.label_length_unit_cm, BodyDataRecord::bustSize),
+    Waist(R.string.label_waist_size, R.string.label_length_unit_cm, BodyDataRecord::waistSize),
+    Hip(R.string.label_hip_size, R.string.label_length_unit_cm, BodyDataRecord::hipSize),
+    BodyFat(R.string.label_body_fat, R.string.label_count_unit_percentage, BodyDataRecord::bodyFat, 0f..100f);
+
+    fun getLabel(context: Context): String = context.getString(labelRes)
+
+    fun getTrailing(context: Context): String = context.getString(trailingRes)
 }

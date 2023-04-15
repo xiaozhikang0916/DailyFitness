@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="label_weight_unit_kg">kg</string>
+    <string name="label_length_unit_cm">cm</string>
+    <string name="label_count_unit_percentage">%</string>
+    <string name="label_body_weight">体重</string>
+    <string name="label_bust_size">胸围</string>
+    <string name="label_waist_size">腰围</string>
+    <string name="label_hip_size">臀围</string>
+    <string name="label_body_fat">体脂率</string>
+</resources>

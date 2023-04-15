@@ -16,8 +16,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.Route
@@ -47,19 +49,22 @@ fun TrainActionPage() {
             appScaffoldViewModel.back()
         }
     } else {
+        val title = stringResource(id = R.string.title_train_action)
+        val actionEditDesc = stringResource(R.string.action_desc_edit_train_action)
+        val actionDeleteDesc = stringResource(R.string.action_desc_delete_train_action)
         LaunchedEffect(key1 = actionState) {
             appScaffoldViewModel.scaffoldState.emit(
                 SubpageScaffoldState(
-                    title = "训练动作",
+                    title = title,
                     actionItems = listOf(
                         TopAction.iconRouteAction(
                             icon = Icons.Default.Edit,
-                            actionDesc = "edit train action name",
+                            actionDesc = actionEditDesc,
                             route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(actionState.action)),
                         ),
                         TopAction.iconRouteAction(
                             icon = Icons.Default.Delete,
-                            actionDesc = "delete train action",
+                            actionDesc = actionDeleteDesc,
                             route = Route(TrainPartGraph.DeleteTrainActionNavItem.getRoute(actionState.action)),
                         )
                     )

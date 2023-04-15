@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -33,7 +34,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
+import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
+import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -59,14 +63,15 @@ fun AddTrainActionPage() {
     val state = viewModel.state.collectAsState().value
     val status = state.status
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
-    val title = if (state.action?.id != 0) "编辑训练动作" else "新增训练动作"
+    val title = stringResource(if (state.action?.id != 0) R.string.edit_train_action else R.string.new_train_action)
+    val actionLabel = stringResource(R.string.top_action_save)
     LaunchedEffect(key1 = state.inputValid) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(
                 title = title,
                 actionItems = listOf(
                     TopAction.textPageAction(
-                        text = "SAVE",
+                        text = actionLabel,
                         type = PageHandleType.SAVE,
                         valid = state.inputValid,
                     )
@@ -76,9 +81,9 @@ fun AddTrainActionPage() {
     }
     LaunchedEffect(key1 = status) {
         if (status == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack("添加成功")
+            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
         } else if (status is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("添加失败")
+            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
         }
     }
     LaunchedEffect(key1 = Unit) {
@@ -98,7 +103,7 @@ fun AddTrainActionPage() {
     ) {
 
         LargeDropdownMenu(
-            label = "训练部位",
+            label = stringResource(R.string.title_train_part),
             modifier = Modifier
                 .fillMaxWidth(),
             items = state.allPart,
@@ -118,7 +123,7 @@ fun AddTrainActionPage() {
             modifier = Modifier
                 .fillMaxWidth(),
             label = {
-                Text(text = "动作名称")
+                Text(text = stringResource(R.string.label_train_action_name))
             }
         )
 
@@ -127,21 +132,9 @@ fun AddTrainActionPage() {
         ) {
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 FilterChip(
-                    selected = state.isTimed,
-                    onClick = { viewModel.reduce(SetTimedIntent(state.isTimed.not())) },
-                    label = { Text(text = "计时动作") },
-                    leadingIcon = {
-                        if (state.isTimed) {
-                            CheckedIcon()
-                        }
-                    }
-                )
-            }
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                FilterChip(
                     selected = state.isWeighted,
                     onClick = { viewModel.reduce(SetWeightedIntent(state.isWeighted.not())) },
-                    label = { Text(text = "计重动作") },
+                    label = { Text(text = stringResource(R.string.add_action_type_weighted)) },
                     leadingIcon = {
                         if (state.isWeighted) {
                             CheckedIcon()
@@ -153,7 +146,7 @@ fun AddTrainActionPage() {
                 FilterChip(
                     selected = state.isCounted,
                     onClick = { viewModel.reduce(SetCountedIntent(state.isCounted.not())) },
-                    label = { Text(text = "计次动作") },
+                    label = { Text(text = stringResource(R.string.add_action_type_counted)) },
                     leadingIcon = {
                         if (state.isCounted) {
                             CheckedIcon()
@@ -161,7 +154,18 @@ fun AddTrainActionPage() {
                     }
                 )
             }
-
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                FilterChip(
+                    selected = state.isTimed,
+                    onClick = { viewModel.reduce(SetTimedIntent(state.isTimed.not())) },
+                    label = { Text(text = stringResource(R.string.add_action_type_timed)) },
+                    leadingIcon = {
+                        if (state.isTimed) {
+                            CheckedIcon()
+                        }
+                    }
+                )
+            }
         }
     }
 }

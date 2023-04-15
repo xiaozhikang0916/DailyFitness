@@ -30,10 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
@@ -74,7 +76,7 @@ fun HomeTrainPartHeadCard(homeTrainPartPage: HomeTrainPartPage) {
                     verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(text = "训练部位", style = MaterialTheme.typography.titleSmall)
+                    Text(text = stringResource(id = R.string.title_train_part), style = MaterialTheme.typography.titleSmall)
                     Text(text = homeTrainPartPage.partCount.toString(), style = MaterialTheme.typography.displaySmall)
                 }
                 Box(
@@ -88,7 +90,7 @@ fun HomeTrainPartHeadCard(homeTrainPartPage: HomeTrainPartPage) {
                     verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(text = "训练动作", style = MaterialTheme.typography.titleSmall)
+                    Text(text = stringResource(id = R.string.title_train_action), style = MaterialTheme.typography.titleSmall)
                     Text(text = homeTrainPartPage.actionCount.toString(), style = MaterialTheme.typography.displaySmall)
                 }
             }
@@ -106,7 +108,7 @@ fun HomeTrainPartHeadCard(homeTrainPartPage: HomeTrainPartPage) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "部位训练数",
+                        text = stringResource(R.string.label_part_train_count),
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         softWrap = false
@@ -126,7 +128,7 @@ fun HomeTrainPartHeadCard(homeTrainPartPage: HomeTrainPartPage) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "训练总组数",
+                        text = stringResource(R.string.label_action_train_group_count),
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         softWrap = false,
@@ -186,7 +188,7 @@ fun TrainPartCard(
                     softWrap = false,
                 )
                 Text(
-                    text = "${trainPartStaticPage.actionCount}个动作",
+                    text = stringResource(R.string.train_part_count_of_action, trainPartStaticPage.actionCount),
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     softWrap = false,
@@ -207,7 +209,7 @@ fun TrainPartCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "部位训练数",
+                        text = stringResource(R.string.label_part_train_count),
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         softWrap = false,
@@ -225,7 +227,7 @@ fun TrainPartCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "训练总组数",
+                        text = stringResource(R.string.label_action_train_group_count),
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         softWrap = false,
@@ -290,7 +292,7 @@ fun TrainActionCard(
                         text = action.actionName,
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    Text(text = "${actionPage.workoutCount}组", style = MaterialTheme.typography.titleSmall)
+                    Text(text = stringResource(R.string.action_train_group_count, actionPage.workoutCount), style = MaterialTheme.typography.titleSmall)
 
                 }
                 Row(
@@ -298,13 +300,13 @@ fun TrainActionCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (action.isWeightedAction) {
-                        SmallChip(label = { Text(text = "计重") })
+                        SmallChip(label = { Text(text = stringResource(R.string.label_train_action_type_weighted)) })
                     }
                     if (action.isTimedAction) {
-                        SmallChip(label = { Text(text = "计时") })
+                        SmallChip(label = { Text(text = stringResource(R.string.label_train_action_type_timed)) })
                     }
                     if (action.isCountedAction) {
-                        SmallChip(label = { Text(text = "计次") })
+                        SmallChip(label = { Text(text = stringResource(R.string.label_train_action_type_counted)) })
                     }
                 }
             }

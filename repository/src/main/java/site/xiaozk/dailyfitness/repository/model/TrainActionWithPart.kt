@@ -34,7 +34,3 @@ data class TrainPartGroup(
     val part: TrainPart = TrainPart(),
     val actions: List<TrainActionWithPart> = emptyList(),
 )
-
-data class TrainPartPage(
-    val allParts: List<TrainPartGroup> = emptyList(),
-)

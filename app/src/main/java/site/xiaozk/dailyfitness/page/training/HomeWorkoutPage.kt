@@ -14,9 +14,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.calendar.Calendar
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
@@ -40,10 +42,11 @@ import java.time.format.FormatStyle
 fun HomeWorkoutPage() {
     val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(R.string.title_home_workout)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(
-                title = "训练记录",
+                title = title,
             )
         )
     }
@@ -86,26 +89,26 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
         if (state.loadStatus != ActionStatus.Idle) {
             item(key = "month") {
                 HomeWorkoutStaticsCard(
-                    title = "本月训练",
+                    title = stringResource(R.string.label_home_workout_count_monthly),
                     content = monthData.monthTrainedDay.toString(),
-                    subContent = "次",
+                    subContent = stringResource(id = R.string.label_home_workout_count_unit),
                     modifier = routeToMonthSummary
                 )
             }
             item(key = "week") {
                 HomeWorkoutStaticsCard(
-                    title = "本周训练",
+                    title = stringResource(R.string.label_home_workout_count_weekly),
                     content = monthData.getWeekTrainedDay().toString(),
-                    subContent = "次"
+                    subContent = stringResource(id = R.string.label_home_workout_count_unit),
                 )
             }
         }
         data.weight?.let {
             item(key = "weight") {
                 HomeWorkoutStaticsCard(
-                    title = "最近体重",
+                    title = stringResource(R.string.label_home_workout_latest_weight),
                     content = it.data.second.toString(),
-                    subContent = "kg",
+                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_weight_unit_kg),
                     bottom = it.data.first.format(formatter)
                 )
             }
@@ -113,9 +116,9 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
         data.bustSize?.let {
             item(key = "bust") {
                 HomeWorkoutStaticsCard(
-                    title = "最近胸围",
+                    title = stringResource(R.string.label_home_workout_latest_bust_size),
                     content = it.data.second.toString(),
-                    subContent = "cm",
+                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
                     bottom = it.data.first.format(formatter)
                 )
             }
@@ -123,9 +126,9 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
         data.waistSize?.let {
             item(key = "waist") {
                 HomeWorkoutStaticsCard(
-                    title = "最近腰围",
+                    title = stringResource(R.string.label_home_workout_latest_waist_size),
                     content = it.data.second.toString(),
-                    subContent = "cm",
+                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
                     bottom = it.data.first.format(formatter)
                 )
             }
@@ -133,9 +136,9 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
         data.hipSize?.let {
             item(key = "hip") {
                 HomeWorkoutStaticsCard(
-                    title = "最近臀围",
+                    title = stringResource(R.string.label_home_workout_latest_hip_size),
                     content = it.data.second.toString(),
-                    subContent = "cm",
+                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
                     bottom = it.data.first.format(formatter)
                 )
             }
@@ -143,9 +146,9 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
         data.bodyFat?.let {
             item(key = "fat") {
                 HomeWorkoutStaticsCard(
-                    title = "最近体脂率",
+                    title = stringResource(R.string.label_home_workout_latest_body_fat),
                     content = it.data.second.toString(),
-                    subContent = "%",
+                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_count_unit_percentage),
                     bottom = it.data.first.format(formatter)
                 )
             }

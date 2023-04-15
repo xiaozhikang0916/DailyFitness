@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -18,9 +19,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.SnackbarStatus
+import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
+import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
+import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
@@ -48,13 +52,13 @@ fun DeleteDailyWorkout() {
     LaunchedEffect(key1 = Unit) {
         viewModel.flow.collect {
             if (it.loadStatus is ActionStatus.Failed) {
-                appScaffoldViewModel.showSnackbarAndBack("加载失败", SnackbarStatus.Error)
+                appScaffoldViewModel.showSnackbarAndBack(LoadFailedSnackbar)
             }
             if (it.deleteStatus is ActionStatus.Done) {
-                appScaffoldViewModel.showSnackbarAndBack("删除成功")
+                appScaffoldViewModel.showSnackbarAndBack(DelSuccessSnackbar)
             }
             if (it.deleteStatus is ActionStatus.Failed) {
-                appScaffoldViewModel.showSnackbarAndBack("删除失败", SnackbarStatus.Error)
+                appScaffoldViewModel.showSnackbarAndBack(DelFailedSnackbar)
             }
         }
     }
@@ -65,7 +69,7 @@ fun DeleteDailyWorkout() {
             onDismissRequest = dismiss,
             confirmButton = {
                 Text(
-                    text = "删除",
+                    text = stringResource(id = R.string.dialog_action_delete),
                     modifier = Modifier
                         .clickable {
                             viewModel.removeWorkout(workout)
@@ -75,22 +79,20 @@ fun DeleteDailyWorkout() {
             },
             dismissButton = {
                 Text(
-                    text = "取消",
+                    text = stringResource(id = R.string.dialog_action_cancel),
                     modifier = Modifier
                         .clickable { dismiss() },
                     textAlign = TextAlign.Center
                 )
             },
             title = {
-                Text(text = "删除动作记录")
+                Text(text = stringResource(R.string.title_dialog_delete_workout))
             },
             text = {
                 val dateTimeFormat =
                     getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
-                    text = "你将要删除记录于${dateTimeFormat.format(workout.instant)}的动作记录${workout.action.actionName} ${
-                        workout.displayText.joinToString(" ")
-                    }"
+                    text = stringResource(R.string.desc_dialog_delete_workout, dateTimeFormat.format(workout.instant), workout.action.actionName, workout.displayText.joinToString(" "))
                 )
             }
         )

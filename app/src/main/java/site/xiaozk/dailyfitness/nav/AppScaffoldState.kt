@@ -21,6 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import site.xiaozk.dailyfitness.R
 import javax.inject.Inject
 
 /**
@@ -94,10 +95,64 @@ enum class SnackbarStatus {
     Error,
 }
 
+interface SnackbarDisplay {
+    fun getMessage(context: Context): String
+    val status: SnackbarStatus
+}
+
 data class SnackbarData(
     val message: String,
-    val status: SnackbarStatus = SnackbarStatus.Normal,
-)
+    override val status: SnackbarStatus = SnackbarStatus.Normal,
+) : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return message
+    }
+}
+
+object AddSuccessSnackbar : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return context.getString(R.string.snackbar_add_success)
+    }
+
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Normal
+}
+
+object AddFailedSnackbar : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return context.getString(R.string.snackbar_add_failed)
+    }
+
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Error
+}
+
+object DelSuccessSnackbar : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return context.getString(R.string.snackbar_del_success)
+    }
+
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Normal
+}
+
+object DelFailedSnackbar : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return context.getString(R.string.snackbar_del_failed)
+    }
+
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Error
+}
+
+object LoadFailedSnackbar : SnackbarDisplay {
+    override fun getMessage(context: Context): String {
+        return context.getString(R.string.snackbar_load_failed)
+    }
+
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Error
+}
 
 
 @HiltViewModel
@@ -114,7 +169,7 @@ class AppScaffoldViewModel @Inject constructor() : ViewModel() {
      */
     val topAction = MutableSharedFlow<TopAction>(replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
-    val snackbarFlow = MutableSharedFlow<SnackbarData>(replay = 0, extraBufferCapacity = 5, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    val snackbarFlow = MutableSharedFlow<SnackbarDisplay>(replay = 0, extraBufferCapacity = 5, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     fun setScaffoldState(state: IScaffoldState) {
         scaffoldState.value = state
@@ -140,8 +195,13 @@ class AppScaffoldViewModel @Inject constructor() : ViewModel() {
         showSnackbar(SnackbarData(message, status))
     }
 
-    fun showSnackbar(snackbarData: SnackbarData) {
+    fun showSnackbar(snackbarData: SnackbarDisplay) {
         snackbarFlow.tryEmit(snackbarData)
+    }
+
+    fun showSnackbarAndBack(snackbarDisplay: SnackbarDisplay) {
+        showSnackbar(snackbarDisplay)
+        back()
     }
 
     fun showSnackbarAndBack(message: String, status: SnackbarStatus = SnackbarStatus.Normal) {

@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
 import site.xiaozk.dailyfitness.page.action.DeleteTrainActionDialog
 import site.xiaozk.dailyfitness.page.action.TrainActionPage
@@ -81,7 +82,7 @@ object AppHomeRootNav : IAppNavGraphItem {
             override val route = "/home/training"
             override val icon = Icons.Default.Home
             override fun getName(context: Context): String {
-                return "Home"
+                return context.getString(R.string.bottom_nav_title_home)
             }
         }
 
@@ -89,7 +90,7 @@ object AppHomeRootNav : IAppNavGraphItem {
             override val route = "/home/body"
             override val icon = Icons.Default.AccountBox
             override fun getName(context: Context): String {
-                return "Body"
+                return context.getString(R.string.bottom_nav_title_body)
             }
         }
 
@@ -97,7 +98,7 @@ object AppHomeRootNav : IAppNavGraphItem {
             override val route = "/home/train_part"
             override val icon = Icons.Default.List
             override fun getName(context: Context): String {
-                return "Train"
+                return context.getString(R.string.bottom_nav_title_train)
             }
         }
 

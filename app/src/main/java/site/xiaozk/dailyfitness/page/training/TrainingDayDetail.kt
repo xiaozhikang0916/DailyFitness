@@ -31,10 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.Route
@@ -59,14 +61,16 @@ fun TrainingDayDetailPage() {
     val data = viewModel.trainingData
 
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(R.string.title_daily_workout)
+    val descAdd = stringResource(R.string.desc_top_action_add_action)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(
-                title = "训练日志",
+                title = title,
                 actionItems = listOf(
                     TopAction.iconRouteAction(
                         Icons.Default.Add,
-                        "添加训练动作",
+                        descAdd,
                         Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
                     )
                 )
@@ -160,7 +164,7 @@ private fun DailyTrainingAction(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${action.trainAction.size}组",
+                text = stringResource(R.string.label_workout_group_unit, action.trainAction.size),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

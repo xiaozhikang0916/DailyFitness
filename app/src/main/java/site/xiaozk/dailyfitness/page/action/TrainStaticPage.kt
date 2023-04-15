@@ -11,8 +11,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -32,10 +34,11 @@ fun TrainStaticPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.homeTrainPartStatic.collectAsState(initial = HomeTrainPartPage()).value
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(id = R.string.title_train_part)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(
-                title = "训练动作",
+                title = title,
             )
         )
     }

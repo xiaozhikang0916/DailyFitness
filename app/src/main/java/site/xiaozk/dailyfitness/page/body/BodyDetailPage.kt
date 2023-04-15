@@ -31,23 +31,25 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.mapNotNull
 import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.chart.LineChart
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
 import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.SnackbarData
-import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
+import site.xiaozk.dailyfitness.utils.label
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -66,31 +68,33 @@ fun BodyDetailPage() {
     val viewModel: BodyViewModel = hiltViewModel()
 
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(R.string.title_body_data)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             HomepageScaffoldState(
-                title = "身体数据",
+                title = title,
             )
         )
     }
     LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.snackbarFlow.emitAll(
-            viewModel.deleteAction.mapNotNull {
-                when (it) {
-                    ActionStatus.Done -> {
-                        SnackbarData("删除成功")
-                    }
+        viewModel.deleteAction.mapNotNull {
+            when (it) {
+                ActionStatus.Done -> {
+                    DelFailedSnackbar
+                }
 
-                    is ActionStatus.Failed -> {
-                        SnackbarData("删除失败", SnackbarStatus.Error)
-                    }
+                is ActionStatus.Failed -> {
+                    DelFailedSnackbar
+                }
 
-                    else -> {
-                        null
-                    }
+                else -> {
+                    null
                 }
             }
-        )
+        }.collectLatest {
+            appScaffoldViewModel.showSnackbar(it)
+        }
+
     }
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
@@ -109,7 +113,7 @@ fun BodyDetailPage() {
             onDismissRequest = dismiss,
             confirmButton = {
                 Text(
-                    text = "删除",
+                    text = stringResource(id = R.string.dialog_action_delete),
                     modifier = Modifier
                         .clickable {
                             viewModel.deleteBodyDetail(it)
@@ -120,19 +124,19 @@ fun BodyDetailPage() {
             },
             dismissButton = {
                 Text(
-                    text = "取消",
+                    text = stringResource(id = R.string.dialog_action_cancel),
                     modifier = Modifier
                         .clickable { dismiss() },
                     textAlign = TextAlign.Center
                 )
             },
             title = {
-                Text(text = "删除身体数据记录")
+                Text(text = stringResource(R.string.title_dialog_delete_body_data))
             },
             text = {
                 val format = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
-                    text = "你将要删除记录于${format.format(it.instant)}的身体数据记录。"
+                    text = stringResource(R.string.desc_dialog_delete_body_date, format.format(it.instant))
                 )
             }
         )
@@ -254,23 +258,23 @@ private fun BodyDetailDaily(
         )
 
         if (data.weight != 0f) {
-            DataPair(name = "体重", content = "${data.weight} kg")
+            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_body_weight), content = "${data.weight} kg")
         }
 
         if (data.bustSize != 0f) {
-            DataPair(name = "胸围", content = "${data.bustSize} cm")
+            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_bust_size), content = "${data.bustSize} cm")
         }
 
         if (data.waistSize != 0f) {
-            DataPair(name = "腰围", content = "${data.waistSize} cm")
+            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_waist_size), content = "${data.waistSize} cm")
         }
 
         if (data.hipSize != 0f) {
-            DataPair(name = "臀围", content = "${data.hipSize} cm")
+            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_hip_size), content = "${data.hipSize} cm")
         }
 
         if (data.bodyFat != 0f) {
-            DataPair(name = "体脂率", content = "${data.bodyFat} %")
+            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_body_fat), content = "${data.bodyFat} %")
         }
     }
 }

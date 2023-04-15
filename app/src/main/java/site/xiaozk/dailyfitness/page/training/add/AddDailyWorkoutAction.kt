@@ -27,13 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
+import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
+import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -58,21 +62,23 @@ fun AddDailyWorkoutAction() {
     val pageState = viewModel.stateFlow.collectAsState()
 
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(R.string.title_add_workout)
+    val actionSave = stringResource(id = R.string.top_action_save)
     LaunchedEffect(key1 = pageState.value.valid) {
         appScaffoldViewModel.scaffoldState.emit(
             FullDialogScaffoldState(
-                title = "新增训练记录",
+                title = title,
                 actionItems = listOf(
-                    TopAction.textPageAction("SAVE", PageHandleType.SAVE, pageState.value.valid)
+                    TopAction.textPageAction(actionSave, PageHandleType.SAVE, pageState.value.valid)
                 )
             )
         )
     }
     LaunchedEffect(pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack("添加成功")
+            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("添加失败")
+            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
         }
     }
     LaunchedEffect(key1 = Unit) {
@@ -104,7 +110,7 @@ fun AddDailyTrainPage(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            label = "训练部位",
+            label = stringResource(id = R.string.title_train_part),
             expended = pageState.showPartMenuState,
             selectedIndex = pageState.allParts.indexOf(pageState.selectedPart),
             items = allParts,
@@ -121,7 +127,7 @@ fun AddDailyTrainPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp),
-                label = "训练动作",
+                label = stringResource(id = R.string.title_train_action),
                 expended = pageState.showActionMenuState,
                 selectedIndex = selectedPart.actions.indexOf(pageState.selectedAction),
                 items = selectedPart.actions,
@@ -177,12 +183,12 @@ fun AddDailyTrainPage(
                                 },
                             value = weight,
                             label = {
-                                Text(text = "重量")
+                                Text(text = stringResource(R.string.label_workout_weight))
                             },
                             singleLine = true,
                             supportingText = {
                                 if (pageState.weightValid.not()) {
-                                    Text(text = "输入数字有误")
+                                    Text(text = stringResource(id = R.string.hint_invalid_input_num))
                                 }
                             },
                             isError = pageState.weightValid.not(),
@@ -240,12 +246,12 @@ fun AddDailyTrainPage(
                                 },
                             value = duration,
                             label = {
-                                Text(text = "时长")
+                                Text(text = stringResource(R.string.label_workout_duration))
                             },
                             singleLine = true,
                             supportingText = {
                                 if (pageState.timeValid.not()) {
-                                    Text(text = "输入数字有误")
+                                    Text(text = stringResource(id = R.string.hint_invalid_input_num))
                                 }
                             },
                             isError = pageState.timeValid.not(),
@@ -297,12 +303,12 @@ fun AddDailyTrainPage(
                         value = count,
                         singleLine = true,
                         label = {
-                            Text(text = "次数")
+                            Text(text = stringResource(R.string.label_workout_count))
                         },
                         onValueChange = { onIntent(InputCountIntent(it.text)) },
                         supportingText = {
                             if (pageState.countValid.not()) {
-                                Text(text = "输入数字有误")
+                                Text(text = stringResource(id = R.string.hint_invalid_input_num))
                             }
                         },
                         isError = pageState.countValid.not(),
@@ -322,7 +328,7 @@ fun AddDailyTrainPage(
                     value = pageState.note,
                     singleLine = true,
                     label = {
-                        Text(text = "备注")
+                        Text(text = stringResource(R.string.label_workout_note))
                     },
                     onValueChange = { onIntent(InputNoteIntent(it)) },
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),

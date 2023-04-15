@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -29,7 +30,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
+import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
+import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
@@ -50,29 +54,35 @@ fun AddTrainPartPage() {
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
     LaunchedEffect(key1 = state.value) {
         if (state.value.submitStatus == ActionStatus.Done) {
-             appScaffoldViewModel.showSnackbarAndBack("添加成功")
+            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
         } else if (state.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("添加失败")
+            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
         }
     }
     var name by remember(state.value.part) {
         mutableStateOf(state.value.part.partName)
     }
-    val title = if (state.value.part.id == 0) "新增训练部位" else "修改训练部位"
+    val title = stringResource(
+        if (state.value.part.id == 0) {
+            R.string.new_train_part
+        } else {
+            R.string.edit_train_part
+        }
+    )
     AlertDialog(
         onDismissRequest = {
             appScaffoldViewModel.back()
         },
         confirmButton = {
             TextButton(onClick = { viewModel.addPart(name) }) {
-                Text(text = "保存")
+                Text(text = stringResource(R.string.dialog_action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = {
                 appScaffoldViewModel.back()
             }) {
-                Text(text = "取消")
+                Text(text = stringResource(R.string.dialog_action_cancel))
             }
         },
         title = { Text(text = title) },
@@ -91,7 +101,7 @@ fun AddTrainPartPage() {
 @HiltViewModel
 class AddTrainPartViewModel @Inject constructor(
     private val repo: ITrainActionRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val partId: Int
         get() = savedStateHandle["partId"] ?: -1

@@ -92,9 +92,10 @@ fun AppHost() {
     val snackbarHostState = remember {
         SnackbarHostState()
     }
+    val context = LocalContext.current
     LaunchedEffect(key1 = appScaffoldViewModel) {
         appScaffoldViewModel.snackbarFlow.filterNotNull().collect {
-            snackbarHostState.showSnackbar(message = it.message, withDismissAction = true)
+            snackbarHostState.showSnackbar(message = it.getMessage(context), withDismissAction = true)
         }
     }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

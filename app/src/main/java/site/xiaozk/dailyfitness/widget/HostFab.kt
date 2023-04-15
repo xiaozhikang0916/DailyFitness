@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntOffset
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem
 import site.xiaozk.dailyfitness.nav.IScaffoldState
 import site.xiaozk.dailyfitness.nav.Route
@@ -93,20 +95,20 @@ fun HostFab(scaffoldState: IScaffoldState?, topAppBarState: TopAppBarState? = nu
                         ) {
                             FloatingActionListButton(
                                 icon = Icons.Default.Add,
-                                text = "新增训练",
+                                text = stringResource(R.string.fab_action_add_workout),
                             ) {
                                 onRoute(Route(TrainingDayGroup.TrainDayAddActionNavItem.route))
                                 showFabMenu = false
                             }
-                            FloatingActionListButton(text = "新增身体数据") {
+                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_body_data)) {
                                 onRoute(Route(AddDailyBodyDetailNavItem.route))
                                 showFabMenu = false
                             }
-                            FloatingActionListButton(text = "新增动作组") {
+                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_group)) {
                                 onRoute(Route(TrainPartGraph.AddTrainPartNavItem.getRoute()))
                                 showFabMenu = false
                             }
-                            FloatingActionListButton(text = "新增动作") {
+                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_action)) {
                                 onRoute(Route(TrainPartGraph.AddTrainActionNavItem.getRoute()))
                                 showFabMenu = false
                             }

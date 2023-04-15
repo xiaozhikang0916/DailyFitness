@@ -7,6 +7,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.stringResource
+import site.xiaozk.dailyfitness.R
 
 /**
  * @author: xiaozhikang
@@ -17,6 +19,6 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 @Composable
 fun BackButton(icon: ImageVector = Icons.Default.KeyboardArrowLeft, onBackClick: () -> Unit = {}) {
     IconButton(onClick = onBackClick) {
-        Icon(painter = rememberVectorPainter(image = icon), contentDescription = "back")
+        Icon(painter = rememberVectorPainter(image = icon), contentDescription = stringResource(R.string.top_action_back))
     }
 }

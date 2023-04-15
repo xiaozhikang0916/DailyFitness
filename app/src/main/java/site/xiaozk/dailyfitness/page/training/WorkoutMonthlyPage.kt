@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -36,11 +37,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import site.xiaozk.calendar.Calendar
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.Route
-import site.xiaozk.dailyfitness.nav.SnackbarStatus
 import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
 import site.xiaozk.dailyfitness.nav.TopAction
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
@@ -68,14 +70,16 @@ import javax.inject.Inject
 fun WorkoutMonthlyPage() {
     val viewModel: WorkoutMonthlyPageViewModel = hiltViewModel()
     val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val title = stringResource(R.string.title_workout_monthly)
+    val descAdd = stringResource(R.string.desc_top_action_add_action)
     LaunchedEffect(key1 = Unit) {
         appScaffoldViewModel.scaffoldState.emit(
             SubpageScaffoldState(
-                title = "训练月报",
+                title = title,
                 actionItems = listOf(
                     TopAction.iconRouteAction(
                         Icons.Default.Add,
-                        "添加训练动作",
+                        descAdd,
                         Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
                     )
                 )
@@ -85,7 +89,7 @@ fun WorkoutMonthlyPage() {
     val page = viewModel.workoutMonthPageState.collectAsState()
     LaunchedEffect(key1 = page.value.loadStatus) {
         if (page.value.loadStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("加载失败", status = SnackbarStatus.Error)
+            appScaffoldViewModel.showSnackbar(LoadFailedSnackbar)
         }
     }
     WorkoutMonthlyPage(
@@ -163,7 +167,7 @@ private fun WorkoutDailyDetailCard(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "${it.value.size}组",
+                    text = stringResource(R.string.label_train_part_unit, it.value.size),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }

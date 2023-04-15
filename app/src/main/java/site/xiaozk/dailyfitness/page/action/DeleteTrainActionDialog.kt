@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
@@ -18,8 +19,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
+import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
+import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
@@ -37,14 +42,14 @@ fun DeleteTrainActionDialog() {
     val state = viewModel.flow.collectAsState()
     LaunchedEffect(key1 = state.value.deleteStatus) {
         if (state.value.deleteStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack("删除成功")
+            appScaffoldViewModel.showSnackbarAndBack(DelSuccessSnackbar)
         } else if (state.value.deleteStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar("删除失败")
+            appScaffoldViewModel.showSnackbar(DelFailedSnackbar)
         }
     }
     LaunchedEffect(key1 = state.value.loadStatus) {
         if (state.value.loadStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbarAndBack("加载成功")
+            appScaffoldViewModel.showSnackbarAndBack(LoadFailedSnackbar)
         }
     }
 
@@ -58,7 +63,7 @@ fun DeleteTrainActionDialog() {
             onDismissRequest = dismiss.value,
             confirmButton = {
                 Text(
-                    text = "删除",
+                    text = stringResource(R.string.dialog_action_delete),
                     modifier = Modifier
                         .clickable {
                             viewModel.performDelete()
@@ -68,18 +73,18 @@ fun DeleteTrainActionDialog() {
             },
             dismissButton = {
                 Text(
-                    text = "取消",
+                    text = stringResource(id = R.string.dialog_action_cancel),
                     modifier = Modifier
                         .clickable { dismiss.value() },
                     textAlign = TextAlign.Center
                 )
             },
             title = {
-                Text(text = "删除训练动作")
+                Text(text = stringResource(R.string.title_delete_train_action))
             },
             text = {
                 Text(
-                    text = "你将要删除训练动作${action.actionName}。删除前请保证此训练动作没有训练记录。"
+                    text = stringResource(R.string.desc_delete_train_action, action.actionName)
                 )
             }
         )
