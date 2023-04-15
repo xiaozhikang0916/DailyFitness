@@ -17,14 +17,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import site.xiaozk.dailyfitness.base.ActionStatus
@@ -134,25 +140,42 @@ fun AddDailyTrainPage(
 
         val selectedAction = pageState.selectedAction
         if (selectedAction != null) {
+            val (weightFocus, timeFocus, countFocus, noteFocus) = remember {
+                FocusRequester.createRefs()
+            }
+            LaunchedEffect(key1 = Unit) {
+                weightFocus.requestFocus()
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val (weightFocus, timeFocus, countFocus, noteFocus) = remember {
-                    FocusRequester.createRefs()
-                }
                 if (selectedAction.isWeightedAction) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
+                        var weight by remember(pageState.weight) {
+                            mutableStateOf(TextFieldValue(pageState.weight, TextRange(pageState.weight.length)))
+                        }
+                        var focused by remember {
+                            mutableStateOf(false)
+                        }
+                        LaunchedEffect(key1 = focused) {
+                            if (focused) {
+                                weight = weight.copy(selection = TextRange(0, weight.text.length))
+                            }
+                        }
                         OutlinedTextField(
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(weightFocus),
-                            value = pageState.weight,
+                                .focusRequester(weightFocus)
+                                .onFocusChanged {
+                                    focused = it.isFocused
+                                },
+                            value = weight,
                             label = {
                                 Text(text = "重量")
                             },
@@ -166,7 +189,7 @@ fun AddDailyTrainPage(
                             onValueChange = {
                                 onIntent(
                                     InputWeightIntent(
-                                        it,
+                                        it.text,
                                         weightUnit = pageState.weightUnit
                                     )
                                 )
@@ -178,6 +201,8 @@ fun AddDailyTrainPage(
                                         timeFocus.requestFocus()
                                     } else if (selectedAction.isCountedAction) {
                                         countFocus.requestFocus()
+                                    } else {
+                                        noteFocus.requestFocus()
                                     }
                                 }
                             ),
@@ -195,11 +220,25 @@ fun AddDailyTrainPage(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.Top
                     ) {
+                        var duration by remember(pageState.duration) {
+                            mutableStateOf(TextFieldValue(pageState.duration, TextRange(pageState.duration.length)))
+                        }
+                        var focused by remember {
+                            mutableStateOf(false)
+                        }
+                        LaunchedEffect(key1 = focused) {
+                            if (focused) {
+                                duration = duration.copy(selection = TextRange(0, duration.text.length))
+                            }
+                        }
                         OutlinedTextField(
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(timeFocus),
-                            value = pageState.duration,
+                                .focusRequester(timeFocus)
+                                .onFocusChanged {
+                                    focused = it.isFocused
+                                },
+                            value = duration,
                             label = {
                                 Text(text = "时长")
                             },
@@ -213,7 +252,7 @@ fun AddDailyTrainPage(
                             onValueChange = {
                                 onIntent(
                                     InputDurationIntent(
-                                        it,
+                                        it.text,
                                         timeUnit = pageState.timeUnit
                                     )
                                 )
@@ -223,6 +262,8 @@ fun AddDailyTrainPage(
                                 onNext = {
                                     if (selectedAction.isCountedAction) {
                                         countFocus.requestFocus()
+                                    } else {
+                                        noteFocus.requestFocus()
                                     }
                                 }
                             ),
@@ -235,16 +276,30 @@ fun AddDailyTrainPage(
                 }
 
                 if (selectedAction.isCountedAction) {
+                    var count by remember(pageState.count) {
+                        mutableStateOf(TextFieldValue(pageState.count, TextRange(pageState.count.length)))
+                    }
+                    var focused by remember {
+                        mutableStateOf(false)
+                    }
+                    LaunchedEffect(key1 = focused) {
+                        if (focused) {
+                            count = count.copy(selection = TextRange(0, count.text.length))
+                        }
+                    }
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .focusRequester(countFocus),
-                        value = pageState.count,
+                            .focusRequester(countFocus)
+                            .onFocusChanged {
+                                focused = it.isFocused
+                            },
+                        value = count,
                         singleLine = true,
                         label = {
                             Text(text = "次数")
                         },
-                        onValueChange = { onIntent(InputCountIntent(it)) },
+                        onValueChange = { onIntent(InputCountIntent(it.text)) },
                         supportingText = {
                             if (pageState.countValid.not()) {
                                 Text(text = "输入数字有误")
@@ -271,6 +326,11 @@ fun AddDailyTrainPage(
                     },
                     onValueChange = { onIntent(InputNoteIntent(it)) },
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            onIntent(SubmitIntent)
+                        }
+                    )
                 )
             }
         }
