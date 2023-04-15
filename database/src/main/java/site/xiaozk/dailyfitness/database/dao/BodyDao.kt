@@ -38,30 +38,30 @@ interface BodyDao {
      * get the last body record of user [userId] with weight is grater than 0
      */
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND abs(weight - 0.0) > 0.0001 ORDER BY recordTime DESC LIMIT 1")
-    suspend fun getLastBodyDataWithWeight(userId: Int): DBDailyBodyData?
+    fun getLastBodyDataWithWeight(userId: Int): Flow<DBDailyBodyData?>
 
     /**
      * get the last body record of user [userId] with bustSize is grater than 0
      */
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND abs(bustSize - 0.0) > 0.0001 ORDER BY recordTime DESC LIMIT 1")
-    suspend fun getLastBodyDataWithBustSize(userId: Int): DBDailyBodyData?
+    fun getLastBodyDataWithBustSize(userId: Int): Flow<DBDailyBodyData?>
 
     /**
      * get the last body record of user [userId] with waistSize is grater than 0
      */
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND abs(waistSize - 0.0) > 0.0001 ORDER BY recordTime DESC LIMIT 1")
-    suspend fun getLastBodyDataWithWaistSize(userId: Int): DBDailyBodyData?
+    fun getLastBodyDataWithWaistSize(userId: Int): Flow<DBDailyBodyData?>
 
     /**
      * get the last body record of user [userId] with hipSize is grater than 0
      */
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND abs(hipSize - 0.0) > 0.0001 ORDER BY recordTime DESC LIMIT 1")
-    suspend fun getLastBodyDataWithHipSize(userId: Int): DBDailyBodyData?
+    fun getLastBodyDataWithHipSize(userId: Int): Flow<DBDailyBodyData?>
 
     /**
      * get the last body record of user [userId] with bodyFat is grater than 0
      */
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND abs(bodyFat - 0.0) > 0.0001 ORDER BY recordTime DESC LIMIT 1")
-    suspend fun getLastBodyDataWithBodyFat(userId: Int): DBDailyBodyData?
+    fun getLastBodyDataWithBodyFat(userId: Int): Flow<DBDailyBodyData?>
 
 }

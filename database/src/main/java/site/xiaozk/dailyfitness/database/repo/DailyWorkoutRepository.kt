@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.database.repo
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.map
 import site.xiaozk.dailyfitness.database.dao.BodyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
@@ -53,19 +54,32 @@ class DailyWorkoutRepository @Inject constructor(
     }
 
     override fun getHomeWorkoutStatics(user: User, month: YearMonth): Flow<HomeWorkoutStatic> {
-        return getMonthWorkoutStatic(user, month).map { it ->
-            val weight = bodyDao.getLastBodyDataWithWeight(userId = user.uid)
-            val bustSize = bodyDao.getLastBodyDataWithBustSize(userId = user.uid)
-            val waistSize = bodyDao.getLastBodyDataWithWaistSize(userId = user.uid)
-            val hipSize = bodyDao.getLastBodyDataWithHipSize(userId = user.uid)
-            val bodyFat = bodyDao.getLastBodyDataWithBodyFat(userId = user.uid)
-            HomeWorkoutStatic(
-                monthStatic = it,
-                weight = weight?.let { BodyStatic(it.recordTime, it.weight) },
-                bustSize = bustSize?.let { BodyStatic(it.recordTime, it.bustSize) },
-                waistSize = waistSize?.let { BodyStatic(it.recordTime, it.waistSize) },
-                hipSize = hipSize?.let { BodyStatic(it.recordTime, it.hipSize) },
-                bodyFat = bodyFat?.let { BodyStatic(it.recordTime, it.bodyFat) },
+        val weightFlow = bodyDao.getLastBodyDataWithWeight(userId = user.uid).map { it?.let { BodyStatic(it.recordTime, it.weight) } }
+        val bustSizeFlow = bodyDao.getLastBodyDataWithBustSize(userId = user.uid).map { it?.let { BodyStatic(it.recordTime, it.bustSize) } }
+        val waistSizeFlow = bodyDao.getLastBodyDataWithWaistSize(userId = user.uid).map { it?.let { BodyStatic(it.recordTime, it.waistSize) } }
+        val hipSizeFlow = bodyDao.getLastBodyDataWithHipSize(userId = user.uid).map { it?.let { BodyStatic(it.recordTime, it.hipSize) } }
+        val bodyFatFlow = bodyDao.getLastBodyDataWithBodyFat(userId = user.uid).map { it?.let { BodyStatic(it.recordTime, it.bodyFat) } }
+        val staticFlow = combineTransform(
+            weightFlow,
+            bustSizeFlow,
+            waistSizeFlow,
+            hipSizeFlow,
+            bodyFatFlow
+        ) { (weight, bustSize, waistSize, hipSize, bodyFat) ->
+            emit(DataHolder(weight, bustSize, waistSize, hipSize, bodyFat))
+        }
+        return getMonthWorkoutStatic(user, month).combineTransform(
+            staticFlow,
+        ) { it, (weight, bustSize, waistSize, hipSize, bodyFat) ->
+            emit(
+                HomeWorkoutStatic(
+                    monthStatic = it,
+                    weight = weight,
+                    bustSize = bustSize,
+                    waistSize = waistSize,
+                    hipSize = hipSize,
+                    bodyFat = bodyFat,
+                )
             )
         }
     }
@@ -109,3 +123,11 @@ class DailyWorkoutRepository @Inject constructor(
             ?.toDailyWorkoutAction()
     }
 }
+
+private data class DataHolder(
+    val weight: BodyStatic? = null,
+    val bustSize: BodyStatic? = null,
+    val waistSize: BodyStatic? = null,
+    val hipSize: BodyStatic? = null,
+    val bodyFat: BodyStatic? = null,
+)

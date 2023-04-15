@@ -37,7 +37,7 @@ class HomeWorkoutPageViewModel @Inject constructor(
         emitAll(getHomePageData(user))
     }.stateIn(viewModelScope, SharingStarted.Lazily, HomeWorkoutPageState())
 
-    fun getHomePageData(user: User): Flow<HomeWorkoutPageState> = flow {
+    private fun getHomePageData(user: User): Flow<HomeWorkoutPageState> = flow {
         emit(HomeWorkoutPageState(loadStatus = ActionStatus.Loading))
         emitAll(
             homeRepo.getHomeWorkoutStatics(
