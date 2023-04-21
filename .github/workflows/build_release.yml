@@ -15,18 +15,18 @@ jobs:
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
       - name: Restore key_store file from Base64
-        uses: kitek/decode-base64-into-file-action@1.0
+        id: decode_key_store
+        uses: timheuer/base64-to-file@v1.2
         with:
-          encoded-value: ${{ secrets.KEY_STORE_FILE_BASE64 }}
-          destination-file: release.keystore
+          encodedString: ${{ secrets.KEY_STORE_FILE_BASE64 }}
+          fileName: release.keystore
       - name: Build release APK
         run: ./gradlew assembleRelease
         env:
-          # If you need to provide any environment variables for the build process, you can do so here
-          # For example:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_FILE: ${{ steps.decode_key_store.outputs.filePath }}
       - name: Upload APK and Mapping files
         uses: actions/upload-artifact@v3.1.2
         with:
