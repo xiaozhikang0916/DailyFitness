@@ -6,6 +6,7 @@ on:
 jobs:
   build_and_upload_apk:
     runs-on: ubuntu-latest
+    environment: Build release
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 17
