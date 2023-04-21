@@ -32,6 +32,6 @@ jobs:
         uses: actions/upload-artifact@v3.1.2
         with:
           name: Release
-          path: 
+          path: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/mapping/release/mapping.txt
