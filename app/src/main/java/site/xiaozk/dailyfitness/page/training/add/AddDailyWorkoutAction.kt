@@ -149,8 +149,17 @@ fun AddDailyTrainPage(
             val (weightFocus, timeFocus, countFocus, noteFocus) = remember {
                 FocusRequester.createRefs()
             }
+            val first = if (selectedAction.isWeightedAction) {
+                weightFocus
+            } else if (selectedAction.isTimedAction) {
+                timeFocus
+            } else if (selectedAction.isCountedAction) {
+                countFocus
+            } else {
+                noteFocus
+            }
             LaunchedEffect(key1 = Unit) {
-                weightFocus.requestFocus()
+                first.requestFocus()
             }
             Column(
                 modifier = Modifier
@@ -163,58 +172,36 @@ fun AddDailyTrainPage(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        var weight by remember(pageState.weight) {
-                            mutableStateOf(TextFieldValue(pageState.weight, TextRange(pageState.weight.length)))
-                        }
-                        var focused by remember {
-                            mutableStateOf(false)
-                        }
-                        LaunchedEffect(key1 = focused) {
-                            if (focused) {
-                                weight = weight.copy(selection = TextRange(0, weight.text.length))
-                            }
-                        }
-                        OutlinedTextField(
+                        WorkoutInput(
+                            value = pageState.weight,
+                            label = stringResource(id = R.string.label_workout_weight),
+                            valid = pageState.weightValid,
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(weightFocus)
-                                .onFocusChanged {
-                                    focused = it.isFocused
-                                },
-                            value = weight,
-                            label = {
-                                Text(text = stringResource(R.string.label_workout_weight))
-                            },
-                            singleLine = true,
-                            supportingText = {
-                                if (pageState.weightValid.not()) {
-                                    Text(text = stringResource(id = R.string.hint_invalid_input_num))
-                                }
-                            },
-                            isError = pageState.weightValid.not(),
+                                .focusRequester(weightFocus),
                             onValueChange = {
                                 onIntent(
                                     InputWeightIntent(
-                                        it.text,
+                                        it,
                                         weightUnit = pageState.weightUnit
                                     )
                                 )
                             },
-                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(
-                                onNext = {
-                                    if (selectedAction.isTimedAction) {
-                                        timeFocus.requestFocus()
-                                    } else if (selectedAction.isCountedAction) {
-                                        countFocus.requestFocus()
-                                    } else {
-                                        noteFocus.requestFocus()
-                                    }
+                            onNextFocus = {
+                                if (selectedAction.isTimedAction) {
+                                    timeFocus.requestFocus()
+                                } else if (selectedAction.isCountedAction) {
+                                    countFocus.requestFocus()
+                                } else {
+                                    noteFocus.requestFocus()
                                 }
-                            ),
+                            }
                         )
 
-                        WeightRadio(pageState = pageState, modifier = Modifier.padding(top = 8.dp)) {
+                        WeightRadio(
+                            pageState = pageState,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
                             onIntent(InputWeightIntent(weight = pageState.weight, weightUnit = it))
                         }
                     }
@@ -226,53 +213,28 @@ fun AddDailyTrainPage(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.Top
                     ) {
-                        var duration by remember(pageState.duration) {
-                            mutableStateOf(TextFieldValue(pageState.duration, TextRange(pageState.duration.length)))
-                        }
-                        var focused by remember {
-                            mutableStateOf(false)
-                        }
-                        LaunchedEffect(key1 = focused) {
-                            if (focused) {
-                                duration = duration.copy(selection = TextRange(0, duration.text.length))
-                            }
-                        }
-                        OutlinedTextField(
+                        WorkoutInput(
+                            value = pageState.duration,
+                            label = stringResource(id = R.string.label_workout_duration),
+                            valid = pageState.timeValid,
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(timeFocus)
-                                .onFocusChanged {
-                                    focused = it.isFocused
-                                },
-                            value = duration,
-                            label = {
-                                Text(text = stringResource(R.string.label_workout_duration))
-                            },
-                            singleLine = true,
-                            supportingText = {
-                                if (pageState.timeValid.not()) {
-                                    Text(text = stringResource(id = R.string.hint_invalid_input_num))
-                                }
-                            },
-                            isError = pageState.timeValid.not(),
+                                .focusRequester(timeFocus),
                             onValueChange = {
                                 onIntent(
                                     InputDurationIntent(
-                                        it.text,
+                                        it,
                                         timeUnit = pageState.timeUnit
                                     )
                                 )
                             },
-                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                            keyboardActions = KeyboardActions(
-                                onNext = {
-                                    if (selectedAction.isCountedAction) {
-                                        countFocus.requestFocus()
-                                    } else {
-                                        noteFocus.requestFocus()
-                                    }
+                            onNextFocus = {
+                                if (selectedAction.isCountedAction) {
+                                    countFocus.requestFocus()
+                                } else {
+                                    noteFocus.requestFocus()
                                 }
-                            ),
+                            }
                         )
 
                         TimeUnitRadio(pageState = pageState, modifier = Modifier.padding(top = 8.dp)) {
@@ -282,42 +244,19 @@ fun AddDailyTrainPage(
                 }
 
                 if (selectedAction.isCountedAction) {
-                    var count by remember(pageState.count) {
-                        mutableStateOf(TextFieldValue(pageState.count, TextRange(pageState.count.length)))
-                    }
-                    var focused by remember {
-                        mutableStateOf(false)
-                    }
-                    LaunchedEffect(key1 = focused) {
-                        if (focused) {
-                            count = count.copy(selection = TextRange(0, count.text.length))
-                        }
-                    }
-                    OutlinedTextField(
+                    WorkoutInput(
+                        value = pageState.count,
+                        label = stringResource(id = R.string.label_workout_count),
+                        valid = pageState.countValid,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .focusRequester(countFocus)
-                            .onFocusChanged {
-                                focused = it.isFocused
-                            },
-                        value = count,
-                        singleLine = true,
-                        label = {
-                            Text(text = stringResource(R.string.label_workout_count))
+                            .focusRequester(countFocus),
+                        onValueChange = {
+                            onIntent(InputCountIntent(it))
                         },
-                        onValueChange = { onIntent(InputCountIntent(it.text)) },
-                        supportingText = {
-                            if (pageState.countValid.not()) {
-                                Text(text = stringResource(id = R.string.hint_invalid_input_num))
-                            }
-                        },
-                        isError = pageState.countValid.not(),
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(
-                            onNext = {
-                                noteFocus.requestFocus()
-                            }
-                        )
+                        onNextFocus = {
+                            noteFocus.requestFocus()
+                        }
                     )
                 }
 
@@ -341,6 +280,56 @@ fun AddDailyTrainPage(
             }
         }
     }
+}
+
+@Composable
+private fun WorkoutInput(
+    value: String,
+    label: String,
+    valid: Boolean,
+    modifier: Modifier = Modifier,
+    onValueChange: (String) -> Unit = {},
+    onNextFocus: () -> Unit = {},
+) {
+    var textFieldValue by remember(value) {
+        mutableStateOf(TextFieldValue(value, TextRange(value.length)))
+    }
+    var focused by remember {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(key1 = focused) {
+        textFieldValue = if (focused) {
+            textFieldValue.copy(selection = TextRange(0, textFieldValue.text.length))
+        } else {
+            textFieldValue.copy(selection = TextRange(textFieldValue.text.length))
+        }
+    }
+    OutlinedTextField(
+        modifier = modifier
+            .onFocusChanged {
+                focused = it.isFocused
+            },
+        value = textFieldValue,
+        label = {
+            Text(text = label)
+        },
+        singleLine = true,
+        supportingText = {
+            if (valid.not()) {
+                Text(text = stringResource(id = R.string.hint_invalid_input_num))
+            }
+        },
+        isError = valid.not(),
+        onValueChange = {
+            onValueChange(it.text)
+        },
+        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+        keyboardActions = KeyboardActions(
+            onNext = {
+                onNextFocus()
+            }
+        ),
+    )
 }
 
 @Composable
