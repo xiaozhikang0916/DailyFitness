@@ -2,8 +2,8 @@ package site.xiaozk.dailyfitness.database.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.datetime.Instant
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
-import java.time.Instant
 
 /**
  * @author: xiaozhikang

@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
@@ -52,8 +53,8 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
+import site.xiaozk.dailyfitness.repository.model.YearMonth
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.TextStyle
@@ -131,7 +132,7 @@ fun WorkoutMonthlyPage(page: MonthWorkoutStatic, onMonthChanged: (YearMonth) -> 
                 DayWithWorkout(day = it, workout = page.workoutDays[it.date])
             }
         }
-        items(list, key = { it.date }) {
+        items(list, key = { it.date.toString() }) {
             WorkoutDailyDetailCard(
                 data = it,
                 onNav = onNav,
@@ -156,7 +157,7 @@ private fun WorkoutDailyDetailCard(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = dateTimeFormatter.format(data.date),
+            text = dateTimeFormatter.format(data.date.toJavaLocalDate()),
             style = MaterialTheme.typography.titleMedium
         )
         data.partsGroup.forEach {

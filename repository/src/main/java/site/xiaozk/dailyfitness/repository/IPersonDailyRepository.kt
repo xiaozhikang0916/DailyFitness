@@ -1,10 +1,10 @@
 package site.xiaozk.dailyfitness.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.LocalDate
 
 /**
  * @author: xiaozhikang

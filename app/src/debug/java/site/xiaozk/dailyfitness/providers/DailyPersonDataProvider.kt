@@ -1,10 +1,11 @@
 package site.xiaozk.dailyfitness.providers
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
-import java.time.Instant
-import java.time.ZoneId
 
 /**
  * @author: xiaozhikang
@@ -14,9 +15,9 @@ import java.time.ZoneId
 class DailyPersonDataProvider : PreviewParameterProvider<BodyDataRecord> {
     override val values: Sequence<BodyDataRecord>
         get() = sequenceOf(
-            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
-            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f),
-            BodyDataRecord(0, Instant.now(), 70f, 70f, 60f, 70f, 0.2f)
+            BodyDataRecord(0, Clock.System.now(), 70f, 70f, 60f, 70f, 0.2f),
+            BodyDataRecord(0, Clock.System.now(), 70f, 70f, 60f, 70f, 0.2f),
+            BodyDataRecord(0, Clock.System.now(), 70f, 70f, 60f, 70f, 0.2f)
         )
 }
 
@@ -25,7 +26,7 @@ class BodyPageDataProvider : PreviewParameterProvider<BodyDataWithDate> {
         get() = sequenceOf(
             BodyDataWithDate(
                 mapOf(
-                    Instant.now().atZone(ZoneId.systemDefault()).toLocalDate() to DailyPersonDataProvider().values.toList()
+                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date to DailyPersonDataProvider().values.toList()
                 )
             )
         )

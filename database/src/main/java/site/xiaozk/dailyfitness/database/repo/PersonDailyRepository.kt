@@ -2,14 +2,15 @@ package site.xiaozk.dailyfitness.database.repo
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.database.dao.BodyDao
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.LocalDate
-import java.time.ZoneId
 import javax.inject.Inject
 
 /**
@@ -20,9 +21,17 @@ import javax.inject.Inject
 class PersonDailyRepository @Inject constructor(
     private val bodyDao: BodyDao,
 ) : IPersonDailyRepository {
-    override fun getPersonDailyDataFlow(user: User, from: LocalDate, to: LocalDate): Flow<BodyDataWithDate> {
+    override fun getPersonDailyDataFlow(
+        user: User,
+        from: LocalDate,
+        to: LocalDate
+    ): Flow<BodyDataWithDate> {
         return bodyDao.getPersonDailyDataFlow(user, from, to).map {
-            val map: Map<LocalDate, List<BodyDataRecord>> = it.groupBy({ it.recordTime.atZone(ZoneId.systemDefault()).toLocalDate() }) {
+            val map: Map<LocalDate, List<BodyDataRecord>> = it.groupBy({
+                it.recordTime.toLocalDateTime(
+                    TimeZone.currentSystemDefault()
+                ).date
+            }) {
                 it.toRepoEntity()
             }
             BodyDataWithDate(

@@ -7,6 +7,8 @@ kapt_version = "1.8.10"
 hilt_version = "2.48"
 ksp_version = "1.9.20-1.0.13"
 coroutine = "1.7.3"
+serialization = "1.6.1"
+datetime = "0.4.1"
 
 junit = "4.13.2"
 androidx-core = "1.12.0"
@@ -28,7 +30,6 @@ accompanist = "0.32.0"
 
 vico = "1.6.4"
 
-
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
 android-library = { id = "com.android.library", version.ref = "android_build_tools" }
@@ -36,6 +37,7 @@ kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kapt_version" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt_version" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp_version" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [libraries]
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
@@ -61,9 +63,13 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3", 
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist"}
 
+serializationx-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization"}
+datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+
 vico-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vico"}
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico"}
 vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico"}
+
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]
 accompanist = ["accompanist-systemuicontroller"]

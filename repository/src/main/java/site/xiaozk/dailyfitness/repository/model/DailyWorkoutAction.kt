@@ -1,15 +1,17 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
-import java.time.Instant
-import java.time.LocalDate
 
 /**
  * @author: xiaozhikang
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/23
  */
+@Serializable
 data class DailyWorkoutAction(
     val id: Int = 0,
     val instant: Instant,

@@ -1,10 +1,13 @@
 package site.xiaozk.dailyfitness.repository.model.unit
 
+import kotlinx.serialization.Serializable
+
 /**
  * @author: xiaozhikang
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/27
  */
+@Serializable
 data class RecordedWeight(
     val weight: Float = 0f,
     val weightUnit: WeightUnit = WeightUnit.Kg,

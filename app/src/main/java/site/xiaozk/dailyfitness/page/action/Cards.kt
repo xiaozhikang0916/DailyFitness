@@ -35,6 +35,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.toJavaInstant
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
@@ -336,7 +337,7 @@ fun TrainActionCard(
                             style = MaterialTheme.typography.labelMedium
                         )
                         Text(
-                            text = dateFormatter.format(dailyWorkoutAction.value),
+                            text = dateFormatter.format(dailyWorkoutAction.value.toJavaInstant()),
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
@@ -362,7 +363,7 @@ fun TrainActionWorkoutCard(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = formatter.format(workout.instant),
+            text = formatter.format(workout.instant.toJavaInstant()),
             style = MaterialTheme.typography.bodyLarge,
             maxLines = 1,
             overflow = TextOverflow.Clip,

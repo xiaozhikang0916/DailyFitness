@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
@@ -49,7 +50,7 @@ data class AddDailyBodyState(
         if (valid) {
             return BodyDataRecord(
                 id = 0,
-                instant = Instant.now(),
+                instant = Clock.System.now(),
                 weight = bodyField.weight.toFloatOrNull() ?: 0f,
                 bustSize = bodyField.bustSize.toFloatOrNull() ?: 0f,
                 waistSize = bodyField.waistSize.toFloatOrNull() ?: 0f,

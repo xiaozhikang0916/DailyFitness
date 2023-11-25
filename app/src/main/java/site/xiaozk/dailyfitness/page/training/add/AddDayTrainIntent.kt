@@ -4,6 +4,7 @@ import android.util.Log
 import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Instant
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.base.IIntent
 import site.xiaozk.dailyfitness.base.IntentResult
@@ -15,7 +16,6 @@ import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
-import java.time.Instant
 import javax.inject.Inject
 
 /**

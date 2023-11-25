@@ -36,6 +36,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -110,7 +111,7 @@ fun TrainingDayDetail(
     ) {
         item {
             Text(
-                text = dateFormat.format(data.date),
+                text = dateFormat.format(data.date.toJavaLocalDate()),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),

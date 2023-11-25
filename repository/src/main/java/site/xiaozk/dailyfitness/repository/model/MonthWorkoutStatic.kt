@@ -1,11 +1,16 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import site.xiaozk.calendar.date.Month
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
+import site.xiaozk.dailyfitness.calendar.date.Month
 import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
 import java.util.TreeMap
 
 /**
@@ -23,18 +28,22 @@ data class MonthWorkoutStatic(
 
     operator fun get(date: LocalDate): DailyWorkoutSummary? = workoutDays[date]
 
-    fun getWeekTrainedDay(today: LocalDate = LocalDate.now(), firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Int {
-        val from = today.with(firstDayOfWeek).let {
-            if (it.isAfter(today).not()) {
+    fun getWeekTrainedDay(
+        today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+        firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY
+    ): Int {
+        val diff = firstDayOfWeek.value - today.dayOfWeek.value
+        val from = today.plus(diff, DateTimeUnit.DAY).let {
+            if (it <= today) {
                 it
             } else {
-                it.minusDays(7)
+                it.minus(7, DateTimeUnit.DAY)
             }
-        }.toEpochDay()
+        }.toEpochDays()
         val to = from + 6
         val period = from..to
         return workoutDays.trainedDate.filter {
-            it.key.toEpochDay() in period
+            it.key.toEpochDays() in period
         }.size
     }
 }
@@ -54,7 +63,10 @@ data class HomeWorkoutStatic(
 value class BodyStatic(
     val data: Pair<LocalDate, Float>,
 ) {
-    constructor(date: Instant, value: Float) : this(LocalDate.from(date.atZone(ZoneId.systemDefault())) to value)
+    constructor(
+        date: Instant,
+        value: Float
+    ) : this(date.toLocalDateTime(TimeZone.currentSystemDefault()).date to value)
 }
 
 data class DailyWorkoutSummary(

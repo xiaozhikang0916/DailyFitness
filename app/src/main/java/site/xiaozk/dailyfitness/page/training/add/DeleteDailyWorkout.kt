@@ -19,6 +19,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toJavaInstant
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
@@ -92,7 +93,7 @@ fun DeleteDailyWorkout() {
                 val dateTimeFormat =
                     getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
-                    text = stringResource(R.string.desc_dialog_delete_workout, dateTimeFormat.format(workout.instant), workout.action.actionName, workout.displayText.joinToString(" "))
+                    text = stringResource(R.string.desc_dialog_delete_workout, dateTimeFormat.format(workout.instant.toJavaInstant()), workout.action.actionName, workout.displayText.joinToString(" "))
                 )
             }
         )

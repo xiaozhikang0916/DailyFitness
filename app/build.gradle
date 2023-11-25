@@ -72,6 +72,8 @@ dependencies {
     implementation libs.androidx.lifecycle.runtime
     implementation libs.androidx.activity
     implementation libs.android.hilt.lib
+    implementation libs.datetime
+    implementation libs.serializationx.json
     kapt libs.android.hilt.compiler
     implementation platform(libs.androidx.compose.bom)
     implementation libs.bundles.androidx.compose

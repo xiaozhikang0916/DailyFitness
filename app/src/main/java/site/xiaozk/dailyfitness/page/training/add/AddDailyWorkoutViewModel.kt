@@ -6,6 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
@@ -14,7 +16,6 @@ import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
-import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -47,7 +48,7 @@ class AddDailyWorkoutViewModel @Inject constructor(
 }
 
 data class AddDailyWorkoutPageState(
-    val instant: Instant = Instant.now(),
+    val instant: Instant = Clock.System.now(),
     val allParts: List<TrainPartGroup> = emptyList(),
     val selectedPart: TrainPartGroup? = null,
     val selectedAction: TrainActionWithPart? = null,

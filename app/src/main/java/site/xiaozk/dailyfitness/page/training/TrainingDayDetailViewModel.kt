@@ -9,11 +9,14 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
-import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -30,7 +33,7 @@ class TrainingDayDetailViewModel @Inject constructor(
     val date : LocalDate
         get() = savedStateHandle.get<String>("date")
             ?.let { TrainingDayGroup.TrainDayNavItem.fromArgument(it) }
-            ?: LocalDate.now()
+            ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     @OptIn(ExperimentalCoroutinesApi::class)
     val trainingData: Flow<DailyWorkout?> = savedStateHandle.getStateFlow("date", "").map {
         TrainingDayGroup.TrainDayNavItem.fromArgument(it)

@@ -20,8 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import site.xiaozk.calendar.date.Day
-import site.xiaozk.calendar.date.IWeek
+import site.xiaozk.dailyfitness.calendar.date.Day
+import site.xiaozk.dailyfitness.calendar.date.IWeek
 
 /**
  * @author: xiaozhikang

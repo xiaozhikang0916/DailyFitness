@@ -6,11 +6,11 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
 import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
 import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.LocalDate
 
 /**
  * @author: xiaozhikang

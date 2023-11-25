@@ -1,5 +1,8 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class TrainActionWithPart(
     val part: TrainPart,
     val action: TrainAction = TrainAction(partId = part.id),
@@ -16,6 +19,7 @@ data class TrainActionWithPart(
         get() = action.isCountedAction
 }
 
+@Serializable
 data class TrainAction(
     val id: Int = 0,
     val partId: Int = 0,
@@ -25,11 +29,13 @@ data class TrainAction(
     val isCountedAction: Boolean = false,
 )
 
+@Serializable
 data class TrainPart(
     val id: Int = 0,
     val partName: String = "",
 )
 
+@Serializable
 data class TrainPartGroup(
     val part: TrainPart = TrainPart(),
     val actions: List<TrainActionWithPart> = emptyList(),

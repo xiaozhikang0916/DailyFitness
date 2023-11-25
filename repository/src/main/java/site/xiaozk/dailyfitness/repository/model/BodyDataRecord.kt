@@ -3,17 +3,20 @@ package site.xiaozk.dailyfitness.repository.model
 import android.content.Context
 import androidx.annotation.FloatRange
 import androidx.annotation.StringRes
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 import site.xiaozk.dailyfitness.repository.R
-import java.time.Instant
 
 /**
  * @author: xiaozhikang
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/23
  */
+@Serializable
 data class BodyDataRecord(
     val id: Int = 0,
-    val instant: Instant = Instant.EPOCH,
+    val instant: Instant = Clock.System.now(),
     val weight: Float = 0f,
     val bustSize: Float = 0f,
     val waistSize: Float = 0f,

@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
+
 
 /**
  * @author: xiaozhikang

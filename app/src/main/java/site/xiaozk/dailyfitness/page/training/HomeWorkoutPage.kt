@@ -17,6 +17,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
@@ -62,7 +63,9 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
     val scaffoldProperty = LocalScaffoldProperty.current
     val data = state.homePageState
     val monthData = data.monthStatic
-    val routeToMonthSummary = Modifier.clickable { onNav(WorkoutStaticGroup.WorkoutMonthNavItem.getRoute(monthData.month)) }
+    val routeToMonthSummary = Modifier.clickable {
+        onNav(WorkoutStaticGroup.WorkoutMonthNavItem.getRoute(monthData.month))
+    }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -109,7 +112,7 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
                     title = stringResource(R.string.label_home_workout_latest_weight),
                     content = it.data.second.toString(),
                     subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_weight_unit_kg),
-                    bottom = it.data.first.format(formatter)
+                    bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
         }
@@ -119,7 +122,7 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
                     title = stringResource(R.string.label_home_workout_latest_bust_size),
                     content = it.data.second.toString(),
                     subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
-                    bottom = it.data.first.format(formatter)
+                    bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
         }
@@ -129,7 +132,7 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
                     title = stringResource(R.string.label_home_workout_latest_waist_size),
                     content = it.data.second.toString(),
                     subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
-                    bottom = it.data.first.format(formatter)
+                    bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
         }
@@ -139,7 +142,7 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
                     title = stringResource(R.string.label_home_workout_latest_hip_size),
                     content = it.data.second.toString(),
                     subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
-                    bottom = it.data.first.format(formatter)
+                    bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
         }
@@ -149,7 +152,7 @@ fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
                     title = stringResource(R.string.label_home_workout_latest_body_fat),
                     content = it.data.second.toString(),
                     subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_count_unit_percentage),
-                    bottom = it.data.first.format(formatter)
+                    bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
         }

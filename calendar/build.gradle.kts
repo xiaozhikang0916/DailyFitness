@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "site.xiaozk.calendar"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 29
@@ -42,4 +42,6 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.androidx.compose)
+    implementation(libs.datetime)
+    implementation(project(":repository"))
 }

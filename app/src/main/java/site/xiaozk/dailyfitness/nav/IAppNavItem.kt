@@ -13,6 +13,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppHomeRootNav.AppHomePage.TrainPartNavItem.homeGraph
 import site.xiaozk.dailyfitness.page.action.DeleteTrainActionDialog
@@ -31,16 +37,17 @@ import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import site.xiaozk.dailyfitness.repository.model.YearMonth
 
 /**
  * @author: xiaozhikang
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/26
  */
+private val json = Json {
+    ignoreUnknownKeys = true
+}
+
 sealed interface IAppNavItem {
     val route: String
 }
@@ -135,12 +142,12 @@ object WorkoutStaticGroup {
         }
 
         fun parseArgument(month: YearMonth): String {
-            return month.toString()
+            return Json.encodeToString(month)
         }
 
         fun fromArgument(arg: String): YearMonth {
             return try {
-                YearMonth.parse(arg)
+                Json.decodeFromString<YearMonth>(arg)
             } catch (e: Exception) {
                 YearMonth.now()
             }
@@ -165,17 +172,16 @@ object TrainingDayGroup {
         override val route: String
             get() = "train_day/day?date={date}"
 
-        private val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
         fun getRoute(date: LocalDate): String {
-            return "train_day/day?date=${dateFormat.format(date)}"
+            return "train_day/day?date=${Json.encodeToString(date)}"
         }
 
         fun fromArgument(arg: String): LocalDate {
             return try {
-                LocalDate.from(dateFormat.parse(arg))
+                Json.decodeFromString<LocalDate>(arg)
             } catch (e: Exception) {
                 Log.e("TrainDayNavItem", "parse $arg to local date failed", e)
-                LocalDate.now()
+                Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
             }
         }
     }

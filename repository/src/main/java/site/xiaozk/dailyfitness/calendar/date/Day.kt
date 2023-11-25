@@ -1,8 +1,14 @@
-package site.xiaozk.calendar.date
+package site.xiaozk.dailyfitness.calendar.date
 
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.YearMonth
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.todayIn
+import site.xiaozk.dailyfitness.repository.model.YearMonth
 
 /**
  * @author: xiaozhikang
@@ -19,29 +25,31 @@ data class Day(
 ) : IDay, Comparable<IDay> {
     companion object {
         val Today: Day
-            get() = Day(LocalDate.now())
+            get() = Day(Clock.System.todayIn(TimeZone.currentSystemDefault()))
     }
 
     override val isToday: Boolean
-        get() = date == LocalDate.now()
+        get() = this == Today
 
     fun getWeek(firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Week {
-        val firstDay = this.date.with(firstDayOfWeek).let {
-            if (it.isAfter(this.date).not()) {
+        val currentDayOfWeek = this.date.dayOfWeek
+        val diff = firstDayOfWeek.value - currentDayOfWeek.value
+        val firstDay = this.date.plus(diff, DateTimeUnit.DAY).let {
+            if (it <= this.date) {
                 it
             } else {
-                it.minusDays(7)
+                it.minus(7, DateTimeUnit.DAY)
             }
         }
         return (0..6).map {
-            Day(firstDay.plusDays(it.toLong()))
+            Day(firstDay.plus(it, DateTimeUnit.DAY))
         }.let(::ArrayList).let(::Week)
     }
 
     fun getMonth(): Month {
-        val firstDay = this.date.withDayOfMonth(1)
-        return (0 until this.date.lengthOfMonth()).map {
-            Day(firstDay.plusDays(it.toLong()))
+        val firstDay = LocalDate(this.date.year, this.date.month, 1)
+        return (0 until this.date.dayOfMonth).map {
+            Day(firstDay.plus(it, DateTimeUnit.DAY))
         }.let(::ArrayList).let(::Month)
     }
 
@@ -70,7 +78,7 @@ data class Week(
 data class WeekOfMonth(
     val month: Month,
     override val days: ArrayList<Day>,
-): IWeek<Day> {
+) : IWeek<Day> {
     override fun IDay.inCurrentRange(): Boolean {
         return with(month) {
             this@inCurrentRange.inCurrentRange()
@@ -91,37 +99,42 @@ data class Month(
             get() = Day.Today.getMonth()
     }
 
-    constructor(month: YearMonth) : this(month.atDay(1).let {
-        (0 until it.lengthOfMonth()).map { offset ->
-            Day(it.plusDays(offset.toLong()))
-        }.let(::ArrayList)
-    })
+    constructor(month: YearMonth) : this(
+        month.atDay(1).let {
+            (0 until month.lengthOfMonth()).map { offset ->
+                Day(it.plus(offset, DateTimeUnit.DAY))
+            }.let(::ArrayList)
+        }
+    )
 
     override val yearMonth: YearMonth
-        get() = YearMonth.from(days.first().date)
+        get() = YearMonth(days.first().date)
 
     fun getOverlappingMonth(firstDayOfWeek: DayOfWeek): OverlappingMonth {
         val firstDay = this.days.first().date
-        val start = firstDay.with(firstDayOfWeek).let {
-            if (it.isAfter(firstDay).not()) {
+        val firstDayInWeekOfMonth = firstDay.dayOfWeek
+        val diff = firstDayOfWeek.value - firstDayInWeekOfMonth.value
+        val start = firstDay.plus(diff, DateTimeUnit.DAY).let {
+            if (it <= firstDay) {
                 it
             } else {
-                it.minusDays(7)
+                it.minus(7, DateTimeUnit.DAY)
             }
         }
         val lastDay = this.days.last().date
-        val end = lastDay.with(DayOfWeek.of((firstDayOfWeek.value + 6) % 7)).let {
-            if (it.isBefore(lastDay).not()) {
+        val diff2 = DayOfWeek.of((firstDayOfWeek.value + 6) % 7).value - lastDay.dayOfWeek.value
+        val end = lastDay.plus(diff2, DateTimeUnit.DAY).let {
+            if (it >= lastDay) {
                 it
             } else {
-                it.plusDays(7)
+                it.plus(7, DateTimeUnit.DAY)
             }
         }
-        val prevDays = (0 until firstDay.toEpochDay() - start.toEpochDay()).map {
-            Day(start.plusDays(it))
+        val prevDays = (0 until firstDay.toEpochDays() - start.toEpochDays()).map {
+            Day(start.plus(it, DateTimeUnit.DAY))
         }.let(::ArrayList)
-        val nextDays = (1..end.toEpochDay() - lastDay.toEpochDay()).map {
-            Day(end.plusDays(it))
+        val nextDays = (1..end.toEpochDays() - lastDay.toEpochDays()).map {
+            Day(end.plus(it, DateTimeUnit.DAY))
         }.let(::ArrayList)
         return OverlappingMonth(this, prevDays, nextDays)
     }

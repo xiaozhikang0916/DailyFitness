@@ -16,7 +16,7 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
-import java.time.YearMonth
+import site.xiaozk.dailyfitness.repository.model.YearMonth
 import javax.inject.Inject
 
 /**

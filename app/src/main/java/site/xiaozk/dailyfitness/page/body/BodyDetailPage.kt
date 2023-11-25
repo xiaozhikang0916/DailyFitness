@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.chart.LineChart
 import site.xiaozk.dailyfitness.R
@@ -48,10 +51,10 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
+import site.xiaozk.dailyfitness.repository.model.YearMonth
+import site.xiaozk.dailyfitness.repository.model.toJavaYearMonth
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.utils.label
-import java.time.LocalDate
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -136,7 +139,7 @@ fun BodyDetailPage() {
             text = {
                 val format = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
                 Text(
-                    text = stringResource(R.string.desc_dialog_delete_body_date, format.format(it.instant))
+                    text = stringResource(R.string.desc_dialog_delete_body_date, format.format(it.instant.toJavaInstant()))
                 )
             }
         )
@@ -214,7 +217,7 @@ fun BodyChart(
                 .fillMaxWidth()
                 .height(200.dp)
                 .padding(horizontal = 12.dp),
-            displayMonth = data.month,
+            displayMonth = data.month.toJavaYearMonth(),
         )
         Row(
             modifier = Modifier
@@ -252,7 +255,7 @@ private fun BodyDetailDaily(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = format.format(day),
+            text = format.format(day.toJavaLocalDate()),
             modifier = Modifier.heightIn(min = 24.dp),
             style = MaterialTheme.typography.titleMedium
         )

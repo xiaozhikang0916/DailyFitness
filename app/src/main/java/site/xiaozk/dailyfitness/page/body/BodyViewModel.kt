@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toJavaInstant
 import site.xiaozk.chart.BodyChartLine
 import site.xiaozk.chart.BodyChartPoint
 import site.xiaozk.dailyfitness.base.ActionStatus
@@ -23,7 +24,7 @@ import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.BodyField
-import java.time.YearMonth
+import site.xiaozk.dailyfitness.repository.model.YearMonth
 import javax.inject.Inject
 
 /**
@@ -112,7 +113,7 @@ data class BodyDetailPageState(
     val chartLine: BodyChartLine = list.personData.entries.flatMap { it.value }
         .map {
             BodyChartPoint(
-                it.instant,
+                it.instant.toJavaInstant(),
                 selectedField.property(it)
             )
         }.let(::BodyChartLine)

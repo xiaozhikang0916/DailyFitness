@@ -1,9 +1,10 @@
 package site.xiaozk.dailyfitness.repository.model
 
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
-import java.time.Instant
-import java.time.ZoneId
 
 /**
  * @author: xiaozhikang
@@ -23,7 +24,13 @@ data class TrainPartStaticPage(
     val actions: List<TrainActionStaticPage> = emptyList(),
 ) {
     val actionCount: Int = actions.size
-    val partWorkoutCount: Int = actions.flatMap { it.workouts.map { it.instant.atZone(ZoneId.systemDefault()).toLocalDate() } }.distinct().size
+    val partWorkoutCount: Int = actions.flatMap {
+        it.workouts.map {
+            it.instant.toLocalDateTime(
+                TimeZone.currentSystemDefault()
+            ).date
+        }
+    }.distinct().size
     val workoutCount: Int = actions.sumOf { it.workoutCount }
 }
 

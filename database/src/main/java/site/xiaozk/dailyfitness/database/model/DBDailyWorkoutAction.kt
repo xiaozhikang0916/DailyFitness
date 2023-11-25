@@ -5,6 +5,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
@@ -19,8 +22,6 @@ import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
-import java.time.Instant
-import java.time.ZoneId
 import java.util.TreeMap
 
 
@@ -140,7 +141,7 @@ enum class DBTimeUnit(val repoUnit: TimeUnit) {
 }
 
 fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutDailyMap(): DailyWorkoutMap {
-    val zone = ZoneId.systemDefault()
+    val zone = TimeZone.currentSystemDefault()
     return this.flatMap { outMap ->
         outMap.value.flatMap { innerMap ->
             innerMap.value.map {
@@ -149,7 +150,7 @@ fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutDa
         }
     }.map {
         it.second.toDailyWorkoutAction() to it.first.toRepoEntity()
-    }.groupBy({ it.first.instant.atZone(zone).toLocalDate() }) {
+    }.groupBy({ it.first.instant.toLocalDateTime(zone).date }) {
         it.first.action to it
     }.entries.map { entry ->
         entry.key to entry.value.groupBy({ it.first to it.second.second }) { it.second.first }
