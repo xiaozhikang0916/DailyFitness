@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace 'site.xiaozk.dailyfitness'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "site.xiaozk.dailyfitness"
         minSdk 29
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
