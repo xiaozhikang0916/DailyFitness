@@ -39,12 +39,12 @@ class BodyViewModel @Inject constructor(
     private val userRepo: IUserRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _month: StateFlow<YearMonth> = savedStateHandle.getStateFlow("date", YearMonth.now())
+    private val _month: MutableStateFlow<YearMonth> = MutableStateFlow(savedStateHandle.get("date") ?: YearMonth.now())
 
     var month: YearMonth
         get() = _month.value
         set(value) {
-            savedStateHandle["date"] = value
+            _month.value = value
         }
 
     private val _field: StateFlow<BodyField> = savedStateHandle.getStateFlow("field", BodyField.Weight)

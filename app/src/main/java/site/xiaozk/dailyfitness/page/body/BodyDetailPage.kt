@@ -175,7 +175,7 @@ fun BodyDetailPage(
                 onFieldFiltered = onFieldFiltered,
             )
         }
-        itemsIndexed(dates, key = { _, item -> item.second.instant }) { index, it ->
+        itemsIndexed(dates, key = { _, item -> item.second.instant.toString() }) { index, it ->
             BodyDetailDaily(
                 modifier = Modifier.padding(horizontal = 12.dp),
                 day = it.first,
