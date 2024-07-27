@@ -3,6 +3,7 @@ plugins {
     alias libs.plugins.kotlin
     alias libs.plugins.kapt
     alias libs.plugins.hilt
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -48,12 +49,6 @@ android {
     kotlinOptions {
         jvmTarget = libs.versions.java.get()
     }
-    buildFeatures {
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion libs.versions.compose.compiler.get()
-    }
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -65,6 +60,13 @@ android {
             outputFileName = fileName
         }
     }
+}
+
+composeCompiler {
+//    enableStrongSkippingMode = true
+//
+//    reportsDestination = layout.buildDirectory.dir("compose_compiler")
+//    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
 }
 
 dependencies {
