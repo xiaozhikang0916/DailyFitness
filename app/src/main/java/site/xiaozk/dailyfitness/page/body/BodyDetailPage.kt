@@ -49,6 +49,7 @@ import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import kotlinx.datetime.YearMonth
+import site.xiaozk.dailyfitness.repository.model.now
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.utils.label
 import site.xiaozk.dailyfitness.widget.HomePageScaffold
@@ -66,7 +67,10 @@ import java.util.Locale
 
 @Composable
 fun BodyDetailPage() {
-    val viewModel: BodyViewModel = hiltViewModel()
+    val initialMonth = remember { YearMonth.now() }
+    val viewModel = hiltViewModel<BodyViewModel, BodyViewModel.Factory>(
+        creationCallback = { it.create(initialMonth) }
+    )
 
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_body_data)

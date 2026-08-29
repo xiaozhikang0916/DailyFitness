@@ -1,14 +1,15 @@
 package site.xiaozk.dailyfitness.nav
 
 import androidx.compose.runtime.compositionLocalOf
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 
 /**
- * NavController shared by the whole app, provided in AppHost.
- * Pages use it directly to navigate / pop back stack, no more shared scaffold ViewModel.
+ * NavBackStack shared by the whole app, provided in AppHost.
+ * Pages use it directly to navigate / pop back stack.
  */
-val LocalNavController = compositionLocalOf<NavController> {
-    error("No NavController provided, make sure AppHost wraps the content with LocalNavController")
+val LocalNavBackStack = compositionLocalOf<NavBackStack<NavKey>> {
+    error("No NavBackStack provided, make sure AppHost wraps the content with LocalNavBackStack")
 }
 
 /**

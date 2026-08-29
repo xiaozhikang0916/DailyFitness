@@ -20,8 +20,9 @@ import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import site.xiaozk.dailyfitness.nav.WorkoutMonth
+import androidx.navigation3.runtime.NavKey
 import site.xiaozk.dailyfitness.widget.HomePageScaffold
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import java.time.ZoneId
@@ -40,13 +41,13 @@ import java.time.format.FormatStyle
 @Composable
 fun HomeWorkoutPage() {
     val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
     val title = stringResource(R.string.title_home_workout)
     val workoutDayList = homeViewModel.pageData.collectAsState()
     HomePageScaffold(title = title) { scaffoldProperty ->
         HomeWorkoutPage(
             state = workoutDayList.value,
-            onNav = { navController.navigate(it) },
+            onNav = { navBackStack.add(it) },
             scaffoldProperty = scaffoldProperty,
         )
     }
@@ -55,7 +56,7 @@ fun HomeWorkoutPage() {
 @Composable
 fun HomeWorkoutPage(
     state: HomeWorkoutPageState,
-    onNav: (String) -> Unit,
+    onNav: (NavKey) -> Unit,
     scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
     val formatter = remember {
@@ -64,7 +65,7 @@ fun HomeWorkoutPage(
     val data = state.homePageState
     val monthData = data.monthStatic
     val routeToMonthSummary = Modifier.clickable {
-        onNav(WorkoutStaticGroup.WorkoutMonthNavItem.getRoute(monthData.month))
+        onNav(WorkoutMonth(date = monthData.month))
     }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),

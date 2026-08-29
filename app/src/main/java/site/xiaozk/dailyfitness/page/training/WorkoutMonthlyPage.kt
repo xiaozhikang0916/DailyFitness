@@ -26,11 +26,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -44,9 +47,12 @@ import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import site.xiaozk.dailyfitness.nav.AddWorkoutAction
+import site.xiaozk.dailyfitness.nav.TrainDay
+import site.xiaozk.dailyfitness.nav.WorkoutMonth
+import androidx.navigation3.runtime.NavKey
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SubPageScaffold
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
@@ -69,9 +75,12 @@ import javax.inject.Inject
  */
 
 @Composable
-fun WorkoutMonthlyPage() {
-    val viewModel: WorkoutMonthlyPageViewModel = hiltViewModel()
-    val navController = LocalNavController.current
+fun WorkoutMonthlyPage(month: YearMonth) {
+    val viewModel = hiltViewModel<WorkoutMonthlyPageViewModel, WorkoutMonthlyPageViewModel.Factory>(
+        creationCallback = { it.create(month) }
+    )
+    val navBackStack = LocalNavBackStack.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_workout_monthly)
     val descAdd = stringResource(R.string.desc_top_action_add_action)
@@ -83,10 +92,10 @@ fun WorkoutMonthlyPage() {
     }
     SubPageScaffold(
         title = title,
-        onBack = { navController.popBackStack() },
+        onBack = { systemBack?.onBackPressed() },
         actions = {
             IconButton(
-                onClick = { navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route) }
+                onClick = { navBackStack.add(AddWorkoutAction) }
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = descAdd)
             }
@@ -95,7 +104,7 @@ fun WorkoutMonthlyPage() {
         WorkoutMonthlyPage(
             page = page.value.monthData,
             onMonthChanged = { viewModel.month = it },
-            onNav = { navController.navigate(it) },
+            onNav = { navBackStack.add(it) },
             scaffoldProperty = scaffoldProperty,
         )
     }
@@ -105,7 +114,7 @@ fun WorkoutMonthlyPage() {
 fun WorkoutMonthlyPage(
     page: MonthWorkoutStatic,
     onMonthChanged: (YearMonth) -> Unit,
-    onNav: (String) -> Unit,
+    onNav: (NavKey) -> Unit,
     scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
     val list = remember(page) {
@@ -149,13 +158,13 @@ fun WorkoutMonthlyPage(
 private fun WorkoutDailyDetailCard(
     data: DailyWorkoutSummary,
     dateTimeFormatter: DateTimeFormatter ,
-    onNav: (String) -> Unit,
+    onNav: (NavKey) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                onNav(TrainingDayGroup.TrainDayNavItem.getRoute(data.date))
+                onNav(TrainDay(date = data.date))
             },
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -179,21 +188,23 @@ private fun WorkoutDailyDetailCard(
     }
 }
 
-@HiltViewModel
-class WorkoutMonthlyPageViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = WorkoutMonthlyPageViewModel.Factory::class)
+class WorkoutMonthlyPageViewModel @AssistedInject constructor(
     private val homeRepo: IDailyWorkoutRepository,
     private val userRepository: IUserRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted month: YearMonth,
 ) : ViewModel() {
-    private val _month: StateFlow<YearMonth> = savedStateHandle.getStateFlow("date", "")
-        .map {
-            WorkoutStaticGroup.WorkoutMonthNavItem.fromArgument(it)
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, YearMonth.now())
+    @AssistedFactory
+    interface Factory {
+        fun create(month: YearMonth): WorkoutMonthlyPageViewModel
+    }
+
+    private val _month: MutableStateFlow<YearMonth> = MutableStateFlow(month)
 
     var month: YearMonth
         get() = _month.value
         set(value) {
-            savedStateHandle["date"] = WorkoutStaticGroup.WorkoutMonthNavItem.parseArgument(value)
+            _month.value = value
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)

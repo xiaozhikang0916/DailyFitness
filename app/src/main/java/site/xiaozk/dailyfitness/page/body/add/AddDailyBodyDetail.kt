@@ -33,7 +33,7 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.utils.label
 import site.xiaozk.dailyfitness.utils.trailing
@@ -51,21 +51,21 @@ fun AddDailyBodyDetail() {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val navController = LocalNavController.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(id = R.string.title_add_body_data)
     val actionSave = stringResource(id = R.string.top_action_save)
     LaunchedEffect(key1 = pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
             appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
-            navController.popBackStack()
+            systemBack?.onBackPressed()
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
     DialogPageScaffold(
         title = title,
-        onBack = { navController.popBackStack() },
+        onBack = { systemBack?.onBackPressed() },
         actions = {
             TextButton(onClick = { viewModel.reduce(SubmitBodyIntent) }) {
                 Text(actionSave)

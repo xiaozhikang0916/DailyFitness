@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.serialization)
 }
 
 android {
@@ -76,8 +77,9 @@ dependencies {
     implementation(libs.androidx.composeMaterialIconsCore)
     implementation(libs.bundles.androidx.compose)
     implementation(libs.bundles.accompanist)
-    implementation(libs.androidx.navigation.compose.core)
-    implementation(libs.androidx.navigation.compose.hilt)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(project(":repository"))
     implementation(project(":database"))
     implementation(project(":calendar"))

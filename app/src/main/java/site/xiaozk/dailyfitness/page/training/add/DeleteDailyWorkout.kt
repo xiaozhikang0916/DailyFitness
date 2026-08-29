@@ -12,10 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +29,6 @@ import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
 import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
@@ -41,30 +43,31 @@ import javax.inject.Inject
  */
 
 @Composable
-fun DeleteDailyWorkout() {
-    val navController = LocalNavController.current
+fun DeleteDailyWorkout(
+    workoutId: Int,
+    onDismiss: () -> Unit,
+) {
     val appSnackbarHostState = LocalAppSnackbarHostState.current
-    val viewModel: DeleteDailyWorkoutViewModel = hiltViewModel()
-    val dismiss = remember {
-        {
-            navController.popBackStack()
-            Unit
-        }
-    }
+    // 本地状态对话框：每次打开重新组合 → 新 key → 独立 VM 实例
+    val vmKey = remember { "delete-workout-$workoutId-${UUID.randomUUID()}" }
+    val viewModel = hiltViewModel<DeleteDailyWorkoutViewModel, DeleteDailyWorkoutViewModel.Factory>(
+        key = vmKey,
+        creationCallback = { it.create(workoutId) }
+    )
     val state = viewModel.flow.collectAsState(initial = null).value
     LaunchedEffect(key1 = Unit) {
         viewModel.flow.collect {
             if (it.loadStatus is ActionStatus.Failed) {
                 appSnackbarHostState.showSnackbar(LoadFailedSnackbar)
-                navController.popBackStack()
+                onDismiss()
             }
             if (it.deleteStatus is ActionStatus.Done) {
                 appSnackbarHostState.showSnackbar(DelSuccessSnackbar)
-                navController.popBackStack()
+                onDismiss()
             }
             if (it.deleteStatus is ActionStatus.Failed) {
                 appSnackbarHostState.showSnackbar(DelFailedSnackbar)
-                navController.popBackStack()
+                onDismiss()
             }
         }
     }
@@ -72,7 +75,7 @@ fun DeleteDailyWorkout() {
     val workout = state?.workout
     if (workout != null) {
         AlertDialog(
-            onDismissRequest = dismiss,
+            onDismissRequest = onDismiss,
             confirmButton = {
                 Text(
                     text = stringResource(id = R.string.dialog_action_delete),
@@ -87,7 +90,7 @@ fun DeleteDailyWorkout() {
                 Text(
                     text = stringResource(id = R.string.dialog_action_cancel),
                     modifier = Modifier
-                        .clickable { dismiss() },
+                        .clickable { onDismiss() },
                     textAlign = TextAlign.Center
                 )
             },
@@ -105,14 +108,17 @@ fun DeleteDailyWorkout() {
     }
 }
 
-@HiltViewModel
-class DeleteDailyWorkoutViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = DeleteDailyWorkoutViewModel.Factory::class)
+class DeleteDailyWorkoutViewModel @AssistedInject constructor(
     private val trainRepo: IDailyWorkoutRepository,
     private val userRepo: IUserRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted private val workoutId: Int,
 ) : ViewModel() {
-    val workoutId: Int
-        get() = savedStateHandle["workoutId"] ?: -1
+    @AssistedFactory
+    interface Factory {
+        fun create(workoutId: Int): DeleteDailyWorkoutViewModel
+    }
+
     private val _flow = MutableStateFlow(DeleteDailyWorkoutState())
     val flow = _flow.asStateFlow()
 

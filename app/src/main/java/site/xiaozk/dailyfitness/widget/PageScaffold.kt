@@ -28,14 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.currentBackStackEntryAsState
-import site.xiaozk.dailyfitness.nav.AppHomeRootNav
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import site.xiaozk.dailyfitness.nav.HomeTab
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
 
 /**
  * Insets + nested scroll connection of the page-level Scaffold, passed down to the page
@@ -58,7 +57,7 @@ fun HomePageScaffold(
     modifier: Modifier = Modifier,
     content: @Composable (ScaffoldProperty) -> Unit,
 ) {
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -76,11 +75,11 @@ fun HomePageScaffold(
             )
         },
         bottomBar = {
-            AppBottomBar(navController = navController)
+            AppBottomBar(backStack = navBackStack)
         },
         floatingActionButton = {
             HostFab(
-                navController = navController,
+                backStack = navBackStack,
                 topAppBarState = scrollBehavior.state,
             )
         },
@@ -167,35 +166,23 @@ private fun AppTopBar(
 }
 
 @Composable
-fun AppBottomBar(navController: NavController) {
-    val bottomList = remember {
-        AppHomeRootNav.AppHomePage.all()
+fun AppBottomBar(backStack: NavBackStack<NavKey>) {
+    val tabs = remember {
+        HomeTab.entries
     }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+    val current = backStack.lastOrNull()
     NavigationBar {
-        bottomList.forEach { item ->
+        tabs.forEach { tab ->
             NavigationBarItem(
-                selected = currentDestination?.hierarchy?.any { dest ->
-                    item.route == dest.route
-                } == true,
+                selected = current == tab.route,
+                // A1 decision: switching tabs clears the back stack (and with it any
+                // entry-scoped ViewModels); data is reloaded on each switch.
                 onClick = {
-                    navController.navigate(item.route) {
-                        // Pop up to the start destination of the graph to
-                        // avoid building up a large stack of destinations
-                        // on the back stack as users select items
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        // Avoid multiple copies of the same destination when
-                        // reselecting the same item
-                        launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
-                        restoreState = true
-                    }
+                    backStack.clear()
+                    backStack.add(tab.route)
                 },
-                icon = { Icon(imageVector = item.icon, contentDescription = null) },
-                label = { Text(text = item.getName(LocalResources.current)) })
+                icon = { Icon(imageVector = tab.icon, contentDescription = null) },
+                label = { Text(text = stringResource(tab.labelRes)) })
         }
     }
 }

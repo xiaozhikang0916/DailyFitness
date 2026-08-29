@@ -1,8 +1,10 @@
 package site.xiaozk.dailyfitness.page.body
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,13 +35,18 @@ import javax.inject.Inject
  * @create: 2023/2/26
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
-class BodyViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = BodyViewModel.Factory::class)
+class BodyViewModel @AssistedInject constructor(
     private val bodyRepo: IPersonDailyRepository,
     private val userRepo: IUserRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted month: YearMonth,
 ) : ViewModel() {
-    private val _month: MutableStateFlow<YearMonth> = MutableStateFlow(savedStateHandle.get("date") ?: YearMonth.now())
+    @AssistedFactory
+    interface Factory {
+        fun create(month: YearMonth): BodyViewModel
+    }
+
+    private val _month: MutableStateFlow<YearMonth> = MutableStateFlow(month)
 
     var month: YearMonth
         get() = _month.value
@@ -47,12 +54,12 @@ class BodyViewModel @Inject constructor(
             _month.value = value
         }
 
-    private val _field: StateFlow<BodyField> = savedStateHandle.getStateFlow("field", BodyField.Weight)
+    private val _field: MutableStateFlow<BodyField> = MutableStateFlow(BodyField.Weight)
 
     var field: BodyField
         get() = _field.value
         set(value) {
-            savedStateHandle["field"] = value
+            _field.value = value
         }
 
     private val bodyDetailFlow: StateFlow<BodyDetailLoadState> = _month.transformLatest { month ->

@@ -16,15 +16,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.TrainPartGraph
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import site.xiaozk.dailyfitness.nav.AddTrainAction
+import site.xiaozk.dailyfitness.nav.TrainActionDetail
+import site.xiaozk.dailyfitness.page.action.parts.AddTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
@@ -36,13 +42,17 @@ import site.xiaozk.dailyfitness.widget.SubPageScaffold
  * @create: 2023/3/22
  */
 @Composable
-fun TrainPartPage() {
-    val viewModel: TrainPartViewModel = hiltViewModel()
+fun TrainPartPage(partId: Int) {
+    val viewModel = hiltViewModel<TrainPartViewModel, TrainPartViewModel.Factory>(
+        creationCallback = { it.create(partId = partId, actionId = -1) }
+    )
     val part = viewModel.trainPartStatic.collectAsState(initial = TrainPartStaticPage()).value
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    var addTrainPartId by remember { mutableStateOf<Int?>(null) }
     if (part == null) {
         SideEffect {
-            navController.popBackStack()
+            systemBack?.onBackPressed()
         }
     } else {
         val title = stringResource(id = R.string.title_train_part)
@@ -50,18 +60,20 @@ fun TrainPartPage() {
         val actionAddDesc = stringResource(R.string.action_desc_add_action)
         SubPageScaffold(
             title = title,
-            onBack = { navController.popBackStack() },
+            onBack = { systemBack?.onBackPressed() },
             actions = {
                 IconButton(
                     onClick = {
-                        navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute(part.trainPart))
+                        navBackStack.add(
+                            AddTrainAction(partId = part.trainPart.id, actionId = 0)
+                        )
                     }
                 ) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = actionAddDesc)
                 }
                 IconButton(
                     onClick = {
-                        navController.navigate(TrainPartGraph.AddTrainPartNavItem.getRoute(part.trainPart))
+                        addTrainPartId = part.trainPart.id
                     }
                 ) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = actionEditDesc)
@@ -71,9 +83,17 @@ fun TrainPartPage() {
             TrainPartPage(
                 trainPartStaticPage = part,
                 onTrainActionClick = {
-                    navController.navigate(TrainPartGraph.TrainActionDetailNavItem.getRoute(it.action))
+                    navBackStack.add(
+                        TrainActionDetail(actionId = it.action.id)
+                    )
                 },
                 scaffoldProperty = scaffoldProperty,
+            )
+        }
+        addTrainPartId?.let { id ->
+            AddTrainPartPage(
+                partId = id,
+                onDismiss = { addTrainPartId = null },
             )
         }
     }

@@ -6,15 +6,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -25,7 +29,6 @@ import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
 import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import javax.inject.Inject
@@ -36,15 +39,23 @@ import javax.inject.Inject
  */
 
 @Composable
-fun DeleteTrainActionDialog() {
-    val viewModel: DeleteTrainActionViewModel = hiltViewModel()
-    val navController = LocalNavController.current
+fun DeleteTrainActionDialog(
+    actionId: Int,
+    onDismiss: () -> Unit,
+) {
+    // 本地状态对话框：每次打开重新组合 → 新 key → 独立 VM 实例
+    val vmKey = remember { "delete-train-action-$actionId-${UUID.randomUUID()}" }
+    val viewModel = hiltViewModel<DeleteTrainActionViewModel, DeleteTrainActionViewModel.Factory>(
+        key = vmKey,
+        creationCallback = { it.create(actionId) }
+    )
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val state = viewModel.flow.collectAsState()
+    val dismiss = rememberUpdatedState(onDismiss)
     LaunchedEffect(key1 = state.value.deleteStatus) {
         if (state.value.deleteStatus == ActionStatus.Done) {
             appSnackbarHostState.showSnackbar(DelSuccessSnackbar)
-            navController.popBackStack()
+            dismiss.value()
         } else if (state.value.deleteStatus is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(DelFailedSnackbar)
         }
@@ -52,13 +63,9 @@ fun DeleteTrainActionDialog() {
     LaunchedEffect(key1 = state.value.loadStatus) {
         if (state.value.loadStatus is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(LoadFailedSnackbar)
-            navController.popBackStack()
+            dismiss.value()
         }
     }
-
-    val dismiss = rememberUpdatedState<() -> Unit>(newValue = {
-        navController.popBackStack()
-    })
 
     val action = state.value.action
     if (action.id > 0) {
@@ -94,13 +101,16 @@ fun DeleteTrainActionDialog() {
     }
 }
 
-@HiltViewModel
-class DeleteTrainActionViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = DeleteTrainActionViewModel.Factory::class)
+class DeleteTrainActionViewModel @AssistedInject constructor(
     private val trainRepo: ITrainActionRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted private val actionId: Int,
 ) : ViewModel() {
-    private val id: Int
-        get() = savedStateHandle["actionId"] ?: 0
+    @AssistedFactory
+    interface Factory {
+        fun create(actionId: Int): DeleteTrainActionViewModel
+    }
+
     private val _flow: MutableStateFlow<DeleteActionState> = MutableStateFlow(DeleteActionState())
     val flow = _flow.asStateFlow()
 
@@ -110,7 +120,7 @@ class DeleteTrainActionViewModel @Inject constructor(
             try {
                 _flow.emit(
                     DeleteActionState(
-                        action = trainRepo.getAction(id).first(),
+                        action = trainRepo.getAction(actionId).first(),
                         loadStatus = ActionStatus.Done,
                     )
                 )

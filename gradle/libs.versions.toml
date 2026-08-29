@@ -17,8 +17,9 @@ androidx-lifecycle-viewmodel-compose = "2.11.0"
 androidx-activity = "1.13.0"
 compose-bom = "2026.08.00"
 room = "2.8.4"
-navigation-compose = "2.10.0"
-navigation-compose-hilt = "1.4.0"
+navigation3 = "1.1.7"
+lifecycle-viewmodel-navigation3 = "2.11.0"
+hilt-lifecycle-viewmodel-compose = "1.4.0"
 accompanist = "0.32.0"
 
 vico = "1.6.4"
@@ -51,8 +52,10 @@ androidx-composeMaterial = { module = "androidx.compose.material:material" }
 androidx-composeMaterialIconsCore = { module = "androidx.compose.material:material-icons-core" }
 androidx-composeUiTooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
-androidx-navigation-compose-core = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
-androidx-navigation-compose-hilt = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "navigation-compose-hilt" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle-viewmodel-navigation3" }
+androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hilt-lifecycle-viewmodel-compose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist"}

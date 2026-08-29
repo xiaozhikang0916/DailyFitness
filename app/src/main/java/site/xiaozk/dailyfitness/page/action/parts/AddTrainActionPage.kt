@@ -28,9 +28,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +42,7 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -56,25 +58,27 @@ import javax.inject.Inject
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainActionPage() {
-    val viewModel: AddTrainActionViewModel = hiltViewModel()
+fun AddTrainActionPage(partId: Int, actionId: Int) {
+    val viewModel = hiltViewModel<AddTrainActionViewModel, AddTrainActionViewModel.Factory>(
+        creationCallback = { it.create(partId, actionId) }
+    )
     val state = viewModel.state.collectAsState().value
     val status = state.status
-    val navController = LocalNavController.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(if (state.action?.id != 0) R.string.edit_train_action else R.string.new_train_action)
     val actionLabel = stringResource(R.string.top_action_save)
     LaunchedEffect(key1 = status) {
         if (status == ActionStatus.Done) {
             appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
-            navController.popBackStack()
+            systemBack?.onBackPressed()
         } else if (status is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
     DialogPageScaffold(
         title = title,
-        onBack = { navController.popBackStack() },
+        onBack = { systemBack?.onBackPressed() },
         actions = {
             TextButton(
                 onClick = { viewModel.reduce(SubmitIntent) },
@@ -170,19 +174,22 @@ private fun CheckedIcon() {
     )
 }
 
-@HiltViewModel
-class AddTrainActionViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = AddTrainActionViewModel.Factory::class)
+class AddTrainActionViewModel @AssistedInject constructor(
     private val reducer: AddTrainActionReducer,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted("partId") private val partId: Int,
+    @Assisted("actionId") private val actionId: Int,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            @Assisted("partId") partId: Int,
+            @Assisted("actionId") actionId: Int,
+        ): AddTrainActionViewModel
+    }
+
     private val _state = MutableStateFlow(AddTrainActionState())
     val state = _state.asStateFlow()
-
-    val partId: Int
-        get() = savedStateHandle["partId"] ?: -1
-
-    val actionId: Int
-        get() = savedStateHandle["actionId"] ?: -1
 
     init {
         Log.i("AddTrainAction", "Load action with part id $partId, action id $actionId")

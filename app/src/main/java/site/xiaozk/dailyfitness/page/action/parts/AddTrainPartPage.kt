@@ -21,10 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
@@ -35,7 +38,6 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import javax.inject.Inject
@@ -48,15 +50,22 @@ import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTrainPartPage() {
-    val viewModel: AddTrainPartViewModel = hiltViewModel()
+fun AddTrainPartPage(
+    partId: Int,
+    onDismiss: () -> Unit,
+) {
+    // 本地状态对话框：每次打开重新组合 → 新 key → 独立 VM 实例（避免复用上次输入/提交状态）
+    val vmKey = remember { "add-train-part-$partId-${UUID.randomUUID()}" }
+    val viewModel = hiltViewModel<AddTrainPartViewModel, AddTrainPartViewModel.Factory>(
+        key = vmKey,
+        creationCallback = { it.create(partId) }
+    )
     val state = viewModel.status.collectAsState()
-    val navController = LocalNavController.current
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     LaunchedEffect(key1 = state.value) {
         if (state.value.submitStatus == ActionStatus.Done) {
             appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
-            navController.popBackStack()
+            onDismiss()
         } else if (state.value.submitStatus is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
@@ -72,18 +81,14 @@ fun AddTrainPartPage() {
         }
     )
     AlertDialog(
-        onDismissRequest = {
-            navController.popBackStack()
-        },
+        onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(onClick = { viewModel.addPart(name) }) {
                 Text(text = stringResource(R.string.dialog_action_save))
             }
         },
         dismissButton = {
-            TextButton(onClick = {
-                navController.popBackStack()
-            }) {
+            TextButton(onClick = { onDismiss() }) {
                 Text(text = stringResource(R.string.dialog_action_cancel))
             }
         },
@@ -100,13 +105,16 @@ fun AddTrainPartPage() {
     )
 }
 
-@HiltViewModel
-class AddTrainPartViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = AddTrainPartViewModel.Factory::class)
+class AddTrainPartViewModel @AssistedInject constructor(
     private val repo: ITrainActionRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted private val partId: Int,
 ) : ViewModel() {
-    val partId: Int
-        get() = savedStateHandle["partId"] ?: -1
+    @AssistedFactory
+    interface Factory {
+        fun create(partId: Int): AddTrainPartViewModel
+    }
+
     private val _status = MutableStateFlow(AddTrainPartState())
     val status = _status.asStateFlow()
 

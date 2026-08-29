@@ -14,8 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.TrainPartGraph
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import site.xiaozk.dailyfitness.nav.TrainPartDetail
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import site.xiaozk.dailyfitness.widget.HomePageScaffold
@@ -29,15 +29,19 @@ import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 
 @Composable
 fun TrainStaticPage() {
-    val viewModel: TrainPartViewModel = hiltViewModel()
+    val viewModel = hiltViewModel<TrainPartViewModel, TrainPartViewModel.Factory>(
+        creationCallback = { it.create(partId = -1, actionId = -1) }
+    )
     val part = viewModel.homeTrainPartStatic.collectAsState(initial = HomeTrainPartPage()).value
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
     val title = stringResource(id = R.string.title_train_part)
     HomePageScaffold(title = title) { scaffoldProperty ->
         TrainStaticPage(
             homeTrainPartPage = part,
             onPartClick = {
-                navController.navigate(TrainPartGraph.TrainPartDetailNavItem.getRoute(it.trainPart))
+                navBackStack.add(
+                    TrainPartDetail(partId = it.trainPart.id)
+                )
             },
             scaffoldProperty = scaffoldProperty,
         )

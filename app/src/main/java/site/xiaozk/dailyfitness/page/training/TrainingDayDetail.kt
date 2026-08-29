@@ -37,16 +37,19 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import site.xiaozk.dailyfitness.nav.AddWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SubPageScaffold
+import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 import java.time.ZoneId
 
 /**
@@ -55,31 +58,39 @@ import java.time.ZoneId
  * @create: 2023/2/25
  */
 @Composable
-fun TrainingDayDetailPage() {
-    val viewModel: TrainingDayDetailViewModel = hiltViewModel()
+fun TrainingDayDetailPage(date: LocalDate) {
+    val viewModel = hiltViewModel<TrainingDayDetailViewModel, TrainingDayDetailViewModel.Factory>(
+        creationCallback = { it.create(date) }
+    )
     val data = viewModel.trainingData
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val title = stringResource(R.string.title_daily_workout)
     val descAdd = stringResource(R.string.desc_top_action_add_action)
+    var deleteWorkoutId by remember { mutableStateOf<Int?>(null) }
     SubPageScaffold(
         title = title,
-        onBack = { navController.popBackStack() },
+        onBack = { systemBack?.onBackPressed() },
         actions = {
             IconButton(
-                onClick = { navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route) }
+                onClick = { navBackStack.add(AddWorkoutAction) }
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = descAdd)
             }
         }
     ) { scaffoldProperty ->
         TrainingDayDetail(
-            data = data.collectAsState(initial = null).value ?: DailyWorkout(viewModel.date),
+            data = data.collectAsState(initial = null).value ?: DailyWorkout(date),
             onTrainingActionDeleted = {
-                navController.navigate(
-                    TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
-                )
+                deleteWorkoutId = it.id
             },
             scaffoldProperty = scaffoldProperty,
+        )
+    }
+    deleteWorkoutId?.let { id ->
+        DeleteDailyWorkout(
+            workoutId = id,
+            onDismiss = { deleteWorkoutId = null },
         )
     }
 }

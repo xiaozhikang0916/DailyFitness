@@ -1,7 +1,9 @@
 package site.xiaozk.dailyfitness.page.action
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
@@ -15,18 +17,22 @@ import javax.inject.Inject
  * @mail: xiaozhikang0916@gmail.com
  * @create: 2023/2/26
  */
-@HiltViewModel
-class TrainPartViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = TrainPartViewModel.Factory::class)
+class TrainPartViewModel @AssistedInject constructor(
     private val trainRepo: ITrainActionRepository,
-    private val savedStateHandle: SavedStateHandle,
+    @Assisted("partId") private val partId: Int,
+    @Assisted("actionId") private val actionId: Int,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            @Assisted("partId") partId: Int,
+            @Assisted("actionId") actionId: Int,
+        ): TrainPartViewModel
+    }
+
     val homeTrainPartStatic: Flow<HomeTrainPartPage> = trainRepo.getAllTrainPartStatics()
 
-    val partId: Int
-        get() = savedStateHandle["partId"] ?: -1
-
-    val actionId: Int
-        get() = savedStateHandle["actionId"] ?: -1
     val trainPartStatic: Flow<TrainPartStaticPage?> by lazy {
         trainRepo.getTrainPartStatic(partId = partId)
     }

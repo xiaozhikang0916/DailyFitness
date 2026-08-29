@@ -37,11 +37,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem
-import site.xiaozk.dailyfitness.nav.TrainPartGraph
-import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.AddBodyDetail
+import site.xiaozk.dailyfitness.nav.AddTrainAction
+import site.xiaozk.dailyfitness.nav.AddWorkoutAction
+import site.xiaozk.dailyfitness.page.action.parts.AddTrainPartPage
 import kotlin.math.max
 import kotlin.math.min
 
@@ -53,10 +55,13 @@ import kotlin.math.min
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HostFab(
-    navController: NavController,
+    backStack: NavBackStack<NavKey>,
     topAppBarState: TopAppBarState? = null,
 ) {
     var showFabMenu by remember {
+        mutableStateOf(false)
+    }
+    var showAddTrainPart by remember {
         mutableStateOf(false)
     }
     Box {
@@ -98,25 +103,31 @@ fun HostFab(
                             icon = Icons.Default.Add,
                             text = stringResource(R.string.fab_action_add_workout),
                         ) {
-                            navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                            backStack.add(AddWorkoutAction)
                             showFabMenu = false
                         }
                         FloatingActionListButton(text = stringResource(R.string.fab_action_add_body_data)) {
-                            navController.navigate(AddDailyBodyDetailNavItem.route)
+                            backStack.add(AddBodyDetail)
                             showFabMenu = false
                         }
                         FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_group)) {
-                            navController.navigate(TrainPartGraph.AddTrainPartNavItem.getRoute())
+                            showAddTrainPart = true
                             showFabMenu = false
                         }
                         FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_action)) {
-                            navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute())
+                            backStack.add(AddTrainAction(partId = 0, actionId = 0))
                             showFabMenu = false
                         }
                     }
                 }
             }
         }
+    }
+    if (showAddTrainPart) {
+        AddTrainPartPage(
+            partId = -1,
+            onDismiss = { showAddTrainPart = false },
+        )
     }
 }
 

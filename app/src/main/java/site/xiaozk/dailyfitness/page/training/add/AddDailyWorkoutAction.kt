@@ -40,7 +40,7 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
-import site.xiaozk.dailyfitness.nav.LocalNavController
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
 import site.xiaozk.dailyfitness.widget.DialogPageScaffold
@@ -59,21 +59,21 @@ fun AddDailyWorkoutAction() {
     val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val navController = LocalNavController.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_add_workout)
     val actionSave = stringResource(id = R.string.top_action_save)
     LaunchedEffect(pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
             appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
-            navController.popBackStack()
+            systemBack?.onBackPressed()
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
             appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
     DialogPageScaffold(
         title = title,
-        onBack = { navController.popBackStack() },
+        onBack = { systemBack?.onBackPressed() },
         actions = {
             TextButton(
                 onClick = { viewModel.reduce(SubmitIntent) },

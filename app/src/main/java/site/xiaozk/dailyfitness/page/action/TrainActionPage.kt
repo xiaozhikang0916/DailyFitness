@@ -14,22 +14,26 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.LocalNavController
-import site.xiaozk.dailyfitness.nav.TrainPartGraph
-import site.xiaozk.dailyfitness.nav.TrainingDayGroup
+import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import site.xiaozk.dailyfitness.nav.AddTrainAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SubPageScaffold
+import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 
 /**
  * @author: xiaozhikang
@@ -37,14 +41,19 @@ import site.xiaozk.dailyfitness.widget.SubPageScaffold
  */
 
 @Composable
-fun TrainActionPage() {
-    val viewModel: TrainPartViewModel = hiltViewModel()
+fun TrainActionPage(actionId: Int) {
+    val viewModel = hiltViewModel<TrainPartViewModel, TrainPartViewModel.Factory>(
+        creationCallback = { it.create(partId = -1, actionId = actionId) }
+    )
     val actionState = viewModel.trainActionStatic.collectAsState(initial = TrainActionStaticPage()).value
-    val navController = LocalNavController.current
+    val navBackStack = LocalNavBackStack.current
+    val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    var deleteActionId by remember { mutableStateOf<Int?>(null) }
+    var deleteWorkoutId by remember { mutableStateOf<Int?>(null) }
 
     if (actionState == null) {
         SideEffect {
-            navController.popBackStack()
+            systemBack?.onBackPressed()
         }
     } else {
         val title = stringResource(id = R.string.title_train_action)
@@ -52,18 +61,23 @@ fun TrainActionPage() {
         val actionDeleteDesc = stringResource(R.string.action_desc_delete_train_action)
         SubPageScaffold(
             title = title,
-            onBack = { navController.popBackStack() },
+            onBack = { systemBack?.onBackPressed() },
             actions = {
                 IconButton(
                     onClick = {
-                        navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute(actionState.action))
+                        navBackStack.add(
+                            AddTrainAction(
+                                partId = actionState.action.partId,
+                                actionId = actionState.action.id,
+                            )
+                        )
                     }
                 ) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = actionEditDesc)
                 }
                 IconButton(
                     onClick = {
-                        navController.navigate(TrainPartGraph.DeleteTrainActionNavItem.getRoute(actionState.action))
+                        deleteActionId = actionState.action.id
                     }
                 ) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = actionDeleteDesc)
@@ -73,11 +87,21 @@ fun TrainActionPage() {
             TrainActionPage(
                 actionStaticPage = actionState,
                 onWorkoutLongClick = {
-                    navController.navigate(
-                        TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
-                    )
+                    deleteWorkoutId = it.id
                 },
                 scaffoldProperty = scaffoldProperty,
+            )
+        }
+        deleteActionId?.let { id ->
+            DeleteTrainActionDialog(
+                actionId = id,
+                onDismiss = { deleteActionId = null },
+            )
+        }
+        deleteWorkoutId?.let { id ->
+            DeleteDailyWorkout(
+                workoutId = id,
+                onDismiss = { deleteWorkoutId = null },
             )
         }
     }
