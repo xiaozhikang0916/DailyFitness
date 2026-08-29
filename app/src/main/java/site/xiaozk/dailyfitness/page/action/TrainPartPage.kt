@@ -11,8 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -22,16 +23,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.Route
-import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
-import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
+import site.xiaozk.dailyfitness.widget.SubPageScaffold
 
 /**
  * @author: xiaozhikang
@@ -41,36 +39,42 @@ import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 fun TrainPartPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.trainPartStatic.collectAsState(initial = TrainPartStaticPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
     if (part == null) {
         SideEffect {
-            appScaffoldViewModel.back()
+            navController.popBackStack()
         }
     } else {
         val title = stringResource(id = R.string.title_train_part)
         val actionEditDesc = stringResource(R.string.action_desc_edit_train_part)
         val actionAddDesc = stringResource(R.string.action_desc_add_action)
-        LaunchedEffect(key1 = part) {
-            appScaffoldViewModel.scaffoldState.emit(
-                SubpageScaffoldState(
-                    title = title,
-                    actionItems = listOf(
-                        TopAction.iconRouteAction(
-                            icon = Icons.Default.Add,
-                            actionDesc = actionAddDesc,
-                            route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(part.trainPart)),
-                        ),
-                        TopAction.iconRouteAction(
-                            icon = Icons.Default.Edit,
-                            actionDesc = actionEditDesc,
-                            route = Route(TrainPartGraph.AddTrainPartNavItem.getRoute(part.trainPart)),
-                        )
-                    )
-                )
+        SubPageScaffold(
+            title = title,
+            onBack = { navController.popBackStack() },
+            actions = {
+                IconButton(
+                    onClick = {
+                        navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute(part.trainPart))
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = actionAddDesc)
+                }
+                IconButton(
+                    onClick = {
+                        navController.navigate(TrainPartGraph.AddTrainPartNavItem.getRoute(part.trainPart))
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = actionEditDesc)
+                }
+            }
+        ) { scaffoldProperty ->
+            TrainPartPage(
+                trainPartStaticPage = part,
+                onTrainActionClick = {
+                    navController.navigate(TrainPartGraph.TrainActionDetailNavItem.getRoute(it.action))
+                },
+                scaffoldProperty = scaffoldProperty,
             )
-        }
-        TrainPartPage(trainPartStaticPage = part) {
-            appScaffoldViewModel.onRoute(TrainPartGraph.TrainActionDetailNavItem.getRoute(it.action))
         }
     }
 }
@@ -79,8 +83,8 @@ fun TrainPartPage() {
 fun TrainPartPage(
     trainPartStaticPage: TrainPartStaticPage,
     onTrainActionClick: (TrainActionStaticPage) -> Unit = {},
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
-    val scaffoldProperty = LocalScaffoldProperty.current
     val dateFormatter = remember {
         getLocalDateFormatter()
     }

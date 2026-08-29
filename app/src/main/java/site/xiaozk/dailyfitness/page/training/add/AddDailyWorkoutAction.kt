@@ -14,6 +14,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,16 +39,13 @@ import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.PageHandleAction
-import site.xiaozk.dailyfitness.nav.PageHandleType
-import site.xiaozk.dailyfitness.nav.TopAction
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
+import site.xiaozk.dailyfitness.widget.DialogPageScaffold
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SegmentedControl
 
 /**
@@ -61,34 +59,36 @@ fun AddDailyWorkoutAction() {
     val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_add_workout)
     val actionSave = stringResource(id = R.string.top_action_save)
-    LaunchedEffect(key1 = pageState.value.valid) {
-        appScaffoldViewModel.scaffoldState.emit(
-            FullDialogScaffoldState(
-                title = title,
-                actionItems = listOf(
-                    TopAction.textPageAction(actionSave, PageHandleType.SAVE, pageState.value.valid)
-                )
-            )
-        )
-    }
     LaunchedEffect(pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
+            appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
+            navController.popBackStack()
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
+            appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.topAction.collect {
-            if (it.actionType is PageHandleAction && it.actionType.type == PageHandleType.SAVE) {
-                viewModel.reduce(SubmitIntent)
+    DialogPageScaffold(
+        title = title,
+        onBack = { navController.popBackStack() },
+        actions = {
+            TextButton(
+                onClick = { viewModel.reduce(SubmitIntent) },
+                enabled = pageState.value.valid,
+            ) {
+                Text(actionSave)
             }
         }
+    ) { scaffoldProperty ->
+        AddDailyTrainPage(
+            pageState = pageState.value,
+            onIntent = { viewModel.reduce(it) },
+            scaffoldProperty = scaffoldProperty,
+        )
     }
-    AddDailyTrainPage(pageState = pageState.value, onIntent = { viewModel.reduce(it) })
 }
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
@@ -96,8 +96,8 @@ fun AddDailyWorkoutAction() {
 fun AddDailyTrainPage(
     pageState: AddDailyWorkoutPageState,
     onIntent: (IDailyTrainIntent) -> Unit,
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
-    val scaffoldProperty = LocalScaffoldProperty.current
     val allParts = pageState.allParts
     Column(
         modifier = Modifier

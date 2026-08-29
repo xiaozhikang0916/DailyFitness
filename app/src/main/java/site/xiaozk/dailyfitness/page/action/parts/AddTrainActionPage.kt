@@ -17,6 +17,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -38,17 +39,14 @@ import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.PageHandleAction
-import site.xiaozk.dailyfitness.nav.PageHandleType
-import site.xiaozk.dailyfitness.nav.TopAction
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
+import site.xiaozk.dailyfitness.widget.DialogPageScaffold
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import javax.inject.Inject
 
 /**
@@ -62,45 +60,37 @@ fun AddTrainActionPage() {
     val viewModel: AddTrainActionViewModel = hiltViewModel()
     val state = viewModel.state.collectAsState().value
     val status = state.status
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(if (state.action?.id != 0) R.string.edit_train_action else R.string.new_train_action)
     val actionLabel = stringResource(R.string.top_action_save)
-    LaunchedEffect(key1 = state.inputValid) {
-        appScaffoldViewModel.scaffoldState.emit(
-            FullDialogScaffoldState(
-                title = title,
-                actionItems = listOf(
-                    TopAction.textPageAction(
-                        text = actionLabel,
-                        type = PageHandleType.SAVE,
-                        valid = state.inputValid,
-                    )
-                )
-            )
-        )
-    }
     LaunchedEffect(key1 = status) {
         if (status == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
+            appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
+            navController.popBackStack()
         } else if (status is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
+            appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.topAction.collect {
-            if (it.actionType is PageHandleAction && it.actionType.type == PageHandleType.SAVE) {
-                viewModel.reduce(SubmitIntent)
+    DialogPageScaffold(
+        title = title,
+        onBack = { navController.popBackStack() },
+        actions = {
+            TextButton(
+                onClick = { viewModel.reduce(SubmitIntent) },
+                enabled = state.inputValid,
+            ) {
+                Text(actionLabel)
             }
         }
-    }
-    val scaffoldProperty = LocalScaffoldProperty.current
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(scaffoldProperty.padding)
-            .padding(horizontal = 12.dp)
-            .nestedScroll(scaffoldProperty.scrollConnection),
-    ) {
+    ) { scaffoldProperty ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(scaffoldProperty.padding)
+                .padding(horizontal = 12.dp)
+                .nestedScroll(scaffoldProperty.scrollConnection),
+        ) {
 
         LargeDropdownMenu(
             label = stringResource(R.string.title_train_part),
@@ -167,6 +157,7 @@ fun AddTrainActionPage() {
                 )
             }
         }
+    }
     }
 }
 

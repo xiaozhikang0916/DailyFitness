@@ -22,11 +22,11 @@ import kotlinx.coroutines.launch
 import kotlin.time.toJavaInstant
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
 import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
@@ -42,24 +42,29 @@ import javax.inject.Inject
 
 @Composable
 fun DeleteDailyWorkout() {
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val viewModel: DeleteDailyWorkoutViewModel = hiltViewModel()
     val dismiss = remember {
         {
-            appScaffoldViewModel.back()
+            navController.popBackStack()
+            Unit
         }
     }
     val state = viewModel.flow.collectAsState(initial = null).value
     LaunchedEffect(key1 = Unit) {
         viewModel.flow.collect {
             if (it.loadStatus is ActionStatus.Failed) {
-                appScaffoldViewModel.showSnackbarAndBack(LoadFailedSnackbar)
+                appSnackbarHostState.showSnackbar(LoadFailedSnackbar)
+                navController.popBackStack()
             }
             if (it.deleteStatus is ActionStatus.Done) {
-                appScaffoldViewModel.showSnackbarAndBack(DelSuccessSnackbar)
+                appSnackbarHostState.showSnackbar(DelSuccessSnackbar)
+                navController.popBackStack()
             }
             if (it.deleteStatus is ActionStatus.Failed) {
-                appScaffoldViewModel.showSnackbarAndBack(DelFailedSnackbar)
+                appSnackbarHostState.showSnackbar(DelFailedSnackbar)
+                navController.popBackStack()
             }
         }
     }

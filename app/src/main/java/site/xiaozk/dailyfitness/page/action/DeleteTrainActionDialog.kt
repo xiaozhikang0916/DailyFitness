@@ -21,11 +21,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
 import site.xiaozk.dailyfitness.nav.DelSuccessSnackbar
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import javax.inject.Inject
@@ -38,23 +38,26 @@ import javax.inject.Inject
 @Composable
 fun DeleteTrainActionDialog() {
     val viewModel: DeleteTrainActionViewModel = hiltViewModel()
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val state = viewModel.flow.collectAsState()
     LaunchedEffect(key1 = state.value.deleteStatus) {
         if (state.value.deleteStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack(DelSuccessSnackbar)
+            appSnackbarHostState.showSnackbar(DelSuccessSnackbar)
+            navController.popBackStack()
         } else if (state.value.deleteStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(DelFailedSnackbar)
+            appSnackbarHostState.showSnackbar(DelFailedSnackbar)
         }
     }
     LaunchedEffect(key1 = state.value.loadStatus) {
         if (state.value.loadStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbarAndBack(LoadFailedSnackbar)
+            appSnackbarHostState.showSnackbar(LoadFailedSnackbar)
+            navController.popBackStack()
         }
     }
 
-    val dismiss = rememberUpdatedState(newValue = {
-        appScaffoldViewModel.back()
+    val dismiss = rememberUpdatedState<() -> Unit>(newValue = {
+        navController.popBackStack()
     })
 
     val action = state.value.action

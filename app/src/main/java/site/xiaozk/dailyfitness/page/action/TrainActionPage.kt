@@ -9,8 +9,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -20,18 +21,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.Route
-import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
-import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
+import site.xiaozk.dailyfitness.widget.SubPageScaffold
 
 /**
  * @author: xiaozhikang
@@ -42,40 +40,44 @@ import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 fun TrainActionPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val actionState = viewModel.trainActionStatic.collectAsState(initial = TrainActionStaticPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
 
     if (actionState == null) {
         SideEffect {
-            appScaffoldViewModel.back()
+            navController.popBackStack()
         }
     } else {
         val title = stringResource(id = R.string.title_train_action)
         val actionEditDesc = stringResource(R.string.action_desc_edit_train_action)
         val actionDeleteDesc = stringResource(R.string.action_desc_delete_train_action)
-        LaunchedEffect(key1 = actionState) {
-            appScaffoldViewModel.scaffoldState.emit(
-                SubpageScaffoldState(
-                    title = title,
-                    actionItems = listOf(
-                        TopAction.iconRouteAction(
-                            icon = Icons.Default.Edit,
-                            actionDesc = actionEditDesc,
-                            route = Route(TrainPartGraph.AddTrainActionNavItem.getRoute(actionState.action)),
-                        ),
-                        TopAction.iconRouteAction(
-                            icon = Icons.Default.Delete,
-                            actionDesc = actionDeleteDesc,
-                            route = Route(TrainPartGraph.DeleteTrainActionNavItem.getRoute(actionState.action)),
-                        )
+        SubPageScaffold(
+            title = title,
+            onBack = { navController.popBackStack() },
+            actions = {
+                IconButton(
+                    onClick = {
+                        navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute(actionState.action))
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = actionEditDesc)
+                }
+                IconButton(
+                    onClick = {
+                        navController.navigate(TrainPartGraph.DeleteTrainActionNavItem.getRoute(actionState.action))
+                    }
+                ) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = actionDeleteDesc)
+                }
+            }
+        ) { scaffoldProperty ->
+            TrainActionPage(
+                actionStaticPage = actionState,
+                onWorkoutLongClick = {
+                    navController.navigate(
+                        TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
                     )
-                )
-            )
-        }
-        TrainActionPage(
-            actionStaticPage = actionState
-        ) {
-            appScaffoldViewModel.onRoute(
-                TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
+                },
+                scaffoldProperty = scaffoldProperty,
             )
         }
     }
@@ -85,8 +87,8 @@ fun TrainActionPage() {
 fun TrainActionPage(
     actionStaticPage: TrainActionStaticPage,
     onWorkoutLongClick: (DailyWorkoutAction) -> Unit = {},
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
-    val scaffoldProperty = LocalScaffoldProperty.current
     val dateTimeFormatter = remember {
         getLocalDateTimeFormatter()
     }

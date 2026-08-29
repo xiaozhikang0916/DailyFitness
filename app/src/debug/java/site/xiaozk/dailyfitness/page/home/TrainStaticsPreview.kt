@@ -23,7 +23,7 @@ import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 @Composable
 fun HomeTrainPartPagePreview(@PreviewParameter(HomeTrainPartPageProvider::class) homeTrainPartPage: HomeTrainPartPage) {
     DailyFitnessTheme {
-        TrainStaticPage(homeTrainPartPage) {}
+        TrainStaticPage(homeTrainPartPage, onPartClick = {})
     }
 }
 

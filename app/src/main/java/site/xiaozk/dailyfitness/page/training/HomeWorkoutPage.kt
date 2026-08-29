@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,11 +20,10 @@ import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.widget.HomePageScaffold
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -42,25 +40,27 @@ import java.time.format.FormatStyle
 @Composable
 fun HomeWorkoutPage() {
     val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
     val title = stringResource(R.string.title_home_workout)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            HomepageScaffoldState(
-                title = title,
-            )
+    val workoutDayList = homeViewModel.pageData.collectAsState()
+    HomePageScaffold(title = title) { scaffoldProperty ->
+        HomeWorkoutPage(
+            state = workoutDayList.value,
+            onNav = { navController.navigate(it) },
+            scaffoldProperty = scaffoldProperty,
         )
     }
-    val workoutDayList = homeViewModel.pageData.collectAsState()
-    HomeWorkoutPage(state = workoutDayList.value, onNav = { appScaffoldViewModel.onRoute(it) })
 }
 
 @Composable
-fun HomeWorkoutPage(state: HomeWorkoutPageState, onNav: (String) -> Unit) {
+fun HomeWorkoutPage(
+    state: HomeWorkoutPageState,
+    onNav: (String) -> Unit,
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
+) {
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
-    val scaffoldProperty = LocalScaffoldProperty.current
     val data = state.homePageState
     val monthData = data.monthStatic
     val routeToMonthSummary = Modifier.clickable {

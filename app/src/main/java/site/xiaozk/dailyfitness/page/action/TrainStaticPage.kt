@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -15,13 +14,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
+import site.xiaozk.dailyfitness.widget.HomePageScaffold
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 
 /**
  * @author: xiaozhikang
@@ -33,17 +31,16 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
 fun TrainStaticPage() {
     val viewModel: TrainPartViewModel = hiltViewModel()
     val part = viewModel.homeTrainPartStatic.collectAsState(initial = HomeTrainPartPage()).value
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
     val title = stringResource(id = R.string.title_train_part)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            HomepageScaffoldState(
-                title = title,
-            )
+    HomePageScaffold(title = title) { scaffoldProperty ->
+        TrainStaticPage(
+            homeTrainPartPage = part,
+            onPartClick = {
+                navController.navigate(TrainPartGraph.TrainPartDetailNavItem.getRoute(it.trainPart))
+            },
+            scaffoldProperty = scaffoldProperty,
         )
-    }
-    TrainStaticPage(homeTrainPartPage = part) {
-        appScaffoldViewModel.onRoute(TrainPartGraph.TrainPartDetailNavItem.getRoute(it.trainPart))
     }
 }
 
@@ -51,8 +48,8 @@ fun TrainStaticPage() {
 fun TrainStaticPage(
     homeTrainPartPage: HomeTrainPartPage,
     onPartClick: (TrainPartStaticPage) -> Unit = {},
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
-    val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

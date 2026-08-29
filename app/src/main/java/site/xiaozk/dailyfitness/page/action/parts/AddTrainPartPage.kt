@@ -34,8 +34,8 @@ import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.model.TrainPart
 import javax.inject.Inject
@@ -51,12 +51,14 @@ import javax.inject.Inject
 fun AddTrainPartPage() {
     val viewModel: AddTrainPartViewModel = hiltViewModel()
     val state = viewModel.status.collectAsState()
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     LaunchedEffect(key1 = state.value) {
         if (state.value.submitStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
+            appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
+            navController.popBackStack()
         } else if (state.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
+            appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
     var name by remember(state.value.part) {
@@ -71,7 +73,7 @@ fun AddTrainPartPage() {
     )
     AlertDialog(
         onDismissRequest = {
-            appScaffoldViewModel.back()
+            navController.popBackStack()
         },
         confirmButton = {
             TextButton(onClick = { viewModel.addPart(name) }) {
@@ -80,7 +82,7 @@ fun AddTrainPartPage() {
         },
         dismissButton = {
             TextButton(onClick = {
-                appScaffoldViewModel.back()
+                navController.popBackStack()
             }) {
                 Text(text = stringResource(R.string.dialog_action_cancel))
             }

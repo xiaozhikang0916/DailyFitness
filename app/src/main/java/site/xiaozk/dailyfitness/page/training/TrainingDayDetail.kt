@@ -18,10 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,17 +39,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.Route
-import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
-import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
+import site.xiaozk.dailyfitness.widget.SubPageScaffold
 import java.time.ZoneId
 
 /**
@@ -60,32 +58,30 @@ import java.time.ZoneId
 fun TrainingDayDetailPage() {
     val viewModel: TrainingDayDetailViewModel = hiltViewModel()
     val data = viewModel.trainingData
-
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
     val title = stringResource(R.string.title_daily_workout)
     val descAdd = stringResource(R.string.desc_top_action_add_action)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            SubpageScaffoldState(
-                title = title,
-                actionItems = listOf(
-                    TopAction.iconRouteAction(
-                        Icons.Default.Add,
-                        descAdd,
-                        Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
-                    )
+    SubPageScaffold(
+        title = title,
+        onBack = { navController.popBackStack() },
+        actions = {
+            IconButton(
+                onClick = { navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route) }
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = descAdd)
+            }
+        }
+    ) { scaffoldProperty ->
+        TrainingDayDetail(
+            data = data.collectAsState(initial = null).value ?: DailyWorkout(viewModel.date),
+            onTrainingActionDeleted = {
+                navController.navigate(
+                    TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
                 )
-            )
+            },
+            scaffoldProperty = scaffoldProperty,
         )
     }
-    TrainingDayDetail(
-        data = data.collectAsState(initial = null).value ?: DailyWorkout(viewModel.date),
-        onTrainingActionDeleted = {
-            appScaffoldViewModel.onRoute(
-                TrainingDayGroup.DeleteWorkoutNavItem.getRoute(it.id)
-            )
-        }
-    )
 }
 
 @Composable
@@ -93,11 +89,11 @@ fun TrainingDayDetail(
     data: DailyWorkout,
     modifier: Modifier = Modifier,
     onTrainingActionDeleted: (DailyWorkoutAction) -> Unit = {},
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
     val dateFormat = remember {
         getLocalDateFormatter().withZone(ZoneId.systemDefault())
     }
-    val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = modifier
             .fillMaxSize()

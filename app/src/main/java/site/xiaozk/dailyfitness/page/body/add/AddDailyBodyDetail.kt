@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,17 +32,13 @@ import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
-import site.xiaozk.dailyfitness.nav.FullDialogScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.PageHandleAction
-import site.xiaozk.dailyfitness.nav.PageHandleType
-import site.xiaozk.dailyfitness.nav.RouteAction
-import site.xiaozk.dailyfitness.nav.TopAction
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.utils.label
 import site.xiaozk.dailyfitness.utils.trailing
+import site.xiaozk.dailyfitness.widget.DialogPageScaffold
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 
 /**
  * @author: xiaozhikang
@@ -54,48 +51,37 @@ fun AddDailyBodyDetail() {
     val viewModel: AddDailyBodyViewModel = hiltViewModel()
     val pageState = viewModel.stateFlow.collectAsState()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(id = R.string.title_add_body_data)
     val actionSave = stringResource(id = R.string.top_action_save)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            FullDialogScaffoldState(
-                title = title,
-                actionItems = listOf(
-                    TopAction.textPageAction(
-                        text = actionSave,
-                        type = PageHandleType.SAVE,
-                    )
-                )
-            )
-        )
-    }
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.topAction.collect { intent ->
-            when (intent.actionType) {
-                is PageHandleAction -> {
-                    when (intent.actionType.type) {
-                        PageHandleType.SAVE -> viewModel.reduce(SubmitBodyIntent)
-                    }
-                }
-
-                is RouteAction -> {}
-            }
-        }
-    }
     LaunchedEffect(key1 = pageState.value.submitStatus) {
         if (pageState.value.submitStatus == ActionStatus.Done) {
-            appScaffoldViewModel.showSnackbarAndBack(AddSuccessSnackbar)
+            appSnackbarHostState.showSnackbar(AddSuccessSnackbar)
+            navController.popBackStack()
         } else if (pageState.value.submitStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(AddFailedSnackbar)
+            appSnackbarHostState.showSnackbar(AddFailedSnackbar)
         }
     }
-    AddDailyBodyDetail(pageState.value, viewModel::reduce)
+    DialogPageScaffold(
+        title = title,
+        onBack = { navController.popBackStack() },
+        actions = {
+            TextButton(onClick = { viewModel.reduce(SubmitBodyIntent) }) {
+                Text(actionSave)
+            }
+        }
+    ) { scaffoldProperty ->
+        AddDailyBodyDetail(pageState.value, viewModel::reduce, scaffoldProperty)
+    }
 }
 
 @Composable
-fun AddDailyBodyDetail(state: AddDailyBodyState, onIntent: (IDailyBodyIntent) -> Unit) {
-    val scaffoldProperty = LocalScaffoldProperty.current
+fun AddDailyBodyDetail(
+    state: AddDailyBodyState,
+    onIntent: (IDailyBodyIntent) -> Unit,
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier

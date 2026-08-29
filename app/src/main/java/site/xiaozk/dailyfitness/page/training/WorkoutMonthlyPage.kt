@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,15 +42,13 @@ import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LoadFailedSnackbar
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.Route
-import site.xiaozk.dailyfitness.nav.SubpageScaffoldState
-import site.xiaozk.dailyfitness.nav.TopAction
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
+import site.xiaozk.dailyfitness.nav.LocalNavController
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import site.xiaozk.dailyfitness.nav.WorkoutStaticGroup
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
+import site.xiaozk.dailyfitness.widget.SubPageScaffold
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
@@ -71,41 +71,43 @@ import javax.inject.Inject
 @Composable
 fun WorkoutMonthlyPage() {
     val viewModel: WorkoutMonthlyPageViewModel = hiltViewModel()
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val navController = LocalNavController.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_workout_monthly)
     val descAdd = stringResource(R.string.desc_top_action_add_action)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            SubpageScaffoldState(
-                title = title,
-                actionItems = listOf(
-                    TopAction.iconRouteAction(
-                        Icons.Default.Add,
-                        descAdd,
-                        Route(TrainingDayGroup.TrainDayAddActionNavItem.route)
-                    )
-                )
-            )
-        )
-    }
     val page = viewModel.workoutMonthPageState.collectAsState()
     LaunchedEffect(key1 = page.value.loadStatus) {
         if (page.value.loadStatus is ActionStatus.Failed) {
-            appScaffoldViewModel.showSnackbar(LoadFailedSnackbar)
+            appSnackbarHostState.showSnackbar(LoadFailedSnackbar)
         }
     }
-    WorkoutMonthlyPage(
-        page = page.value.monthData,
-        onMonthChanged = {
-            viewModel.month = (it)
-        },
-        onNav = { appScaffoldViewModel.onRoute(it) }
-    )
+    SubPageScaffold(
+        title = title,
+        onBack = { navController.popBackStack() },
+        actions = {
+            IconButton(
+                onClick = { navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route) }
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = descAdd)
+            }
+        }
+    ) { scaffoldProperty ->
+        WorkoutMonthlyPage(
+            page = page.value.monthData,
+            onMonthChanged = { viewModel.month = it },
+            onNav = { navController.navigate(it) },
+            scaffoldProperty = scaffoldProperty,
+        )
+    }
 }
 
 @Composable
-fun WorkoutMonthlyPage(page: MonthWorkoutStatic, onMonthChanged: (YearMonth) -> Unit, onNav: (String) -> Unit) {
-    val scaffoldProperty = LocalScaffoldProperty.current
+fun WorkoutMonthlyPage(
+    page: MonthWorkoutStatic,
+    onMonthChanged: (YearMonth) -> Unit,
+    onNav: (String) -> Unit,
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
+) {
     val list = remember(page) {
         page.workoutDays.trainedDate.descendingMap().values.toList()
     }

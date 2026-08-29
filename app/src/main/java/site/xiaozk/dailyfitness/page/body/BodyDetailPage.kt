@@ -44,16 +44,15 @@ import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.chart.LineChart
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
-import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.DelFailedSnackbar
-import site.xiaozk.dailyfitness.nav.HomepageScaffoldState
-import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
-import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import kotlinx.datetime.YearMonth
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.utils.label
+import site.xiaozk.dailyfitness.widget.HomePageScaffold
+import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -69,45 +68,32 @@ import java.util.Locale
 fun BodyDetailPage() {
     val viewModel: BodyViewModel = hiltViewModel()
 
-    val appScaffoldViewModel: AppScaffoldViewModel = localAppScaffoldViewModel()
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_body_data)
-    LaunchedEffect(key1 = Unit) {
-        appScaffoldViewModel.scaffoldState.emit(
-            HomepageScaffoldState(
-                title = title,
-            )
-        )
-    }
     LaunchedEffect(key1 = Unit) {
         viewModel.deleteAction.mapNotNull {
             when (it) {
-                ActionStatus.Done -> {
-                    DelFailedSnackbar
-                }
-
-                is ActionStatus.Failed -> {
-                    DelFailedSnackbar
-                }
-
-                else -> {
-                    null
-                }
+                ActionStatus.Done -> DelFailedSnackbar
+                is ActionStatus.Failed -> DelFailedSnackbar
+                else -> null
             }
         }.collectLatest {
-            appScaffoldViewModel.showSnackbar(it)
+            appSnackbarHostState.showSnackbar(it)
         }
-
     }
     var deleteBodyDialog by remember {
         mutableStateOf<BodyDataRecord?>(null)
     }
     val state = viewModel.bodyDetail.collectAsState().value
-    BodyDetailPage(
-        data = state,
-        onCardLongClick = { deleteBodyDialog = it },
-        onMonthChanged = { viewModel.month = it },
-        onFieldFiltered = { viewModel.field = it },
-    )
+    HomePageScaffold(title = title) { scaffoldProperty ->
+        BodyDetailPage(
+            data = state,
+            onCardLongClick = { deleteBodyDialog = it },
+            onMonthChanged = { viewModel.month = it },
+            onFieldFiltered = { viewModel.field = it },
+            scaffoldProperty = scaffoldProperty,
+        )
+    }
 
     deleteBodyDialog?.let {
         val dismiss by rememberUpdatedState(newValue = { deleteBodyDialog = null })
@@ -151,6 +137,7 @@ fun BodyDetailPage(
     onCardLongClick: (BodyDataRecord) -> Unit,
     onMonthChanged: (YearMonth) -> Unit = {},
     onFieldFiltered: (BodyField) -> Unit = {},
+    scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
     val dates =
         data.list.personData.entries.sortedBy { it.key }.flatMap { map -> map.value.map { map.key to it } }
@@ -158,7 +145,6 @@ fun BodyDetailPage(
     val formatter = remember {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
     }
-    val scaffoldProperty = LocalScaffoldProperty.current
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

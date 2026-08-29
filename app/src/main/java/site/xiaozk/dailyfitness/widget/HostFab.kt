@@ -37,10 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import androidx.navigation.NavController
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AddDailyBodyDetailNavItem
-import site.xiaozk.dailyfitness.nav.IScaffoldState
-import site.xiaozk.dailyfitness.nav.Route
 import site.xiaozk.dailyfitness.nav.TrainPartGraph
 import site.xiaozk.dailyfitness.nav.TrainingDayGroup
 import kotlin.math.max
@@ -53,65 +52,66 @@ import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HostFab(scaffoldState: IScaffoldState?, topAppBarState: TopAppBarState? = null, onRoute: (Route) -> Unit) {
+fun HostFab(
+    navController: NavController,
+    topAppBarState: TopAppBarState? = null,
+) {
     var showFabMenu by remember {
         mutableStateOf(false)
     }
-    if (scaffoldState?.showFab == true) {
-        Box {
-            FloatingActionButtonShowHide(
-                onClick = {
-                    showFabMenu = !showFabMenu
-                },
-                topAppBarState = topAppBarState
-            ) {
-                Image(
-                    painter = rememberVectorPainter(image = Icons.Default.Add),
-                    contentDescription = null
-                )
-            }
-            val expandedStates = remember { MutableTransitionState(false) }
+    Box {
+        FloatingActionButtonShowHide(
+            onClick = {
+                showFabMenu = !showFabMenu
+            },
+            topAppBarState = topAppBarState
+        ) {
+            Image(
+                painter = rememberVectorPainter(image = Icons.Default.Add),
+                contentDescription = null
+            )
+        }
+        val expandedStates = remember { MutableTransitionState(false) }
 
-            expandedStates.targetState = showFabMenu
-            if (showFabMenu) {
+        expandedStates.targetState = showFabMenu
+        if (showFabMenu) {
 
-                if (expandedStates.currentState || expandedStates.targetState) {
-                    val transformOriginState = remember { mutableStateOf(TransformOrigin.Center) }
-                    val density = LocalDensity.current
-                    val popupPositionProvider = DropdownMenuPositionProvider(
-                        DpOffset(x = 0.dp, y = (24).dp),
-                        density
-                    ) { parentBounds, menuBounds ->
-                        transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
-                    }
-                    Popup(
-                        onDismissRequest = { showFabMenu = false },
-                        popupPositionProvider = popupPositionProvider,
-                        properties = PopupProperties(focusable = true),
+            if (expandedStates.currentState || expandedStates.targetState) {
+                val transformOriginState = remember { mutableStateOf(TransformOrigin.Center) }
+                val density = LocalDensity.current
+                val popupPositionProvider = DropdownMenuPositionProvider(
+                    DpOffset(x = 0.dp, y = (24).dp),
+                    density
+                ) { parentBounds, menuBounds ->
+                    transformOriginState.value = calculateTransformOrigin(parentBounds, menuBounds)
+                }
+                Popup(
+                    onDismissRequest = { showFabMenu = false },
+                    popupPositionProvider = popupPositionProvider,
+                    properties = PopupProperties(focusable = true),
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.End,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        FloatingActionListButton(
+                            icon = Icons.Default.Add,
+                            text = stringResource(R.string.fab_action_add_workout),
                         ) {
-                            FloatingActionListButton(
-                                icon = Icons.Default.Add,
-                                text = stringResource(R.string.fab_action_add_workout),
-                            ) {
-                                onRoute(Route(TrainingDayGroup.TrainDayAddActionNavItem.route))
-                                showFabMenu = false
-                            }
-                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_body_data)) {
-                                onRoute(Route(AddDailyBodyDetailNavItem.route))
-                                showFabMenu = false
-                            }
-                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_group)) {
-                                onRoute(Route(TrainPartGraph.AddTrainPartNavItem.getRoute()))
-                                showFabMenu = false
-                            }
-                            FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_action)) {
-                                onRoute(Route(TrainPartGraph.AddTrainActionNavItem.getRoute()))
-                                showFabMenu = false
-                            }
+                            navController.navigate(TrainingDayGroup.TrainDayAddActionNavItem.route)
+                            showFabMenu = false
+                        }
+                        FloatingActionListButton(text = stringResource(R.string.fab_action_add_body_data)) {
+                            navController.navigate(AddDailyBodyDetailNavItem.route)
+                            showFabMenu = false
+                        }
+                        FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_group)) {
+                            navController.navigate(TrainPartGraph.AddTrainPartNavItem.getRoute())
+                            showFabMenu = false
+                        }
+                        FloatingActionListButton(text = stringResource(R.string.fab_action_add_train_action)) {
+                            navController.navigate(TrainPartGraph.AddTrainActionNavItem.getRoute())
+                            showFabMenu = false
                         }
                     }
                 }
