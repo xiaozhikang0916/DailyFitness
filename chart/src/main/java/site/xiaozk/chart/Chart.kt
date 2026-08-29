@@ -15,9 +15,10 @@ import com.patrykandpatrick.vico.core.entry.ChartEntryModel
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import java.text.DecimalFormat
-import java.time.Instant
-import java.time.YearMonth
-import java.time.ZoneId
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.log10
 import kotlin.math.pow
 
@@ -47,7 +48,7 @@ fun LineChart(
                     minY = line.minY.displayFloor().coerceAtLeast(0f),
                     maxY = line.maxY.displayCeil(),
                     minX = 1f,
-                    maxX = displayMonth.lengthOfMonth().toFloat(),
+                    maxX = displayMonth.numberOfDays.toFloat(),
                 )
             ),
             modifier = modifier,
@@ -88,7 +89,7 @@ data class BodyChartPoint(
     val value: Float,
 ) {
     val date: Int
-        get() = instant.atZone(ZoneId.systemDefault()).toLocalDate().dayOfMonth
+        get() = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date.day
 }
 
 internal fun Float.displayFloor(): Float {

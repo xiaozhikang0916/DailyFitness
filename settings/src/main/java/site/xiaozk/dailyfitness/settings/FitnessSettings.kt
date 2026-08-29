@@ -1,14 +1,10 @@
 package site.xiaozk.dailyfitness.settings
 
 import android.util.Log
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.LocalDate
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
@@ -36,22 +32,10 @@ class FitnessSettings
 
     override suspend fun exportAllDataTo(file: File): Unit = withContext(Dispatchers.IO) {
         try {
-            val minDay =
-                LocalDate.fromEpochDays(java.time.LocalDate.MIN.toEpochDay().toInt())
-            val maxDay =
-                LocalDate.fromEpochDays(java.time.LocalDate.MAX.toEpochDay().toInt())
             val allTranins = trainRepo.getAllTrainParts().first()
             val user = userRepo.getCurrentUser()
-            val bodyData = personDataRepo.getPersonDailyDataFlow(
-                user,
-                minDay,
-                maxDay,
-            ).toList()
-            val workouts = dailyWorkoutRepo.getWorkoutDayList(
-                user,
-                minDay,
-                maxDay
-            ).first()
+            val bodyData = personDataRepo.getAllPersonDailyDataFlow(user).toList()
+            val workouts = dailyWorkoutRepo.getAllWorkoutDayList(user).first()
 
             val exportData = ExportedData(
                 userTrains = listOf(
@@ -103,16 +87,8 @@ class FitnessSettings
     }
 
     private suspend fun clearCurrentData() {
-        val minDay =
-            LocalDate.fromEpochDays(java.time.LocalDate.MIN.toEpochDay().toInt())
-        val maxDay =
-            LocalDate.fromEpochDays(java.time.LocalDate.MAX.toEpochDay().toInt())
         val user = userRepo.getCurrentUser()
-        dailyWorkoutRepo.getWorkoutDayList(
-            user,
-            minDay,
-            maxDay
-        ).first().trainedDate.flatMap { it.value.actions }.flatMap {
+        dailyWorkoutRepo.getAllWorkoutDayList(user).first().trainedDate.flatMap { it.value.actions }.flatMap {
             it.trainAction
         }.forEach {
             dailyWorkoutRepo.deleteWorkoutAction(user, it)
@@ -125,7 +101,7 @@ class FitnessSettings
             trainRepo.removeTrainPart(group.part)
         }
 
-        personDataRepo.getPersonDailyDataFlow(user, minDay, maxDay).first().personData.flatMap {
+        personDataRepo.getAllPersonDailyDataFlow(user).first().personData.flatMap {
             it.value
         }.forEach {
             personDataRepo.removePersonDailyData(it)

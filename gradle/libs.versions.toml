@@ -1,30 +1,24 @@
 [versions]
 java = "17"
-kotlin = "2.0.0"
-android_build_tools = "8.1.4"
+kotlin = "2.4.10"
+android_build_tools = "9.3.2"
 app_version = "0.0.1"
-kapt_version = "1.8.10"
-hilt_version = "2.51.1"
-ksp_version = "2.0.0-1.0.22"
-coroutine = "1.8.1"
-serialization = "1.7.1"
-datetime = "0.5.0"
+hilt_version = "2.60.1"
+ksp_version = "2.3.11"
+coroutine = "1.10.2"
+serialization = "1.9.0"
+datetime = "0.7.1"
 
 junit = "4.13.2"
-androidx-core = "1.13.1"
-androidx-appcompat = "1.7.0"
-androidx-lifecycle-runtime = "2.8.4"
-androidx-lifecycle-viewmodel-compose = "2.8.4"
-androidx-activity = "1.9.1"
-compose-material = "1.6.8"
-compose-material3 = "1.2.1"
-compose-ui = "1.6.8"
-compose-ui-graphics = "1.6.8"
-compose-ui-tooling = "1.6.8"
-compose-bom = "2024.06.00"
-room = "2.6.1"
-navigation-compose = "2.7.7"
-navigation-compose-hilt = "1.2.0"
+androidx-core = "1.19.0"
+androidx-appcompat = "1.8.0"
+androidx-lifecycle-runtime = "2.11.0"
+androidx-lifecycle-viewmodel-compose = "2.11.0"
+androidx-activity = "1.13.0"
+compose-bom = "2026.08.00"
+room = "2.8.4"
+navigation-compose = "2.10.0"
+navigation-compose-hilt = "1.4.0"
 accompanist = "0.32.0"
 
 vico = "1.6.4"
@@ -32,8 +26,6 @@ vico = "1.6.4"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
 android-library = { id = "com.android.library", version.ref = "android_build_tools" }
-kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kapt_version" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt_version" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp_version" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -53,14 +45,15 @@ junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle-runtime" }
 androidx-activity = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle-viewmodel-compose" }
-androidx-composeUi = { module = "androidx.compose.ui:ui", version.ref = "compose-ui" }
-androidx-composeGraphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "compose-ui-graphics" }
-androidx-composeMaterial = { module = "androidx.compose.material:material", version.ref = "compose-material" }
-androidx-composeUiTooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose-ui-tooling" }
+androidx-composeUi = { module = "androidx.compose.ui:ui" }
+androidx-composeGraphics = { module = "androidx.compose.ui:ui-graphics" }
+androidx-composeMaterial = { module = "androidx.compose.material:material" }
+androidx-composeMaterialIconsCore = { module = "androidx.compose.material:material-icons-core" }
+androidx-composeUiTooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-navigation-compose-core = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 androidx-navigation-compose-hilt = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "navigation-compose-hilt" }
-androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist"}
 

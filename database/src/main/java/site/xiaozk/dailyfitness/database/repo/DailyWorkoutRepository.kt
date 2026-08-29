@@ -9,6 +9,8 @@ import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.database.dao.BodyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.WorkoutDao
+import site.xiaozk.dailyfitness.database.model.DBDailyWorkoutAction
+import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.database.model.toWorkoutDailyMap
@@ -97,15 +99,11 @@ class DailyWorkoutRepository @Inject constructor(
     ): Flow<DailyWorkoutMap> {
         return workoutDao.getDailyWorkoutActions(
             user.uid, from.getStartEpochMillis(), to.getEndEpochMillis()
-        ).map {
-            val actions = it.keys.map { it.id }.toIntArray()
-            val parts = trainDao.getTrainPartOfAction(actions)
-            it.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
-                entry.toPair()
-            }.mapNotNull { entry ->
-                entry.key?.let { key -> key to entry.value.toMap() }
-            }.toMap().toWorkoutDailyMap()
-        }
+        ).map { it.toDailyWorkoutMap(trainDao) }
+    }
+
+    override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> {
+        return workoutDao.getAllDailyWorkoutActions(user.uid).map { it.toDailyWorkoutMap(trainDao) }
     }
 
     override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction {
@@ -141,3 +139,15 @@ private data class DataHolder(
     val hipSize: BodyStatic? = null,
     val bodyFat: BodyStatic? = null,
 )
+
+private suspend fun Map<DBTrainAction, List<DBDailyWorkoutAction>>.toDailyWorkoutMap(
+    trainDao: TrainDao,
+): DailyWorkoutMap {
+    val actions = this.keys.map { it.id }.toIntArray()
+    val parts = trainDao.getTrainPartOfAction(actions)
+    return this.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
+        entry.toPair()
+    }.mapNotNull { entry ->
+        entry.key?.let { key -> key to entry.value.toMap() }
+    }.toMap().toWorkoutDailyMap()
+}

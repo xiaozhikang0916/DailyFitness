@@ -29,6 +29,15 @@ interface WorkoutDao {
     )
     fun getDailyWorkoutActions(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
 
+    @Query(
+        """
+            SELECT * from daily_train_action 
+            JOIN train_action ON usingActionId = train_action.id 
+            WHERE userId = :userId
+        """
+    )
+    fun getAllDailyWorkoutActions(userId: Int): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
+
 
     @Insert
     suspend fun addDailyWorkoutAction(dailyTrainAction: DBDailyWorkoutAction)

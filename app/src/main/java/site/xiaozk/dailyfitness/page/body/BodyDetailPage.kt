@@ -38,7 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toJavaInstant
+import kotlin.time.toJavaInstant
 import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.chart.LineChart
@@ -52,7 +52,6 @@ import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
 import site.xiaozk.dailyfitness.repository.model.YearMonth
-import site.xiaozk.dailyfitness.repository.model.toJavaYearMonth
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.utils.label
 import java.time.ZoneId
@@ -217,7 +216,7 @@ fun BodyChart(
                 .fillMaxWidth()
                 .height(200.dp)
                 .padding(horizontal = 12.dp),
-            displayMonth = data.month.toJavaYearMonth(),
+            displayMonth = kotlinx.datetime.YearMonth(data.month.year, data.month.month),
         )
         Row(
             modifier = Modifier

@@ -1,6 +1,6 @@
 package site.xiaozk.dailyfitness.calendar.date
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -8,6 +8,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
+import kotlinx.datetime.isoDayNumber
 import site.xiaozk.dailyfitness.repository.model.YearMonth
 
 /**
@@ -33,7 +34,7 @@ data class Day(
 
     fun getWeek(firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY): Week {
         val currentDayOfWeek = this.date.dayOfWeek
-        val diff = firstDayOfWeek.value - currentDayOfWeek.value
+        val diff = firstDayOfWeek.isoDayNumber - currentDayOfWeek.isoDayNumber
         val firstDay = this.date.plus(diff, DateTimeUnit.DAY).let {
             if (it <= this.date) {
                 it
@@ -48,7 +49,7 @@ data class Day(
 
     fun getMonth(): Month {
         val firstDay = LocalDate(this.date.year, this.date.month, 1)
-        return (0 until this.date.dayOfMonth).map {
+        return (0 until this.date.day).map {
             Day(firstDay.plus(it, DateTimeUnit.DAY))
         }.let(::ArrayList).let(::Month)
     }
@@ -113,7 +114,7 @@ data class Month(
     fun getOverlappingMonth(firstDayOfWeek: DayOfWeek): OverlappingMonth {
         val firstDay = this.days.first().date
         val firstDayInWeekOfMonth = firstDay.dayOfWeek
-        val diff = firstDayOfWeek.value - firstDayInWeekOfMonth.value
+        val diff = firstDayOfWeek.isoDayNumber - firstDayInWeekOfMonth.isoDayNumber
         val start = firstDay.plus(diff, DateTimeUnit.DAY).let {
             if (it <= firstDay) {
                 it
@@ -122,7 +123,7 @@ data class Month(
             }
         }
         val lastDay = this.days.last().date
-        val diff2 = DayOfWeek.of((firstDayOfWeek.value + 6) % 7).value - lastDay.dayOfWeek.value
+        val diff2 = DayOfWeek((firstDayOfWeek.isoDayNumber + 6) % 7).isoDayNumber - lastDay.dayOfWeek.isoDayNumber
         val end = lastDay.plus(diff2, DateTimeUnit.DAY).let {
             if (it >= lastDay) {
                 it

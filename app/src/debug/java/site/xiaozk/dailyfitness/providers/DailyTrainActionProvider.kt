@@ -1,13 +1,11 @@
 package site.xiaozk.dailyfitness.providers
 
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
-import java.time.temporal.ChronoUnit
-import java.util.Calendar
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 

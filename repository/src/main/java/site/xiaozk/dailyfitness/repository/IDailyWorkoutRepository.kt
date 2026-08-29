@@ -2,7 +2,7 @@ package site.xiaozk.dailyfitness.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -31,6 +31,8 @@ interface IDailyWorkoutRepository {
     ): Flow<HomeWorkoutStatic>
 
     fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<DailyWorkoutMap>
+
+    fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap>
 
     fun getWorkoutOfDayFlow(user: User, day: LocalDate): Flow<DailyWorkout?> {
         return getWorkoutDayList(user, day, day).map { it.trainedDate[day] }

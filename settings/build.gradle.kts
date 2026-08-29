@@ -1,15 +1,14 @@
 @Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    alias(libs.plugins.kapt)
     alias(libs.plugins.serialization)
 }
 
 android {
     namespace = "site.xiaozk.dailyfitness.settings"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         minSdk = 28
@@ -28,16 +27,19 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
 dependencies {
-    kapt(libs.android.hilt.compiler)
+    ksp(libs.android.hilt.compiler)
     implementation(libs.android.hilt.lib)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

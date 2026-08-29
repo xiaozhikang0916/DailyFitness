@@ -13,6 +13,7 @@ import site.xiaozk.dailyfitness.repository.model.User
  */
 interface IPersonDailyRepository {
     fun getPersonDailyDataFlow(user: User, from: LocalDate, to: LocalDate): Flow<BodyDataWithDate>
+    fun getAllPersonDailyDataFlow(user: User): Flow<BodyDataWithDate>
     suspend fun addPersonDailyData(user: User, data: BodyDataRecord)
 
     suspend fun updatePersonDailyData(user: User, data: BodyDataRecord)

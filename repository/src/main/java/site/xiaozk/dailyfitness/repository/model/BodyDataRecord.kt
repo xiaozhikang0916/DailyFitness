@@ -3,8 +3,8 @@ package site.xiaozk.dailyfitness.repository.model
 import android.content.Context
 import androidx.annotation.FloatRange
 import androidx.annotation.StringRes
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 import site.xiaozk.dailyfitness.repository.R
 

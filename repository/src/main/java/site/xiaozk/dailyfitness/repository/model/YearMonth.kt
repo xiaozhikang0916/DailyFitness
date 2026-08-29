@@ -1,12 +1,13 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaMonth
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.number
 import kotlinx.serialization.Serializable
-import java.time.Year
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.TextStyle
@@ -40,7 +41,7 @@ data class YearMonth(
 
     override fun compareTo(other: YearMonth): Int {
         return if (this.year == other.year) {
-            this.month.value.compareTo(other.month.value)
+            this.month.number.compareTo(other.month.number)
         } else {
             this.year.compareTo(other.year)
         }
@@ -51,18 +52,37 @@ data class YearMonth(
     }
 
     fun lengthOfMonth(): Int {
-        return month.length(Year.isLeap(year.toLong()))
+        return when (month) {
+            Month.FEBRUARY -> if (year.isLeap()) 29 else 28
+            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+            else -> 31
+        }
     }
 
     override fun toString(): String {
-        return "$year ${DefaultYearMonthFormatter.format(month)}"
+        return "$year ${DefaultYearMonthFormatter.format(month.toJavaMonth())}"
     }
 
     fun atEndOfMonth(): LocalDate {
         return atDay(lengthOfMonth())
     }
+
+    fun previousMonth(): YearMonth {
+        return if (month.number == 1) {
+            YearMonth(year - 1, Month(12))
+        } else {
+            YearMonth(year, Month(month.number - 1))
+        }
+    }
+
+    fun nextMonth(): YearMonth {
+        return if (month.number == 12) {
+            YearMonth(year + 1, Month(1))
+        } else {
+            YearMonth(year, Month(month.number + 1))
+        }
+    }
 }
 
-fun YearMonth.toJavaYearMonth(): java.time.YearMonth {
-    return java.time.YearMonth.of(year, month.value)
-}
+private fun Int.isLeap(): Boolean =
+    this % 4 == 0 && (this % 100 != 0 || this % 400 == 0)

@@ -54,7 +54,7 @@ fun DayWithWorkout(day: Day, workout: DailyWorkoutSummary? = null) {
         } else {
             Alignment.Center
         }
-        Text(text = day.date.dayOfMonth.toString(), modifier = Modifier.align(alignment))
+        Text(text = day.date.day.toString(), modifier = Modifier.align(alignment))
         if (workout != null) {
             Icon(
                 imageVector = Icons.Default.Check,

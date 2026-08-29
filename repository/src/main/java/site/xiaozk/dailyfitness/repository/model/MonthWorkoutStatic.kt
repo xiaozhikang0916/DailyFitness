@@ -1,16 +1,17 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import kotlinx.datetime.isoDayNumber
 import site.xiaozk.dailyfitness.calendar.date.Month
-import java.time.DayOfWeek
+import kotlinx.datetime.DayOfWeek
 import java.util.TreeMap
 
 /**
@@ -32,7 +33,7 @@ data class MonthWorkoutStatic(
         today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
         firstDayOfWeek: DayOfWeek = DayOfWeek.SUNDAY
     ): Int {
-        val diff = firstDayOfWeek.value - today.dayOfWeek.value
+        val diff = firstDayOfWeek.isoDayNumber - today.dayOfWeek.isoDayNumber
         val from = today.plus(diff, DateTimeUnit.DAY).let {
             if (it <= today) {
                 it

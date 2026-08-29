@@ -24,9 +24,9 @@ import site.xiaozk.dailyfitness.repository.model.YearMonth
 
 @Composable
 fun CalendarHeader(
-    month: site.xiaozk.dailyfitness.repository.model.YearMonth,
+    month: YearMonth,
     modifier: Modifier = Modifier,
-    onMonthChanged: ((site.xiaozk.dailyfitness.repository.model.YearMonth) -> Unit)? = null,
+    onMonthChanged: ((YearMonth) -> Unit)? = null,
     showNavigator: Boolean = onMonthChanged != null,
 ) {
     Row(
@@ -44,10 +44,7 @@ fun CalendarHeader(
             ) {
                 IconButton(onClick = {
                     onMonthChanged?.invoke(
-                        site.xiaozk.dailyfitness.repository.model.YearMonth(
-                            year = month.year,
-                            month = month.month.minus(1)
-                        )
+                        month.previousMonth()
                     )
                 }) {
                     Icon(
@@ -57,10 +54,7 @@ fun CalendarHeader(
                 }
                 IconButton(onClick = {
                     onMonthChanged?.invoke(
-                        site.xiaozk.dailyfitness.repository.model.YearMonth(
-                            year = month.year,
-                            month = month.month.plus(1)
-                        )
+                        month.nextMonth()
                     )
                 }) {
                     Icon(

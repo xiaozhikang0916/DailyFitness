@@ -1,19 +1,18 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin)
-    alias(libs.plugins.kapt)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "site.xiaozk.dailyfitness"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "site.xiaozk.dailyfitness"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -44,22 +43,24 @@ android {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.java.get())
         targetCompatibility = JavaVersion.toVersion(libs.versions.java.get())
     }
-    kotlinOptions {
-        jvmTarget = libs.versions.java.get()
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    applicationVariants.configureEach {
-        outputs.configureEach {
-            val outputFile = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
-            val fileName = "DailyFitness-${name}-${versionName}.apk"
-            outputFile.outputFileName = fileName
+}
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("DailyFitness-${variant.name}-${output.versionName.get()}.apk")
         }
+    }
+}
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
@@ -70,8 +71,9 @@ dependencies {
     implementation(libs.android.hilt.lib)
     implementation(libs.datetime)
     implementation(libs.serializationx.json)
-    kapt(libs.android.hilt.compiler)
+    ksp(libs.android.hilt.compiler)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.composeMaterialIconsCore)
     implementation(libs.bundles.androidx.compose)
     implementation(libs.bundles.accompanist)
     implementation(libs.androidx.navigation.compose.core)

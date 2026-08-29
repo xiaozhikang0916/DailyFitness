@@ -15,6 +15,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.toJavaDayOfWeek
 import site.xiaozk.dailyfitness.calendar.date.Day
 import site.xiaozk.dailyfitness.calendar.date.Month
 import site.xiaozk.calendar.display.CalendarHeader
@@ -46,7 +47,7 @@ fun Calendar(
         )
     },
     weekdayIndicator: @Composable () -> Unit = {
-        WeekdayIndicator(firstDayOfWeek)
+        WeekdayIndicator(firstDayOfWeek.toJavaDayOfWeek())
     },
     onDayClick: (Day) -> Unit = {},
     displayDay: @Composable BoxScope.(Day) -> Unit = {

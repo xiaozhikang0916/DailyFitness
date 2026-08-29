@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.database.dao.BodyDao
+import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
 import site.xiaozk.dailyfitness.database.model.toDbEntity
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
@@ -26,18 +27,11 @@ class PersonDailyRepository @Inject constructor(
         from: LocalDate,
         to: LocalDate
     ): Flow<BodyDataWithDate> {
-        return bodyDao.getPersonDailyDataFlow(user, from, to).map {
-            val map: Map<LocalDate, List<BodyDataRecord>> = it.groupBy({
-                it.recordTime.toLocalDateTime(
-                    TimeZone.currentSystemDefault()
-                ).date
-            }) {
-                it.toRepoEntity()
-            }
-            BodyDataWithDate(
-                map
-            )
-        }
+        return bodyDao.getPersonDailyDataFlow(user, from, to).map { it.toBodyDataWithDate() }
+    }
+
+    override fun getAllPersonDailyDataFlow(user: User): Flow<BodyDataWithDate> {
+        return bodyDao.getAllPersonDailyDataFlow(user.uid).map { it.toBodyDataWithDate() }
     }
 
     override suspend fun addPersonDailyData(user: User, data: BodyDataRecord) {
@@ -56,4 +50,15 @@ class PersonDailyRepository @Inject constructor(
         bodyDao.deleteDailyPersonData(data = data.toDbEntity())
 
     }
+}
+
+private fun List<DBDailyBodyData>.toBodyDataWithDate(): BodyDataWithDate {
+    val map: Map<LocalDate, List<BodyDataRecord>> = this.groupBy({
+        it.recordTime.toLocalDateTime(
+            TimeZone.currentSystemDefault()
+        ).date
+    }) {
+        it.toRepoEntity()
+    }
+    return BodyDataWithDate(map)
 }

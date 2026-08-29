@@ -30,6 +30,9 @@ interface BodyDao {
     @Query("SELECT * from daily_body_data WHERE userId = :userId AND recordTime > :fromTimestampMilli AND recordTime < :toTimestampMilli")
     fun getPersonDailyDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<List<DBDailyBodyData>>
 
+    @Query("SELECT * from daily_body_data WHERE userId = :userId")
+    fun getAllPersonDailyDataFlow(userId: Int): Flow<List<DBDailyBodyData>>
+
     fun getPersonDailyDataFlow(user: User, from: LocalDate, to: LocalDate): Flow<List<DBDailyBodyData>> {
         return getPersonDailyDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
     }

@@ -1,6 +1,6 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
