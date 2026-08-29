@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.minusMonth
+import kotlinx.datetime.plusMonth
 
 /**
  * @author: xiaozhikang
@@ -44,7 +46,7 @@ fun CalendarHeader(
             ) {
                 IconButton(onClick = {
                     onMonthChanged?.invoke(
-                        month.previousMonth()
+                        month.minusMonth()
                     )
                 }) {
                     Icon(
@@ -54,7 +56,7 @@ fun CalendarHeader(
                 }
                 IconButton(onClick = {
                     onMonthChanged?.invoke(
-                        month.nextMonth()
+                        month.plusMonth()
                     )
                 }) {
                     Icon(

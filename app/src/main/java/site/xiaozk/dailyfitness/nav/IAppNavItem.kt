@@ -35,7 +35,8 @@ import site.xiaozk.dailyfitness.page.training.add.DeleteDailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainAction
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPart
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
+import site.xiaozk.dailyfitness.repository.model.now
 import kotlin.time.Clock
 
 /**

@@ -23,7 +23,8 @@ import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
 import site.xiaozk.dailyfitness.repository.model.BodyField
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
+import site.xiaozk.dailyfitness.repository.model.now
 import javax.inject.Inject
 
 /**
@@ -59,8 +60,8 @@ class BodyViewModel @Inject constructor(
         emitAll(
             bodyRepo.getPersonDailyDataFlow(
                 user,
-                month.atDay(1),
-                month.atEndOfMonth()
+                month.firstDay,
+                month.lastDay
             ).map { data ->
                 BodyDetailLoadState(list = data, loadStatus = ActionStatus.Done, month = month)
             }

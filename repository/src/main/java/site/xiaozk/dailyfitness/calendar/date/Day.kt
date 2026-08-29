@@ -9,7 +9,8 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlinx.datetime.isoDayNumber
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.yearMonth
 
 /**
  * @author: xiaozhikang
@@ -101,15 +102,15 @@ data class Month(
     }
 
     constructor(month: YearMonth) : this(
-        month.atDay(1).let {
-            (0 until month.lengthOfMonth()).map { offset ->
+        month.firstDay.let {
+            (0 until month.numberOfDays).map { offset ->
                 Day(it.plus(offset, DateTimeUnit.DAY))
             }.let(::ArrayList)
         }
     )
 
     override val yearMonth: YearMonth
-        get() = YearMonth(days.first().date)
+        get() = days.first().date.yearMonth
 
     fun getOverlappingMonth(firstDayOfWeek: DayOfWeek): OverlappingMonth {
         val firstDay = this.days.first().date

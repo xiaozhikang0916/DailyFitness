@@ -53,7 +53,8 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
+import site.xiaozk.dailyfitness.repository.model.now
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder

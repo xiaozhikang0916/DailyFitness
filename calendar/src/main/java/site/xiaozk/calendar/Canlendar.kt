@@ -22,7 +22,7 @@ import site.xiaozk.calendar.display.CalendarHeader
 import site.xiaozk.calendar.display.DisplayDay
 import site.xiaozk.calendar.display.DisplayWeek
 import site.xiaozk.calendar.display.WeekdayIndicator
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
 
 /**
  * @author: xiaozhikang

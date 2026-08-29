@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.database.dao.BodyDao
 import site.xiaozk.dailyfitness.database.dao.TrainDao
@@ -24,7 +25,6 @@ import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
-import site.xiaozk.dailyfitness.repository.model.YearMonth
 import javax.inject.Inject
 
 /**
@@ -41,8 +41,8 @@ class DailyWorkoutRepository @Inject constructor(
     override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> {
         return workoutDao.getDailyWorkoutActions(
             user.uid,
-            month.atDay(1).getStartEpochMillis(),
-            month.atEndOfMonth().getEndEpochMillis(),
+            month.firstDay.getStartEpochMillis(),
+            month.lastDay.getEndEpochMillis(),
         ).map {
             val actions = it.keys.map { it.id }.toIntArray()
             val parts = trainDao.getTrainPartOfAction(actions)

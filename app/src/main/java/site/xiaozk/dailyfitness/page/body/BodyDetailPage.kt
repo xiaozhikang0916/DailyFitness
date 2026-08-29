@@ -51,7 +51,7 @@ import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
 import site.xiaozk.dailyfitness.nav.localAppScaffoldViewModel
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyField
-import site.xiaozk.dailyfitness.repository.model.YearMonth
+import kotlinx.datetime.YearMonth
 import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import site.xiaozk.dailyfitness.utils.label
 import java.time.ZoneId
@@ -216,7 +216,7 @@ fun BodyChart(
                 .fillMaxWidth()
                 .height(200.dp)
                 .padding(horizontal = 12.dp),
-            displayMonth = kotlinx.datetime.YearMonth(data.month.year, data.month.month),
+            displayMonth = data.month,
         )
         Row(
             modifier = Modifier
