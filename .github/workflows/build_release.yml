@@ -27,7 +27,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEYSTORE_FILE: release.keystore
+          KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
       - name: Upload APK and Mapping files
         uses: actions/upload-artifact@v4
         with:
