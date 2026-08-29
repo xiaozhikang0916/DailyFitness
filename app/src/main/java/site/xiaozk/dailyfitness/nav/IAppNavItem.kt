@@ -3,9 +3,9 @@ package site.xiaozk.dailyfitness.nav
 import android.content.Context
 import android.util.Log
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -103,7 +103,7 @@ object AppHomeRootNav : IAppNavGraphItem {
 
         object TrainPartNavItem : AppHomePage() {
             override val route = "/home/train_part"
-            override val icon = Icons.Default.List
+            override val icon = Icons.AutoMirrored.Filled.List
             override fun getName(context: Context): String {
                 return context.getString(R.string.bottom_nav_title_train)
             }

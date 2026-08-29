@@ -101,6 +101,6 @@ fun DisplayDay(
             .then(background),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = displayDay.date.dayOfMonth.toString())
+        Text(text = displayDay.date.day.toString())
     }
 }

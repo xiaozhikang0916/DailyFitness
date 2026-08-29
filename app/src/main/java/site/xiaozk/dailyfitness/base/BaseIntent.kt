@@ -1,12 +1,9 @@
-@file:OptIn(ExperimentalTypeInference::class)
-
 package site.xiaozk.dailyfitness.base
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
-import kotlin.experimental.ExperimentalTypeInference
 
 /**
  * @author: xiaozhikang
@@ -22,7 +19,7 @@ class IntentResult<State, Intent : IIntent>(
 ) {
     constructor(
         state: State,
-        @BuilderInference sideEffectBuilder: suspend FlowCollector<Intent>.() -> Unit,
+        sideEffectBuilder: suspend FlowCollector<Intent>.() -> Unit,
     ) : this(state, flow(sideEffectBuilder))
 }
 

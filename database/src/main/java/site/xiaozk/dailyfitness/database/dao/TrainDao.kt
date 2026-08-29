@@ -3,7 +3,7 @@ package site.xiaozk.dailyfitness.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.MapInfo
+import androidx.room.MapColumn
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +28,7 @@ interface TrainDao {
     fun getAllTrainActionOnPart(trainPartId: Int): Flow<Map<DBTrainPart, List<DBTrainAction>>>
 
     @Query("SELECT * FROM train_part LEFT JOIN train_action ON train_part.id = train_action.partId")
-    fun getAllTrainPartWithAction(): Flow<Map<DBTrainPart, List<DBTrainAction>?>>
+    fun getAllTrainPartWithAction(): Flow<Map<DBTrainPart, List<DBTrainAction>>>
 
     @Query("SELECT train_action.*, daily_train_action.* FROM train_action LEFT JOIN daily_train_action ON train_action.id = daily_train_action.usingActionId JOIN train_part ON train_action.partId = train_part.id")
     fun getAllTrainActionWithWorkout(): Flow<Map<DBTrainAction, List<DBDailyWorkoutAction>>>
@@ -67,8 +67,7 @@ interface TrainDao {
     /**
      * A helper query to map a group of train actions with id [actionId] to it's belonging train part
      */
-    @MapInfo(keyTable = "train_action", keyColumn = "actionID", valueTable = "train_part")
     @Query("SELECT train_action.id as actionID, train_part.* FROM train_part JOIN train_action ON train_action.partId = train_part.id WHERE train_action.id IN (:actionId) ")
-    suspend fun getTrainPartOfAction(actionId: IntArray): Map<Int, DBTrainPart>
+    suspend fun getTrainPartOfAction(actionId: IntArray): Map<@MapColumn(columnName = "actionID") Int, DBTrainPart>
 
 }

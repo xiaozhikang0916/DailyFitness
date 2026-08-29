@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.nav.AppScaffoldViewModel
 import site.xiaozk.dailyfitness.nav.LocalScaffoldProperty
@@ -120,7 +120,7 @@ fun TrainActionPage(
                 onCardLongClick = onWorkoutLongClick,
             )
             if (index < actionStaticPage.workoutCount - 1) {
-                Divider(modifier = Modifier.padding(horizontal = 4.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 4.dp))
             }
         }
     }

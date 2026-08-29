@@ -45,14 +45,14 @@ data class Day(
         }
         return (0..6).map {
             Day(firstDay.plus(it, DateTimeUnit.DAY))
-        }.let(::ArrayList).let(::Week)
+        }.let { ArrayList(it) }.let(::Week)
     }
 
     fun getMonth(): Month {
         val firstDay = LocalDate(this.date.year, this.date.month, 1)
         return (0 until this.date.day).map {
             Day(firstDay.plus(it, DateTimeUnit.DAY))
-        }.let(::ArrayList).let(::Month)
+        }.let { ArrayList(it) }.let(::Month)
     }
 
     override fun compareTo(other: IDay): Int {
@@ -105,7 +105,7 @@ data class Month(
         month.firstDay.let {
             (0 until month.numberOfDays).map { offset ->
                 Day(it.plus(offset, DateTimeUnit.DAY))
-            }.let(::ArrayList)
+            }.let { ArrayList(it) }
         }
     )
 
@@ -134,10 +134,10 @@ data class Month(
         }
         val prevDays = (0 until firstDay.toEpochDays() - start.toEpochDays()).map {
             Day(start.plus(it, DateTimeUnit.DAY))
-        }.let(::ArrayList)
+        }.let { ArrayList(it) }
         val nextDays = (1..end.toEpochDays() - lastDay.toEpochDays()).map {
             Day(end.plus(it, DateTimeUnit.DAY))
-        }.let(::ArrayList)
+        }.let { ArrayList(it) }
         return OverlappingMonth(this, prevDays, nextDays)
     }
 

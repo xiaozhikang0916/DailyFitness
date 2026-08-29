@@ -29,9 +29,9 @@ fun TrainPart.toDbEntity() : DBTrainPart {
     return DBTrainPart(id = this.id, partName = this.partName)
 }
 
-fun Map.Entry<DBTrainPart, List<DBTrainAction>?>.toRepoEntity(): TrainPartGroup {
+fun Map.Entry<DBTrainPart, List<DBTrainAction>>.toRepoEntity(): TrainPartGroup {
     return TrainPartGroup(
         part = key.toRepoEntity(),
-        actions = value?.map { it.toRepoEntity(key) } ?: emptyList()
+        actions = value.map { it.toRepoEntity(key) }
     )
 }

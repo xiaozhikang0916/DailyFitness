@@ -3,7 +3,7 @@ package site.xiaozk.dailyfitness.widget
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -17,7 +17,7 @@ import site.xiaozk.dailyfitness.R
  */
 
 @Composable
-fun BackButton(icon: ImageVector = Icons.Default.KeyboardArrowLeft, onBackClick: () -> Unit = {}) {
+fun BackButton(icon: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, onBackClick: () -> Unit = {}) {
     IconButton(onClick = onBackClick) {
         Icon(painter = rememberVectorPainter(image = icon), contentDescription = stringResource(R.string.top_action_back))
     }
