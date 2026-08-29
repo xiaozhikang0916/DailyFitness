@@ -58,6 +58,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 /**
  * @author: xiaozhikang
@@ -126,7 +127,7 @@ fun BodyDetailPage() {
                 Text(text = stringResource(R.string.title_dialog_delete_body_data))
             },
             text = {
-                val format = getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
+                val format = getLocalDateTimeFormatter(LocalLocale.current.platformLocale).withZone(ZoneId.systemDefault())
                 Text(
                     text = stringResource(R.string.desc_dialog_delete_body_date, format.format(it.instant.toJavaInstant()))
                 )

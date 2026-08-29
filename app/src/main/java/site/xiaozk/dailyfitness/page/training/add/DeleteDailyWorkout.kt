@@ -36,6 +36,7 @@ import site.xiaozk.dailyfitness.utils.getLocalDateTimeFormatter
 import java.time.ZoneId
 import java.util.Locale
 import javax.inject.Inject
+import androidx.compose.ui.platform.LocalLocale
 
 /**
  * @author: xiaozhikang
@@ -99,7 +100,7 @@ fun DeleteDailyWorkout(
             },
             text = {
                 val dateTimeFormat =
-                    getLocalDateTimeFormatter(Locale.getDefault()).withZone(ZoneId.systemDefault())
+                    getLocalDateTimeFormatter(LocalLocale.current.platformLocale).withZone(ZoneId.systemDefault())
                 Text(
                     text = stringResource(R.string.desc_dialog_delete_workout, dateTimeFormat.format(workout.instant.toJavaInstant()), workout.action.actionName, workout.displayText.joinToString(" "))
                 )
