@@ -2,6 +2,7 @@ package site.xiaozk.dailyfitness.session
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ import javax.inject.Singleton
  * The foreground service / notification wiring is layered on top in later
  * milestones, this class itself has no Android UI dependency.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
 class WorkoutSessionControllerImpl @Inject constructor(
     private val store: SessionStore,

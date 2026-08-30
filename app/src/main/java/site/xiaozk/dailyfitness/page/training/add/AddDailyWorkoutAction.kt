@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
@@ -47,6 +48,7 @@ import site.xiaozk.dailyfitness.widget.DialogPageScaffold
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SegmentedControl
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @author: xiaozhikang
@@ -146,20 +148,30 @@ fun AddDailyTrainPage(
 
         val selectedAction = pageState.selectedAction
         if (selectedAction != null) {
-            val (weightFocus, timeFocus, countFocus, noteFocus) = remember {
-                FocusRequester.createRefs()
+            // 输入字段显示顺序：重量 -> 时长 -> 次数 -> 备注
+            val focusRequesters = remember {
+                Array(WorkoutField.entries.size) { FocusRequester() }
             }
-            val first = if (selectedAction.isWeightedAction) {
-                weightFocus
-            } else if (selectedAction.isTimedAction) {
-                timeFocus
-            } else if (selectedAction.isCountedAction) {
-                countFocus
-            } else {
-                noteFocus
+            // 当前动作可见的输入字段（按显示顺序，备注始终可见）
+            val visibleFields = buildList {
+                if (selectedAction.isWeightedAction) add(WorkoutField.Weight)
+                if (selectedAction.isTimedAction) add(WorkoutField.Time)
+                if (selectedAction.isCountedAction) add(WorkoutField.Count)
+                add(WorkoutField.Note)
             }
-            LaunchedEffect(key1 = Unit) {
-                first.requestFocus()
+            fun requesterOf(field: WorkoutField) = focusRequesters[field.ordinal]
+            fun focusNext(field: WorkoutField) {
+                visibleFields.getOrNull(visibleFields.indexOf(field) + 1)
+                    ?.let { requesterOf(it).requestFocus() }
+            }
+            val first = requesterOf(visibleFields.first())
+            // 每次切换动作时字段集合都会变化（如从“仅次数”切到“重量+次数”），
+            // 以 selectedAction 为 key，切换后重新把焦点请求到当前第一个输入框；
+            // 新字段刚加入组合、焦点节点可能尚未附加，重试直到请求成功。
+            LaunchedEffect(key1 = selectedAction) {
+                while (!first.requestFocus()) {
+                    delay(16.milliseconds)
+                }
             }
             Column(
                 modifier = Modifier
@@ -178,7 +190,7 @@ fun AddDailyTrainPage(
                             valid = pageState.weightValid,
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(weightFocus),
+                                .focusRequester(requesterOf(WorkoutField.Weight)),
                             onValueChange = {
                                 onIntent(
                                     InputWeightIntent(
@@ -187,15 +199,7 @@ fun AddDailyTrainPage(
                                     )
                                 )
                             },
-                            onNextFocus = {
-                                if (selectedAction.isTimedAction) {
-                                    timeFocus.requestFocus()
-                                } else if (selectedAction.isCountedAction) {
-                                    countFocus.requestFocus()
-                                } else {
-                                    noteFocus.requestFocus()
-                                }
-                            }
+                            onNextFocus = { focusNext(WorkoutField.Weight) }
                         )
 
                         WeightRadio(
@@ -219,7 +223,7 @@ fun AddDailyTrainPage(
                             valid = pageState.timeValid,
                             modifier = Modifier
                                 .weight(1f)
-                                .focusRequester(timeFocus),
+                                .focusRequester(requesterOf(WorkoutField.Time)),
                             onValueChange = {
                                 onIntent(
                                     InputDurationIntent(
@@ -228,13 +232,7 @@ fun AddDailyTrainPage(
                                     )
                                 )
                             },
-                            onNextFocus = {
-                                if (selectedAction.isCountedAction) {
-                                    countFocus.requestFocus()
-                                } else {
-                                    noteFocus.requestFocus()
-                                }
-                            }
+                            onNextFocus = { focusNext(WorkoutField.Time) }
                         )
 
                         TimeUnitRadio(pageState = pageState, modifier = Modifier.padding(top = 8.dp)) {
@@ -250,20 +248,18 @@ fun AddDailyTrainPage(
                         valid = pageState.countValid,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .focusRequester(countFocus),
+                            .focusRequester(requesterOf(WorkoutField.Count)),
                         onValueChange = {
                             onIntent(InputCountIntent(it))
                         },
-                        onNextFocus = {
-                            noteFocus.requestFocus()
-                        }
+                        onNextFocus = { focusNext(WorkoutField.Count) }
                     )
                 }
 
                 OutlinedTextField(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .focusRequester(noteFocus),
+                        .focusRequester(requesterOf(WorkoutField.Note)),
                     value = pageState.note,
                     singleLine = true,
                     label = {
@@ -281,6 +277,11 @@ fun AddDailyTrainPage(
         }
     }
 }
+
+/**
+ * 训练录入页的输入字段，声明顺序即输入框显示顺序。
+ */
+private enum class WorkoutField { Weight, Time, Count, Note }
 
 @Composable
 private fun WorkoutInput(
