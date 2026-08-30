@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "DailyFitness"
 include ':app'
+include ':session'
 include ':database'
 include ':repository'
 include ':calendar'

@@ -12,6 +12,7 @@ datetime = "0.7.1"
 junit = "4.13.2"
 androidx-core = "1.19.0"
 androidx-appcompat = "1.8.0"
+androidx-datastore = "1.1.7"
 androidx-lifecycle-runtime = "2.11.0"
 androidx-lifecycle-viewmodel-compose = "2.11.0"
 androidx-activity = "1.13.0"
@@ -38,6 +39,8 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 coroutine-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
+coroutine-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 android-hilt-lib = { module = "com.google.dagger:hilt-android", version.ref = "hilt_version" }
 android-hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_version" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }

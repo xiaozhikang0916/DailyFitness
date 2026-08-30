@@ -82,7 +82,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(project(":repository"))
+    implementation(project(":session"))
     implementation(project(":database"))
     implementation(project(":calendar"))
     implementation(project(":chart"))
+
+    testImplementation(libs.junit)
 }
