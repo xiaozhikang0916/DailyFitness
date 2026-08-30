@@ -11,6 +11,7 @@ This app supports following functions:
 
 * Create and save your own train parts and actions;
 * Record your daily workouts;
+* During a workout, an ongoing notification shows the sets done for the current action with a one-tap jump to add another set;
 * Record your body datas like weight;
 * Statics and show your workouts;
 * Show your body datas in line chart.
