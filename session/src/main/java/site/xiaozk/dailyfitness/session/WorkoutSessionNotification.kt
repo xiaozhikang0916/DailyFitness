@@ -8,12 +8,15 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Date
+import kotlin.time.Instant
 import javax.inject.Inject
 
 /**
  * Builds the ongoing session notification and owns the notification channel.
  * Pure presentation: given a [WorkoutSessionState] it produces a [Notification]
- * with the current action name, the set count and two actions:
+ * with the session start time, the current action name, the set count and two
+ * actions:
  *  - "add one set" -> [WorkoutSessionNavProvider.pendingIntentAddSet]
  *  - "finish"      -> starts [WorkoutSessionService] with [SessionIntents.ACTION_FINISH]
  */
@@ -36,11 +39,18 @@ class WorkoutSessionNotification @Inject constructor(
         val contentText = state.currentActionName?.let { name ->
             context.getString(R.string.notification_session_text, name, state.setsDone)
         } ?: context.getString(R.string.notification_session_no_action)
+        val subText = state.startedAt?.let { startTime ->
+            context.getString(
+                R.string.notification_session_started_at,
+                formatTime(startTime),
+            )
+        }
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_workout_session)
             .setContentTitle(context.getString(R.string.notification_session_title))
             .setContentText(contentText)
+            .setSubText(subText)
             .setContentIntent(navProvider.pendingIntentOpenToday())
             .addAction(
                 0,
@@ -58,6 +68,11 @@ class WorkoutSessionNotification @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
+
+    /** Formats the session start time in the user's 12/24h preference. */
+    private fun formatTime(instant: Instant): String =
+        android.text.format.DateFormat.getTimeFormat(context)
+            .format(Date(instant.toEpochMilliseconds()))
 
     private fun finishPendingIntent(): PendingIntent {
         val intent = Intent(context, WorkoutSessionService::class.java)
