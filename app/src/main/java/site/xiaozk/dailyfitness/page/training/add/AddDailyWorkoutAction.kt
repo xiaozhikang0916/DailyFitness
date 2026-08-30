@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
@@ -158,8 +159,13 @@ fun AddDailyTrainPage(
             } else {
                 noteFocus
             }
-            LaunchedEffect(key1 = Unit) {
-                first.requestFocus()
+            // 每次切换动作时字段集合都会变化（如从“仅次数”切到“重量+次数”），
+            // 以 selectedAction 为 key，切换后重新把焦点请求到当前第一个输入框；
+            // 新字段刚加入组合、焦点节点可能尚未附加，重试直到请求成功。
+            LaunchedEffect(key1 = selectedAction) {
+                while (!first.requestFocus()) {
+                    delay(16)
+                }
             }
             Column(
                 modifier = Modifier
