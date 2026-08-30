@@ -48,6 +48,7 @@ import site.xiaozk.dailyfitness.widget.DialogPageScaffold
 import site.xiaozk.dailyfitness.widget.LargeDropdownMenu
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SegmentedControl
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @author: xiaozhikang
@@ -169,7 +170,7 @@ fun AddDailyTrainPage(
             // 新字段刚加入组合、焦点节点可能尚未附加，重试直到请求成功。
             LaunchedEffect(key1 = selectedAction) {
                 while (!first.requestFocus()) {
-                    delay(16)
+                    delay(16.milliseconds)
                 }
             }
             Column(
