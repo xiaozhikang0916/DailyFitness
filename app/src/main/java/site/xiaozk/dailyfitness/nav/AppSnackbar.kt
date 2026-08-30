@@ -56,6 +56,12 @@ object LoadFailedSnackbar : SnackbarDisplay {
         get() = SnackbarStatus.Error
 }
 
+object NotificationPermissionDeniedSnackbar : SnackbarDisplay {
+    override val messageRes = R.string.snackbar_notification_permission_denied
+    override val status: SnackbarStatus
+        get() = SnackbarStatus.Normal
+}
+
 /**
  * App-wide snackbar presenter, created once in AppHost.
  *

@@ -7,6 +7,7 @@
     <string name="snackbar_del_success">删除成功</string>
     <string name="snackbar_del_failed">删除失败</string>
     <string name="snackbar_load_failed">加载失败</string>
+    <string name="snackbar_notification_permission_denied">通知权限被拒绝，仍可在应用内记录训练</string>
     <string name="title_train_part">训练部位</string>
     <string name="title_train_action">训练动作</string>
     <string name="label_train_action_name">动作名称</string>
@@ -62,6 +63,8 @@
     <string name="title_workout_monthly">训练月报</string>
     <string name="desc_top_action_add_action">添加训练动作</string>
     <string name="title_daily_workout">训练日志</string>
+    <string name="desc_top_action_start_workout">开始运动</string>
+    <string name="title_finish_workout">结束运动</string>
     <string name="label_workout_group_unit">%1$s组</string>
     <string name="label_train_part_unit">%1$s轮</string>
     <string name="bottom_nav_title_home">首页</string>

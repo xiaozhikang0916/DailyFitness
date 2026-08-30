@@ -15,6 +15,10 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.nav.AddBodyDetail
 import site.xiaozk.dailyfitness.nav.AddTrainAction
 import site.xiaozk.dailyfitness.nav.AddWorkoutAction
@@ -24,10 +28,13 @@ import site.xiaozk.dailyfitness.nav.HomeTrainPart
 import site.xiaozk.dailyfitness.nav.HomeTraining
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import site.xiaozk.dailyfitness.nav.NavIntentBus
 import site.xiaozk.dailyfitness.nav.TrainActionDetail
 import site.xiaozk.dailyfitness.nav.TrainDay
 import site.xiaozk.dailyfitness.nav.TrainPartDetail
 import site.xiaozk.dailyfitness.nav.WorkoutMonth
+import site.xiaozk.dailyfitness.nav.sessionActionToNavKey
+import site.xiaozk.dailyfitness.session.SessionIntents
 import site.xiaozk.dailyfitness.page.action.TrainActionPage
 import site.xiaozk.dailyfitness.page.action.TrainPartPage
 import site.xiaozk.dailyfitness.page.action.TrainStaticPage
@@ -65,7 +72,7 @@ import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
  *   Activity default and finishes it.
  */
 @Composable
-fun AppHost() {
+fun AppHost(navIntentBus: NavIntentBus) {
     val navBackStack: NavBackStack<NavKey> = rememberNavBackStack(HomeTraining)
     val appSnackbarHostState = remember {
         AppSnackbarHostState()
@@ -77,6 +84,14 @@ fun AppHost() {
                 message = res.getString(display.messageRes),
                 withDismissAction = true,
             )
+        }
+    }
+    LaunchedEffect(navIntentBus) {
+        navIntentBus.observe().collect { intent ->
+            val target = sessionActionToNavKey(intent.action, todayLocalDate()) ?: return@collect
+            if (navBackStack.lastOrNull() != target) {
+                navBackStack.add(target)
+            }
         }
     }
     DailyFitnessTheme(darkTheme = false) {
@@ -113,3 +128,6 @@ fun AppHost() {
         }
     }
 }
+
+private fun todayLocalDate(): LocalDate =
+    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">Workout session</string>
+    <string name="notification_channel_description">Ongoing workout session</string>
+    <string name="notification_session_title">Workout in progress</string>
+    <string name="notification_session_text">%1$s · %2$d sets done</string>
+    <string name="notification_session_no_action">No workout records yet</string>
+    <string name="notification_action_add_set">Add set</string>
+    <string name="notification_action_finish">Finish</string>
+</resources>

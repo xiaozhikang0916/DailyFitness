@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name">训练会话</string>
+    <string name="notification_channel_description">训练中的常驻通知</string>
+    <string name="notification_session_title">训练进行中</string>
+    <string name="notification_session_text">%1$s · 已完成 %2$d 组</string>
+    <string name="notification_session_no_action">还没有训练记录</string>
+    <string name="notification_action_add_set">添加一组</string>
+    <string name="notification_action_finish">结束</string>
+</resources>
