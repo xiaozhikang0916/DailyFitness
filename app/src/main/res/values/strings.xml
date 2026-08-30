@@ -58,11 +58,11 @@
     <string name="title_workout_monthly">Workout monthly</string>
     <string name="desc_top_action_add_action">Add workout</string>
     <string name="title_daily_workout">Workout daily</string>
-    <string name="desc_top_action_start_workout">Start workout</string>
-    <string name="title_finish_workout">Finish workout</string>
     <string name="label_workout_group_unit">%1$s groups</string>
     <string name="label_train_part_unit">%1$s times</string>
     <string name="fab_action_add_workout">Add new workout</string>
+    <string name="fab_action_start_workout">Start workout</string>
+    <string name="fab_action_finish_workout">Finish workout</string>
     <string name="fab_action_add_body_data">Add new body data</string>
     <string name="fab_action_add_train_group">Add new train part</string>
     <string name="fab_action_add_train_action">Add new train action</string>

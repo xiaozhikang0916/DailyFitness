@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SmallFloatingActionButton
@@ -57,6 +59,9 @@ import kotlin.math.min
 fun HostFab(
     backStack: NavBackStack<NavKey>,
     topAppBarState: TopAppBarState? = null,
+    sessionActive: Boolean = false,
+    onStartWorkout: () -> Unit = {},
+    onFinishWorkout: () -> Unit = {},
 ) {
     var showFabMenu by remember {
         mutableStateOf(false)
@@ -99,6 +104,16 @@ fun HostFab(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
+                        FloatingActionListButton(
+                            icon = if (sessionActive) Icons.Default.Check else Icons.Default.PlayArrow,
+                            text = stringResource(
+                                if (sessionActive) R.string.fab_action_finish_workout
+                                else R.string.fab_action_start_workout
+                            ),
+                        ) {
+                            if (sessionActive) onFinishWorkout() else onStartWorkout()
+                            showFabMenu = false
+                        }
                         FloatingActionListButton(
                             icon = Icons.Default.Add,
                             text = stringResource(R.string.fab_action_add_workout),

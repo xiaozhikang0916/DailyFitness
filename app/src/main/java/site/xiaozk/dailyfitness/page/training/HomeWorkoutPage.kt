@@ -10,18 +10,32 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.calendar.Calendar
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.base.ActionStatus
+import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
+import site.xiaozk.dailyfitness.nav.NotificationPermissionDeniedSnackbar
 import site.xiaozk.dailyfitness.nav.WorkoutMonth
+import site.xiaozk.dailyfitness.session.SessionIntents
+import site.xiaozk.dailyfitness.session.WorkoutSessionService
 import androidx.navigation3.runtime.NavKey
 import site.xiaozk.dailyfitness.widget.HomePageScaffold
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
@@ -42,9 +56,34 @@ import java.time.format.FormatStyle
 fun HomeWorkoutPage() {
     val homeViewModel: HomeWorkoutPageViewModel = hiltViewModel()
     val navBackStack = LocalNavBackStack.current
+    val context = LocalContext.current
+    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_home_workout)
     val workoutDayList = homeViewModel.pageData.collectAsState()
-    HomePageScaffold(title = title) { scaffoldProperty ->
+    val sessionActive by homeViewModel.sessionState.collectAsState()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            startSessionService(context)
+        } else {
+            appSnackbarHostState.showSnackbar(NotificationPermissionDeniedSnackbar)
+        }
+    }
+    val onStartWorkout: () -> Unit = {
+        if (needsNotificationPermission(context) && !hasNotificationPermission(context)) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            startSessionService(context)
+        }
+    }
+    HomePageScaffold(
+        title = title,
+        sessionActive = sessionActive.active,
+        onStartWorkout = onStartWorkout,
+        onFinishWorkout = { homeViewModel.finishSession() },
+    ) { scaffoldProperty ->
         HomeWorkoutPage(
             state = workoutDayList.value,
             onNav = { navBackStack.add(it) },
@@ -158,4 +197,19 @@ fun HomeWorkoutPage(
             }
         }
     }
+}
+
+private fun needsNotificationPermission(context: Context): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+private fun hasNotificationPermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS,
+    ) == PackageManager.PERMISSION_GRANTED
+
+private fun startSessionService(context: Context) {
+    val intent = Intent(context, WorkoutSessionService::class.java)
+        .setAction(SessionIntents.ACTION_START)
+    ContextCompat.startForegroundService(context, intent)
 }

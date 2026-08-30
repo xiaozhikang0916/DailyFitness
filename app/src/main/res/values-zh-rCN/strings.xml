@@ -29,6 +29,8 @@
     <string name="action_desc_add_action">添加新训练动作</string>
     <string name="top_action_back">返回</string>
     <string name="fab_action_add_workout">新增训练</string>
+    <string name="fab_action_start_workout">开始运动</string>
+    <string name="fab_action_finish_workout">结束运动</string>
     <string name="fab_action_add_body_data">新增身体数据</string>
     <string name="fab_action_add_train_group">新增动作组</string>
     <string name="fab_action_add_train_action">新增动作</string>
@@ -63,8 +65,6 @@
     <string name="title_workout_monthly">训练月报</string>
     <string name="desc_top_action_add_action">添加训练动作</string>
     <string name="title_daily_workout">训练日志</string>
-    <string name="desc_top_action_start_workout">开始运动</string>
-    <string name="title_finish_workout">结束运动</string>
     <string name="label_workout_group_unit">%1$s组</string>
     <string name="label_train_part_unit">%1$s轮</string>
     <string name="bottom_nav_title_home">首页</string>

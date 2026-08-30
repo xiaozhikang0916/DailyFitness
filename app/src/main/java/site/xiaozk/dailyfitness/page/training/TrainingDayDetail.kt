@@ -1,13 +1,5 @@
 package site.xiaozk.dailyfitness.page.training
 
-import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -26,12 +18,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,25 +32,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import site.xiaozk.dailyfitness.R
-import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
-import site.xiaozk.dailyfitness.nav.NotificationPermissionDeniedSnackbar
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import site.xiaozk.dailyfitness.nav.AddWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
-import site.xiaozk.dailyfitness.session.SessionIntents
-import site.xiaozk.dailyfitness.session.WorkoutSessionService
 import site.xiaozk.dailyfitness.utils.getLocalDateFormatter
 import site.xiaozk.dailyfitness.widget.ScaffoldProperty
 import site.xiaozk.dailyfitness.widget.SubPageScaffold
@@ -80,53 +65,13 @@ fun TrainingDayDetailPage(date: LocalDate) {
     val data = viewModel.trainingData
     val navBackStack = LocalNavBackStack.current
     val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    val context = LocalContext.current
-    val appSnackbarHostState = LocalAppSnackbarHostState.current
     val title = stringResource(R.string.title_daily_workout)
     val descAdd = stringResource(R.string.desc_top_action_add_action)
-    val descStart = stringResource(R.string.desc_top_action_start_workout)
-    val textFinish = stringResource(R.string.title_finish_workout)
-    val sessionActive by viewModel.sessionState.collectAsState()
     var deleteWorkoutId by remember { mutableStateOf<Int?>(null) }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            startSessionService(context)
-        } else {
-            appSnackbarHostState.showSnackbar(NotificationPermissionDeniedSnackbar)
-        }
-    }
-
-    val startWorkout: () -> Unit = {
-        if (needsNotificationPermission(context) && !hasNotificationPermission(context)) {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            startSessionService(context)
-        }
-    }
-
     SubPageScaffold(
         title = title,
         onBack = { systemBack?.onBackPressed() },
         actions = {
-            if (sessionActive.active) {
-                TextButton(
-                    onClick = { viewModel.finishSession() }
-                ) {
-                    Text(textFinish)
-                }
-            } else {
-                IconButton(
-                    onClick = startWorkout
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = descStart,
-                    )
-                }
-            }
             IconButton(
                 onClick = { navBackStack.add(AddWorkoutAction) }
             ) {
@@ -188,21 +133,6 @@ fun TrainingDayDetail(
 
 private fun key(item: DailyWorkoutListActionPair): String {
     return item.action.id.toString()
-}
-
-private fun needsNotificationPermission(context: Context): Boolean =
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-
-private fun hasNotificationPermission(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.POST_NOTIFICATIONS,
-    ) == PackageManager.PERMISSION_GRANTED
-
-private fun startSessionService(context: Context) {
-    val intent = Intent(context, WorkoutSessionService::class.java)
-        .setAction(SessionIntents.ACTION_START)
-    ContextCompat.startForegroundService(context, intent)
 }
 
 @OptIn(ExperimentalFoundationApi::class)

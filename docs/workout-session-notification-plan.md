@@ -33,7 +33,7 @@
 | "常驻卡片" | 前台服务（FGS）+ ongoing 通知。只有 FGS 能在用户离开应用甚至进程被杀后稳定存活并保持数据同步 |
 | "当前锻炼的组数" | 当前动作今天已完成的组数（= 今天该动作 `DailyWorkoutAction` 的条数），**从 repository flow 实时推导，不另存副本** |
 | "快捷添加一次锻炼次数" | **改为跳转到现有"添加一组"页面**（`AddWorkoutAction` 路由），由用户在原表单中完成录入，而非通知直接插库 |
-| "开始运动" | 用户显式点击入口（训练日详情页 `TrainingDayDetail`）→ 申请通知权限 → 启动前台服务 |
+| "开始运动" | 用户显式点击入口（**首页 FAB 菜单第一项**，按会话状态切换"开始运动/结束运动"）→ 申请通知权限 → 启动前台服务 |
 | "当前动作"如何确定 | v1 自动跟随最新一组：会话只持久化 `active` + `startedAt`，当前动作 = 今天最新一条记录的 action，组数 = 该动作今天条数 |
 
 ### 关键设计决策
@@ -106,7 +106,7 @@
 
 ### 核心数据流
 
-- **开始**：`TrainingDayDetail` 点"开始运动" → 运行时申请 `POST_NOTIFICATIONS`（API 33+）→ `controller.start()` → DataStore 写 `active=true` → `startForegroundService` → `startForeground` 发布通知 → 收集当日 flow
+- **开始**：首页 FAB 菜单点"开始运动" → 运行时申请 `POST_NOTIFICATIONS`（API 33+）→ `startForegroundService(ACTION_START)` → 服务内 `controller.start()` → DataStore 写 `active=true` → `startForeground` 发布通知 → 收集当日 flow
 - **展示**：当日 `DailyWorkout` flow 每发一版，状态机推导"最新动作名 + 该动作今日组数" → 通知更新
 - **跳转添加**：通知按钮 → PendingIntent → MainActivity → NavIntentBus → AppHost → `navBackStack.add(AddWorkoutAction)`；用户在原表单录入 → 写库 → flow 重新发射 → 通知自动更新组数
 - **结束**：通知"结束"按钮 → `controller.finish()` → DataStore 清状态 → 撤通知 + `stopSelf()`
@@ -121,7 +121,7 @@
 3. **`WorkoutSessionNavProvider` 实现**（Hilt 绑定）：`@ApplicationContext` 构造 PendingIntent（`Intent(MainActivity)` + action 常量 + `FLAG_ACTIVITY_SINGLE_TOP or CLEAR_TOP` + `FLAG_IMMUTABLE` + 唯一 requestCode）
 4. **`MainActivity`**：`onCreate` 与 `onNewIntent` 将 intent 投递给 `NavIntentBus`
 5. **`AppHost`**：`LaunchedEffect` 收集 bus，按 `SessionIntents` 常量映射 `NavKey`，执行 `navBackStack.add(AddWorkoutAction)` / `TrainDay(today)`
-6. **`TrainingDayDetail`**：顶部工具栏加"开始运动/结束"入口；`ActivityResultContracts.RequestPermission` 申请通知权限，拒绝则 Snackbar 提示（不影响应用内手动加组）
+6. **首页 `HostFab`**：FAB 菜单新增"开始运动/结束运动"项（`HomePageScaffold`/`HostFab` 透传会话状态与回调，`HomeWorkoutPageViewModel` 注入 `WorkoutSessionController`）；`ActivityResultContracts.RequestPermission` 申请通知权限，拒绝则 Snackbar 提示（不影响应用内手动加组）
 7. （可选 v2）首页 `HomeWorkoutPage` 订阅会话状态显示小卡片
 
 ---
@@ -152,8 +152,8 @@
 - [x] M3.2 实现 `WorkoutSessionNavProvider`（app 侧 `AppSessionNavProvider`，构造指向 `MainActivity` 的 PendingIntent，首次引用 `AddWorkoutAction`；同时移除 `:session` 的 `@BindsOptionalOf` 与 `LaunchAppNavProvider`，改为硬绑定，缺绑定编译期报错）
 - [x] M3.3 `MainActivity` 捕获 intent（`onCreate` 仅首次创建 + `onNewIntent`）投递 bus
 - [x] M3.4 `AppHost` 收集 bus → 常量映射 NavKey → `navBackStack.add(AddWorkoutAction)` / `TrainDay(today)`（带栈顶去重）
-- [x] M3.5 `TrainingDayDetail` 加"开始运动/结束"入口 + `POST_NOTIFICATIONS` 运行时权限流程（拒绝 Snackbar 降级）
-- [x] M3.6 全链路手工验证：`ACTION_ADD_SET` → 添加页 ✓ → 表单录入（啊啊啊2/哦哦哦/50Kg×12）→ 通知更新为"哦哦哦 · 1 sets done" ✓ → 训练日志页"Finish workout"点击后通知消失、服务停止、按钮回到"Start workout" ✓
+- [x] M3.5 **首页 FAB 菜单**加"开始运动/结束"入口（会话激活状态切换文案与图标）+ `POST_NOTIFICATIONS` 运行时权限流程（拒绝 Snackbar 降级）
+- [x] M3.6 全链路手工验证：`ACTION_ADD_SET` → 添加页 ✓ → 表单录入（啊啊啊2/哦哦哦/50Kg×12）→ 通知更新为"哦哦哦 · 1 sets done" ✓ → 首页 FAB"结束运动"点击后会话结束、菜单切回"开始运动" ✓；训练日志页无开始/结束按钮 ✓
 
 ### M4 健壮性
 

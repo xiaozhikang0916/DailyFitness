@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.datetime.YearMonth
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
@@ -18,6 +19,8 @@ import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
 import site.xiaozk.dailyfitness.repository.model.now
+import site.xiaozk.dailyfitness.session.WorkoutSessionController
+import site.xiaozk.dailyfitness.session.WorkoutSessionState
 import javax.inject.Inject
 
 /**
@@ -29,6 +32,7 @@ import javax.inject.Inject
 class HomeWorkoutPageViewModel @Inject constructor(
     private val homeRepo: IDailyWorkoutRepository,
     private val userRepository: IUserRepository,
+    private val sessionController: WorkoutSessionController,
 ) : ViewModel() {
     var user: User? = null
         private set
@@ -37,6 +41,14 @@ class HomeWorkoutPageViewModel @Inject constructor(
         val user = user ?: userRepository.getCurrentUser()
         emitAll(getHomePageData(user))
     }.stateIn(viewModelScope, SharingStarted.Lazily, HomeWorkoutPageState())
+
+    /** Session state for the start/finish entry in the home FAB menu. */
+    val sessionState: StateFlow<WorkoutSessionState> = sessionController.state
+
+    /** Finishes the session; the service tears itself down on the inactive state. */
+    fun finishSession() {
+        viewModelScope.launch { sessionController.finish() }
+    }
 
     private fun getHomePageData(user: User): Flow<HomeWorkoutPageState> = flow {
         emit(HomeWorkoutPageState(loadStatus = ActionStatus.Loading))

@@ -55,6 +55,9 @@ private object EmptyScrollConnection : NestedScrollConnection
 fun HomePageScaffold(
     title: String,
     modifier: Modifier = Modifier,
+    sessionActive: Boolean = false,
+    onStartWorkout: () -> Unit = {},
+    onFinishWorkout: () -> Unit = {},
     content: @Composable (ScaffoldProperty) -> Unit,
 ) {
     val navBackStack = LocalNavBackStack.current
@@ -81,6 +84,9 @@ fun HomePageScaffold(
             HostFab(
                 backStack = navBackStack,
                 topAppBarState = scrollBehavior.state,
+                sessionActive = sessionActive,
+                onStartWorkout = onStartWorkout,
+                onFinishWorkout = onFinishWorkout,
             )
         },
         snackbarHost = {
