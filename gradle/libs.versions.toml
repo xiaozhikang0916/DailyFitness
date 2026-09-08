@@ -1,7 +1,7 @@
 [versions]
 java = "17"
 kotlin = "2.4.20"
-android_build_tools = "9.3.2"
+android_build_tools = "9.4.0"
 app_version = "0.0.1"
 hilt_version = "2.60.1"
 ksp_version = "2.3.11"
