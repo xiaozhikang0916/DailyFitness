@@ -3,43 +3,65 @@ name: CI
 on:
   push:
     branches:
-      - '**'        # 所有分支（含 main 与普通开发分支）
+      - main        # 仅 main 分支推送触发主构建
     tags:
-      - 'v*'        # main 分支上创建的新 tag，如 v1.1.0
+      - 'v*'        # main 分支上创建的新 tag，如 v1.1.0，触发 release
+  pull_request:     # 所有 PR（目标为 main 或各 dev 分支）触发 dev 检查
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # 1) 普通开发分支推送：构建所有模块的 Debug 产物并运行单元测试
+  # ===================== PR 触发的 dev 检查（build 与 test 并行） =====================
+
+  # 1a) PR 触发：构建所有模块的 Debug 产物
   debug-build:
-    name: Debug build + unit tests (dev branches)
-    if: github.ref_type == 'branch' && github.ref_name != 'main'
+    name: Build debug APKs (PR)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+      - name: Assemble debug (all modules)
+        run: ./gradlew assembleDebug
+
+  # 1b) PR 触发：与 debug-build 并行运行单元测试
+  debug-test:
+    name: Run unit tests (PR)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
       # test 为所有模块所有变体的单元测试聚合任务（AGP 任务为 test<Variant>UnitTest）
-      - name: Assemble debug & run unit tests (all modules)
-        run: ./gradlew assembleDebug test
+      - name: Run unit tests (all modules)
+        run: ./gradlew test
 
-  # 2) main 分支推送：所有模块 assemble + 单元测试
-  main-build:
-    name: Assemble + unit tests (main)
-    if: github.ref_type == 'branch' && github.ref_name == 'main'
+  # ===================== main 推送的构建（build 与 test 并行） =====================
+
+  # 2a) main 分支推送：所有模块 assemble（含 release 变体，需要签名密钥）
+  main-assemble:
+    name: Assemble all variants (main)
+    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     environment: Build release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -51,26 +73,46 @@ jobs:
         env:
           KEY_STORE_BASE64: ${{ secrets.KEY_STORE_FILE_BASE64 }}
       # assemble 会构建所有模块的全部变体（含 release），需要签名密钥
-      - name: Assemble all variants & run unit tests
-        run: ./gradlew assemble test
+      - name: Assemble all variants
+        run: ./gradlew assemble
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
 
+  # 2b) main 分支推送：与 main-assemble 并行运行单元测试
+  main-test:
+    name: Run unit tests (main)
+    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+      # test 为所有模块所有变体的单元测试聚合任务（AGP 任务为 test<Variant>UnitTest）
+      - name: Run unit tests (all modules)
+        run: ./gradlew test
+
+  # ===================== tag 触发的 release =====================
+
   # 3) main 分支上的新 tag：assembleRelease 并把产物发布到 GitHub Release
   release:
     name: Release APK (tag)
-    if: github.ref_type == 'tag'
+    if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     environment: Build release
     permissions:
       contents: write   # 允许向 GitHub Release 上传产物
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -89,7 +131,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
       - name: Publish APK & mapping to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             app/build/outputs/apk/release/*.apk
