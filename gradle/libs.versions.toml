@@ -21,7 +21,7 @@ room = "2.8.4"
 navigation3 = "1.1.7"
 lifecycle-viewmodel-navigation3 = "2.11.0"
 hilt-lifecycle-viewmodel-compose = "1.4.0"
-accompanist = "0.32.0"
+accompanist = "0.36.0"
 
 vico = "1.6.4"
 
