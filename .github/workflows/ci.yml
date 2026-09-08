@@ -89,7 +89,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
       - name: Publish APK & mapping to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             app/build/outputs/apk/release/*.apk
