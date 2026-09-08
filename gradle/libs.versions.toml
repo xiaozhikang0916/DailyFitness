@@ -5,7 +5,7 @@ android_build_tools = "9.3.2"
 app_version = "0.0.1"
 hilt_version = "2.60.1"
 ksp_version = "2.3.11"
-coroutine = "1.10.2"
+coroutine = "1.11.0"
 serialization = "1.9.0"
 datetime = "0.7.1"
 
