@@ -15,7 +15,7 @@ This app supports following functions:
 * Record your body datas like weight;
 * Statics and show your workouts;
 * Show your body datas in line chart.
-* *(WIP)* AI Coach: recommend today's training part/plan or the next set advice powered by an LLM (DeepSeek). See [AI Coach design](docs/ai-coach-plan.md) / [work plan](docs/ai-coach-work-plan.md).
+* *(WIP)* AI Coach: recommend today's training part/plan or the next set advice powered by an LLM (DeepSeek).
 
 ### Train actions
 
