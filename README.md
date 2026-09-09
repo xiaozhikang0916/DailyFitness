@@ -15,6 +15,7 @@ This app supports following functions:
 * Record your body datas like weight;
 * Statics and show your workouts;
 * Show your body datas in line chart.
+* *(WIP)* AI Coach: recommend today's training part/plan or the next set advice powered by an LLM (DeepSeek). See [AI Coach design](docs/ai-coach-plan.md) / [work plan](docs/ai-coach-work-plan.md).
 
 ### Train actions
 
@@ -72,6 +73,12 @@ Some custom widgets are inspired by the following blogs:
 
 * The software is only for personal learning and communication, commercial usage is strickly prohibited.
 * The software will only save user's data in local storage, and will not upload or share with others.
+
+### AI Coach privacy note *(draft, finalized after the feature lands)*
+
+* AI Coach is opt-in: **unless you actively tap the AI recommendation entry, the app makes no network requests at all**.
+* Only when you trigger AI Coach does the app send a **training summary** (body part/action names, sets, weight in kg, reps, duration in seconds — no notes, no body data) to a third-party LLM service (DeepSeek by default).
+* Your AI API key is stored locally on the device only.
 
 ## License
 
