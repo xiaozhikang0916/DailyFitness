@@ -15,15 +15,15 @@ import javax.inject.Inject
 /**
  * FlowRedux 2.x state machine factory for the AI Coach tab.
  *
+ * The machine instance is **stateless**: everything needed across transitions
+ * (including the in-memory conversation) travels inside [AiCoachUiState].
+ *
  * Transitions:
  * - [AiCoachUiState.Initial] probes the config -> ConfigMissing or Idle
  * - ConfigMissing: [AiCoachUiAction.SaveConfig] persists the key/model -> Idle
- * - Idle / Error: [AiCoachUiAction.Refresh] -> Loading
- * - Loading: on enter, runs [IAiCoach.recommendToday] -> Idle(content) / Error / ConfigMissing
- * - Stationary states keep [AiCoachUiState.setsToday] in sync via
- *   [AiCoachUiAction.TodayInfo] (dispatched by the ViewModel from the DB flow).
- *
- * The factory is launched by the ViewModel in its viewModelScope.
+ * - Idle / Error: [AiCoachUiAction.Refresh] -> Loading (history carried over)
+ * - Loading: on enter, runs [IAiCoach.recommendToday] with the state's history and
+ *   appends the returned turn(s) into the next Idle/Error state
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AiCoachStateMachine @Inject constructor(
@@ -31,9 +31,6 @@ class AiCoachStateMachine @Inject constructor(
     private val configProvider: AiCoachConfigProvider,
     private val configStore: IAiCoachConfigStore,
 ) : FlowReduxStateMachineFactory<AiCoachUiState, AiCoachUiAction>() {
-
-    /** Request-scoped conversation snapshot handed over by the ViewModel. */
-    private var pendingHistory: List<CoachMessage> = emptyList()
 
     init {
         initializeWith(reuseLastEmittedStateOnLaunch = false) { AiCoachUiState.Initial }
@@ -69,9 +66,10 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> { action ->
-                    pendingHistory = action.history
-                    override { AiCoachUiState.Loading(setsToday = this.setsToday) }
+                on<AiCoachUiAction.Refresh> {
+                    override {
+                        AiCoachUiState.Loading(setsToday = this.setsToday, history = this.history)
+                    }
                 }
             }
 
@@ -79,43 +77,46 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> { action ->
-                    pendingHistory = action.history
-                    override { AiCoachUiState.Loading(setsToday = this.setsToday) }
+                on<AiCoachUiAction.Refresh> {
+                    override {
+                        AiCoachUiState.Loading(setsToday = this.setsToday, history = this.history)
+                    }
                 }
             }
 
             inState<AiCoachUiState.Loading> {
                 onEnter {
                     val setsToday = snapshot.setsToday
-                    val next = runCatching { aiCoach.recommendToday(pendingHistory) }
+                    val history = snapshot.history
+                    val next = runCatching { aiCoach.recommendToday(history) }
                         .getOrElse { AiCoachResult.Failed(it.message ?: "unknown", retryable = true) }
                     val target = when (next) {
                         is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
                         AiCoachResult.NoTrainParts ->
-                            AiCoachUiState.Idle(setsToday, UiContent.NoTrainParts)
+                            AiCoachUiState.Idle(setsToday, UiContent.NoTrainParts, history)
                         is AiCoachResult.TodayPlan -> AiCoachUiState.Idle(
-                            setsToday,
-                            UiContent.TodayPlan(
+                            setsToday = setsToday,
+                            content = UiContent.TodayPlan(
                                 parts = next.parts,
                                 sessionsUsed = next.sessionsUsed,
                                 rounds = next.rounds,
                                 ignoredNames = next.ignoredNames,
-                                newMessages = next.newMessages,
                             ),
+                            history = history.appendTurn(next.newMessages),
                         )
                         is AiCoachResult.NextAdvice -> AiCoachUiState.Idle(
-                            setsToday,
-                            UiContent.NextAdvice(
+                            setsToday = setsToday,
+                            content = UiContent.NextAdvice(
                                 advice = next.advice,
                                 ignoredNames = next.ignoredNames,
-                                newMessages = next.newMessages,
                             ),
+                            history = history.appendTurn(next.newMessages),
                         )
                         is AiCoachResult.Failed -> AiCoachUiState.Error(
                             setsToday = setsToday,
                             message = next.message,
                             retryable = next.retryable,
+                            history = history,
                         )
                     }
                     override { target }
@@ -123,4 +124,11 @@ class AiCoachStateMachine @Inject constructor(
             }
         }
     }
+
 }
+
+/** 5 rounds = 10 messages kept in the UI state (and sent to the LLM). */
+private const val HISTORY_MESSAGES = 10
+
+private fun List<CoachMessage>.appendTurn(newMessages: List<CoachMessage>): List<CoachMessage> =
+    if (newMessages.isEmpty()) this else (this + newMessages).takeLast(HISTORY_MESSAGES)

@@ -50,7 +50,6 @@ fun AiCoachPageContent(
     state: AiCoachUiState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
-    history: List<CoachMessage> = emptyList(),
     onRefresh: () -> Unit,
     onSaveConfig: (apiKey: String, model: AiCoachModel) -> Unit,
 ) {
@@ -58,6 +57,7 @@ fun AiCoachPageContent(
     // When the latest result is rendered as a structured card, the trailing
     // assistant message would be duplicated; hide it from the chat list.
     val latestContent = (state as? AiCoachUiState.Idle)?.content
+    val history = state.conversation
     val chatHistory = if (
         (latestContent is UiContent.TodayPlan || latestContent is UiContent.NextAdvice) &&
         history.lastOrNull()?.fromUser == false

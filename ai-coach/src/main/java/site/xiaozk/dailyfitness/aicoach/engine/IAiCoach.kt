@@ -1,5 +1,8 @@
 package site.xiaozk.dailyfitness.aicoach.engine
 
+import kotlin.time.Clock
+import kotlin.time.Instant
+
 /**
  * Facade of the AI Coach feature, consumed by the UI module (:ai-coach-ui).
  *
@@ -19,7 +22,22 @@ interface IAiCoach {
 data class CoachMessage(
     val fromUser: Boolean,
     val text: String,
-    val at: kotlin.time.Instant = kotlin.time.Clock.System.now(),
+    /** Structured suggestions carried by assistant turns, for M3.3 one-click adopt/prefill. */
+    val suggestions: List<CoachSuggestion> = emptyList(),
+    val at: Instant = Clock.System.now(),
+)
+
+/**
+ * A machine-actionable recommendation (action/weight/reps, plus part/sets/duration
+ * so timed actions and multi-action plans can be prefilled as well).
+ */
+data class CoachSuggestion(
+    val partName: String? = null,
+    val actionName: String,
+    val sets: Int? = null,
+    val reps: Int? = null,
+    val weightKg: Double? = null,
+    val durationSec: Int? = null,
 )
 
 sealed interface AiCoachResult {

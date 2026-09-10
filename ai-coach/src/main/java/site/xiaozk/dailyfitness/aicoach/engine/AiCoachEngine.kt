@@ -98,6 +98,7 @@ class AiCoachEngine @Inject constructor(
                     newMessages = turn(
                         userLabel = planRequestLabel(today, sessionsUsed = 0),
                         assistantLabel = planSummary(mapped.parts),
+                        suggestions = suggestionsOf(mapped.parts),
                     )
                 )
             } else {
@@ -318,17 +319,53 @@ class AiCoachEngine @Inject constructor(
             newMessages = turn(
                 userLabel = adviceRequestLabel(today, setsToday, currentPartName),
                 assistantLabel = adviceSummary(advice),
+                suggestions = suggestionOf(currentPartName, advice),
             ),
         )
     }
 
     // ------------------------------------------------------------- turn helpers
 
-    /** New conversation turn (compact user label + assistant summary) for the caller to append. */
-    private fun turn(userLabel: String, assistantLabel: String): List<CoachMessage> = listOf(
+    /**
+     * New conversation turn (compact user label + assistant summary). The assistant
+     * message also carries machine-actionable suggestions for M3.3 prefill.
+     */
+    private fun turn(
+        userLabel: String,
+        assistantLabel: String,
+        suggestions: List<CoachSuggestion> = emptyList(),
+    ): List<CoachMessage> = listOf(
         CoachMessage(fromUser = true, text = userLabel),
-        CoachMessage(fromUser = false, text = assistantLabel),
+        CoachMessage(fromUser = false, text = assistantLabel, suggestions = suggestions),
     )
+
+    private fun suggestionsOf(parts: List<RecommendedPart>): List<CoachSuggestion> =
+        parts.flatMap { part ->
+            part.actions.map { action ->
+                CoachSuggestion(
+                    partName = part.partName,
+                    actionName = action.actionName,
+                    sets = action.sets,
+                    reps = action.reps,
+                    weightKg = action.weightKg,
+                    durationSec = action.durationSec,
+                )
+            }
+        }
+
+    private fun suggestionOf(partName: String, advice: Advice): List<CoachSuggestion> {
+        val actionName = advice.actionName ?: return emptyList()
+        return listOf(
+            CoachSuggestion(
+                partName = partName,
+                actionName = actionName,
+                sets = advice.sets.takeIf { it > 0 },
+                reps = advice.reps,
+                weightKg = advice.weightKg,
+                durationSec = advice.durationSec,
+            )
+        )
+    }
 
     private fun planRequestLabel(today: LocalDate, sessionsUsed: Int): String =
         "[$today][Case A] 今日尚无锻炼记录；基于最近 $sessionsUsed 个训练日请求推荐"

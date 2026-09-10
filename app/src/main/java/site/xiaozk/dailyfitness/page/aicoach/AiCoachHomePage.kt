@@ -43,7 +43,6 @@ fun AiCoachHomePage() {
         hiltViewModel()
     }
     val state by viewModel.state.collectAsState()
-    val history by viewModel.history.collectAsState()
     val navBackStack = LocalNavBackStack.current
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -74,7 +73,6 @@ fun AiCoachHomePage() {
                 top = innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 12.dp,
             ),
-            history = history,
             onRefresh = viewModel::refresh,
             onSaveConfig = viewModel::saveConfig,
         )

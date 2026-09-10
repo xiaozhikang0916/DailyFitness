@@ -302,6 +302,14 @@ class AiCoachEngineTest {
         assertEquals(2, plan.newMessages.size)
         assertTrue(plan.newMessages.first().fromUser)
         assertTrue(plan.newMessages.first().text.contains("Case A"))
+        // Structured suggestions for M3.3 prefill: one per planned action.
+        val suggestions = plan.newMessages.last().suggestions
+        assertEquals(2, suggestions.size)
+        assertEquals(listOf("卧推", "哑铃飞鸟"), suggestions.map { it.actionName })
+        assertEquals(listOf("胸部", "胸部"), suggestions.map { it.partName })
+        assertEquals(60.0, suggestions.first().weightKg!!, 0.001)
+        assertEquals(4, suggestions.first().sets)
+        assertTrue(plan.newMessages.first().suggestions.isEmpty())
     }
 
     @Test
@@ -328,6 +336,13 @@ class AiCoachEngineTest {
         assertTrue(next.newMessages.first().text.contains("Case B"))
         assertTrue(next.newMessages.last().text.contains("卧推"))
         assertTrue(next.newMessages.last().text.contains("62.5kg"))
+        // Single machine-actionable suggestion for the next set (M3.3 prefill).
+        val suggestion = next.newMessages.last().suggestions.single()
+        assertEquals("胸部", suggestion.partName)
+        assertEquals("卧推", suggestion.actionName)
+        assertEquals(1, suggestion.sets)
+        assertEquals(8, suggestion.reps)
+        assertEquals(62.5, suggestion.weightKg!!, 0.001)
     }
 
     private companion object {
