@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_status_today_empty">今天还没有开始锻炼</string>
+    <string name="ai_status_today_sets">今天已练 %1$d 组</string>
+    <string name="ai_ready_hint">AI 教练会分析你的训练历史（部位、动作、重量与组数），推荐今天练什么或下一步做什么。只有点击下方按钮时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_refresh">获取 AI 建议</string>
+    <string name="ai_loading">AI 正在分析你的训练历史…</string>
+    <string name="ai_retry">重试</string>
+    <string name="ai_config_missing_title">需要先配置 AI 教练</string>
+    <string name="ai_config_missing_hint">填写你的 DeepSeek API Key 以启用推荐。Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_api_key_label">API Key</string>
+    <string name="ai_model_label">模型</string>
+    <string name="ai_model_deepseek_v4_flash">DeepSeek V4 Flash</string>
+    <string name="ai_model_deepseek_v4_pro">DeepSeek V4 Pro</string>
+    <string name="ai_save">保存</string>
+    <string name="ai_error_title">出错了</string>
+    <string name="ai_no_train_parts_hint">还没有任何训练部位与动作。请先添加训练部位及其动作，再向 AI 教练获取建议。</string>
+    <string name="ai_plan_title">今日推荐</string>
+    <string name="ai_part_primary">主推</string>
+    <string name="ai_part_secondary">备选</string>
+    <string name="ai_reason_label">理由：%1$s</string>
+    <string name="ai_ignored_hint">已忽略不在动作库中的建议项：%1$s</string>
+    <string name="ai_advice_title">下一步建议</string>
+    <string name="ai_advice_continue_current">继续练 %1$s</string>
+    <string name="ai_advice_switch_action">换练 %1$s</string>
+    <string name="ai_advice_finish_part">该部位今天练够了</string>
+    <string name="ai_advice_finish_day">今天总量已够，建议收工</string>
+    <string name="ai_advice_reason">理由：%1$s</string>
+</resources>

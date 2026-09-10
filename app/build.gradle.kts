@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(project(":repository"))
     implementation(project(":ai-coach"))
+    implementation(project(":ai-coach-ui"))
     implementation(project(":session"))
     implementation(project(":database"))
     implementation(project(":calendar"))

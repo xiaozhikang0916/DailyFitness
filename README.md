@@ -74,11 +74,11 @@ Some custom widgets are inspired by the following blogs:
 * The software is only for personal learning and communication, commercial usage is strickly prohibited.
 * The software will only save user's data in local storage, and will not upload or share with others.
 
-### AI Coach privacy note *(draft, finalized after the feature lands)*
+### AI Coach privacy note
 
-* AI Coach is opt-in: **unless you actively tap the AI recommendation entry, the app makes no network requests at all**.
+* AI Coach is opt-in: **unless you actively tap the AI recommendation button, the app makes no network requests at all**.
 * Only when you trigger AI Coach does the app send a **training summary** (body part/action names, sets, weight in kg, reps, duration in seconds — no notes, no body data) to a third-party LLM service (DeepSeek by default).
-* Your AI API key is stored locally on the device only.
+* Your AI API key is stored locally on the device only (AI Coach tab configuration); it is never synced or uploaded by the app.
 
 ## License
 

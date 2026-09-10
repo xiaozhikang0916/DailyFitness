@@ -42,6 +42,9 @@ dependencies {
     ksp(libs.android.hilt.compiler)
     implementation(libs.android.hilt.lib)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    implementation(libs.flowredux)
+    implementation(libs.coroutine.core)
+    implementation(libs.datetime)
 
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))

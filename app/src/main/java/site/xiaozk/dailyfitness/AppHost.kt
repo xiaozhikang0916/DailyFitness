@@ -26,6 +26,7 @@ import site.xiaozk.dailyfitness.nav.AppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.HomeBody
 import site.xiaozk.dailyfitness.nav.HomeTrainPart
 import site.xiaozk.dailyfitness.nav.HomeTraining
+import site.xiaozk.dailyfitness.nav.HomeAiCoach
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
 import site.xiaozk.dailyfitness.nav.NavIntentBus
@@ -45,6 +46,7 @@ import site.xiaozk.dailyfitness.page.training.HomeWorkoutPage
 import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.WorkoutMonthlyPage
 import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
+import site.xiaozk.dailyfitness.page.aicoach.AiCoachHomePage
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 
 /**
@@ -112,6 +114,7 @@ fun AppHost(navIntentBus: NavIntentBus) {
                         is HomeTraining -> NavEntry(key) { HomeWorkoutPage() }
                         is HomeBody -> NavEntry(key) { BodyDetailPage() }
                         is HomeTrainPart -> NavEntry(key) { TrainStaticPage() }
+                        is HomeAiCoach -> NavEntry(key) { AiCoachHomePage() }
                         is WorkoutMonth -> NavEntry(key) { WorkoutMonthlyPage(month = key.date) }
                         is TrainDay -> NavEntry(key) { TrainingDayDetailPage(date = key.date) }
                         is AddWorkoutAction -> NavEntry(key) { AddDailyWorkoutAction() }
