@@ -2,6 +2,7 @@ package site.xiaozk.dailyfitness.aicoach.ui
 
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
+import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
 
 /**
@@ -63,6 +64,8 @@ sealed interface UiContent {
     data class NextAdvice(
         val advice: Advice,
         val ignoredNames: List<String>,
+        /** Machine-actionable prefill for M3.3 (empty for finish_* advice). */
+        val suggestions: List<CoachSuggestion> = emptyList(),
     ) : UiContent
 }
 

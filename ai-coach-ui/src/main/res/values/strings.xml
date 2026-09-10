@@ -18,6 +18,8 @@
     <string name="ai_reason_label">Reason: %1$s</string>
     <string name="ai_ignored_hint">Ignored suggestions not in your action library: %1$s</string>
     <string name="ai_advice_title">Next step</string>
+    <string name="ai_adopt">Adopt</string>
+    <string name="ai_adopt_to_add_set">Adopt and add a set</string>
     <string name="ai_advice_continue_current">Continue %1$s</string>
     <string name="ai_advice_switch_action">Switch to %1$s</string>
     <string name="ai_advice_finish_part">This part is enough for today</string>

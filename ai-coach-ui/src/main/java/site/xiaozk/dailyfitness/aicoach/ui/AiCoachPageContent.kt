@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
+import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedAction
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
 
@@ -48,6 +50,7 @@ fun AiCoachPageContent(
     contentPadding: PaddingValues = PaddingValues(),
     onRefresh: () -> Unit,
     onOpenSettings: () -> Unit,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
     val listState = rememberLazyListState()
     // When the latest result is rendered as a structured card, the trailing
@@ -108,8 +111,10 @@ fun AiCoachPageContent(
                         null -> RefreshCallToAction(onRefresh)
                         else -> when (content) {
                             UiContent.NoTrainParts -> EmptyContentHint()
-                            is UiContent.TodayPlan -> TodayPlanContent(content, onRefresh)
-                            is UiContent.NextAdvice -> NextAdviceContent(content, onRefresh)
+                            is UiContent.TodayPlan ->
+                                TodayPlanContent(content, onRefresh, onAdoptSuggestion)
+                            is UiContent.NextAdvice ->
+                                NextAdviceContent(content, onRefresh, onAdoptSuggestion)
                         }
                     }
                     is AiCoachUiState.Loading -> LoadingHint()
@@ -199,13 +204,17 @@ private fun ConfigMissingHint(onOpenSettings: () -> Unit) {
 }
 
 @Composable
-private fun TodayPlanContent(content: UiContent.TodayPlan, onRefresh: () -> Unit) {
+private fun TodayPlanContent(
+    content: UiContent.TodayPlan,
+    onRefresh: () -> Unit,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
     Text(
         text = stringResource(R.string.ai_plan_title),
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
     )
-    content.parts.forEach { RecommendedPartCard(it) }
+    content.parts.forEach { RecommendedPartCard(it, onAdoptSuggestion) }
     content.ignoredNames.takeIf { it.isNotEmpty() }?.let { ignored ->
         Text(
             text = stringResource(R.string.ai_ignored_hint, ignored.joinToString("、")),
@@ -219,7 +228,10 @@ private fun TodayPlanContent(content: UiContent.TodayPlan, onRefresh: () -> Unit
 }
 
 @Composable
-private fun RecommendedPartCard(part: RecommendedPart) {
+private fun RecommendedPartCard(
+    part: RecommendedPart,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -244,22 +256,52 @@ private fun RecommendedPartCard(part: RecommendedPart) {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        part.actions.forEach { ActionLine(it) }
+        part.actions.forEach { action ->
+            ActionLine(
+                action = action,
+                onAdopt = {
+                    onAdoptSuggestion(
+                        CoachSuggestion(
+                            partName = part.partName,
+                            actionName = action.actionName,
+                            sets = action.sets,
+                            reps = action.reps,
+                            weightKg = action.weightKg,
+                            durationSec = action.durationSec,
+                        )
+                    )
+                },
+            )
+        }
         HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
     }
 }
 
 @Composable
-private fun ActionLine(action: RecommendedAction) {
-    Text(
-        text = actionLineText(action),
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(start = 8.dp),
-    )
+private fun ActionLine(action: RecommendedAction, onAdopt: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = actionLineText(action),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp),
+        )
+        TextButton(onClick = onAdopt) {
+            Text(stringResource(R.string.ai_adopt))
+        }
+    }
 }
 
 @Composable
-private fun NextAdviceContent(content: UiContent.NextAdvice, onRefresh: () -> Unit) {
+private fun NextAdviceContent(
+    content: UiContent.NextAdvice,
+    onRefresh: () -> Unit,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
     Text(
         text = stringResource(R.string.ai_advice_title),
         style = MaterialTheme.typography.titleMedium,
@@ -283,6 +325,14 @@ private fun NextAdviceContent(content: UiContent.NextAdvice, onRefresh: () -> Un
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
         )
+    }
+    content.suggestions.firstOrNull()?.let { suggestion ->
+        Button(
+            onClick = { onAdoptSuggestion(suggestion) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.ai_adopt_to_add_set))
+        }
     }
     OutlinedButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.ai_refresh))

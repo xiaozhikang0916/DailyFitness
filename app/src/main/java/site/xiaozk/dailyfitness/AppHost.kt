@@ -120,7 +120,9 @@ fun AppHost(navIntentBus: NavIntentBus) {
                         is AiCoachSettings -> NavEntry(key) { AiCoachSettingsPage() }
                         is WorkoutMonth -> NavEntry(key) { WorkoutMonthlyPage(month = key.date) }
                         is TrainDay -> NavEntry(key) { TrainingDayDetailPage(date = key.date) }
-                        is AddWorkoutAction -> NavEntry(key) { AddDailyWorkoutAction() }
+                        is AddWorkoutAction -> NavEntry(key) {
+                            AddDailyWorkoutAction(suggestion = key.suggestion)
+                        }
                         is AddBodyDetail -> NavEntry(key) { AddDailyBodyDetail() }
                         is TrainPartDetail -> NavEntry(key) { TrainPartPage(partId = key.partId) }
                         is TrainActionDetail -> NavEntry(key) { TrainActionPage(actionId = key.actionId) }

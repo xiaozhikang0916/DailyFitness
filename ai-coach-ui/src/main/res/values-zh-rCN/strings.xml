@@ -18,6 +18,8 @@
     <string name="ai_reason_label">理由：%1$s</string>
     <string name="ai_ignored_hint">已忽略不在动作库中的建议项：%1$s</string>
     <string name="ai_advice_title">下一步建议</string>
+    <string name="ai_adopt">采纳</string>
+    <string name="ai_adopt_to_add_set">采纳并添加一组</string>
     <string name="ai_advice_continue_current">继续练 %1$s</string>
     <string name="ai_advice_switch_action">换练 %1$s</string>
     <string name="ai_advice_finish_part">该部位今天练够了</string>

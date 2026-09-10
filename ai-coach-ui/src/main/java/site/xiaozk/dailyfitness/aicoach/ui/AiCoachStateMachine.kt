@@ -99,6 +99,7 @@ class AiCoachStateMachine @Inject constructor(
                             content = UiContent.NextAdvice(
                                 advice = next.advice,
                                 ignoredNames = next.ignoredNames,
+                                suggestions = next.newMessages.flatMap { it.suggestions },
                             ),
                             history = history + next.newMessages,
                         )

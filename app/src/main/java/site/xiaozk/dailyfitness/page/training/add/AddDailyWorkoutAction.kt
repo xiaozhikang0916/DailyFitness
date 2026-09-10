@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import site.xiaozk.dailyfitness.R
+import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.nav.AddFailedSnackbar
 import site.xiaozk.dailyfitness.nav.AddSuccessSnackbar
@@ -57,9 +58,11 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 
 @Composable
-fun AddDailyWorkoutAction() {
-    val viewModel: AddDailyWorkoutViewModel = hiltViewModel()
-    val pageState = viewModel.stateFlow.collectAsState()
+fun AddDailyWorkoutAction(suggestion: CoachSuggestion? = null) {
+    val viewModel = hiltViewModel<AddDailyWorkoutViewModel, AddDailyWorkoutViewModel.Factory>(
+        creationCallback = { it.create(suggestion) }
+    )
+    val pageState = viewModel.state.collectAsState()
 
     val systemBack = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val appSnackbarHostState = LocalAppSnackbarHostState.current
@@ -78,7 +81,7 @@ fun AddDailyWorkoutAction() {
         onBack = { systemBack?.onBackPressed() },
         actions = {
             TextButton(
-                onClick = { viewModel.reduce(SubmitIntent) },
+                onClick = { viewModel.dispatch(AddWorkoutAction.Submit) },
                 enabled = pageState.value.valid,
             ) {
                 Text(actionSave)
@@ -87,7 +90,7 @@ fun AddDailyWorkoutAction() {
     ) { scaffoldProperty ->
         AddDailyTrainPage(
             pageState = pageState.value,
-            onIntent = { viewModel.reduce(it) },
+            onAction = viewModel::dispatch,
             scaffoldProperty = scaffoldProperty,
         )
     }
@@ -96,8 +99,8 @@ fun AddDailyWorkoutAction() {
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AddDailyTrainPage(
-    pageState: AddDailyWorkoutPageState,
-    onIntent: (IDailyTrainIntent) -> Unit,
+    pageState: AddWorkoutUiState,
+    onAction: (AddWorkoutAction) -> Unit,
     scaffoldProperty: ScaffoldProperty = ScaffoldProperty(),
 ) {
     val allParts = pageState.allParts
@@ -117,7 +120,7 @@ fun AddDailyTrainPage(
             selectedIndex = pageState.allParts.indexOf(pageState.selectedPart),
             items = allParts,
             onItemSelected = { _, it ->
-                onIntent(SelectPartIntent(it))
+                onAction(AddWorkoutAction.SelectPart(it))
             },
             itemToString = { it.part.partName },
         )
@@ -134,7 +137,7 @@ fun AddDailyTrainPage(
                 selectedIndex = selectedPart.actions.indexOf(pageState.selectedAction),
                 items = selectedPart.actions,
                 onItemSelected = { _, it ->
-                    onIntent(SelectActionIntent(it))
+                    onAction(AddWorkoutAction.SelectAction(it))
                 },
                 itemToString = { it.actionName },
             )
@@ -192,8 +195,8 @@ fun AddDailyTrainPage(
                                 .weight(1f)
                                 .focusRequester(requesterOf(WorkoutField.Weight)),
                             onValueChange = {
-                                onIntent(
-                                    InputWeightIntent(
+                                onAction(
+                                    AddWorkoutAction.InputWeight(
                                         it,
                                         weightUnit = pageState.weightUnit
                                     )
@@ -206,7 +209,7 @@ fun AddDailyTrainPage(
                             pageState = pageState,
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            onIntent(InputWeightIntent(weight = pageState.weight, weightUnit = it))
+                            onAction(AddWorkoutAction.InputWeight(weight = pageState.weight, weightUnit = it))
                         }
                     }
 
@@ -225,8 +228,8 @@ fun AddDailyTrainPage(
                                 .weight(1f)
                                 .focusRequester(requesterOf(WorkoutField.Time)),
                             onValueChange = {
-                                onIntent(
-                                    InputDurationIntent(
+                                onAction(
+                                    AddWorkoutAction.InputDuration(
                                         it,
                                         timeUnit = pageState.timeUnit
                                     )
@@ -236,7 +239,7 @@ fun AddDailyTrainPage(
                         )
 
                         TimeUnitRadio(pageState = pageState, modifier = Modifier.padding(top = 8.dp)) {
-                            onIntent(InputDurationIntent(duration = pageState.duration, timeUnit = it))
+                            onAction(AddWorkoutAction.InputDuration(duration = pageState.duration, timeUnit = it))
                         }
                     }
                 }
@@ -250,7 +253,7 @@ fun AddDailyTrainPage(
                             .fillMaxWidth()
                             .focusRequester(requesterOf(WorkoutField.Count)),
                         onValueChange = {
-                            onIntent(InputCountIntent(it))
+                            onAction(AddWorkoutAction.InputCount(it))
                         },
                         onNextFocus = { focusNext(WorkoutField.Count) }
                     )
@@ -265,11 +268,11 @@ fun AddDailyTrainPage(
                     label = {
                         Text(text = stringResource(R.string.label_workout_note))
                     },
-                    onValueChange = { onIntent(InputNoteIntent(it)) },
+                    onValueChange = { onAction(AddWorkoutAction.InputNote(it)) },
                     keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            onIntent(SubmitIntent)
+                            onAction(AddWorkoutAction.Submit)
                         }
                     )
                 )
@@ -335,7 +338,7 @@ private fun WorkoutInput(
 
 @Composable
 private fun WeightRadio(
-    pageState: AddDailyWorkoutPageState,
+    pageState: AddWorkoutUiState,
     modifier: Modifier = Modifier,
     onWeightUnitSelect: (WeightUnit) -> Unit,
 ) {
@@ -353,7 +356,7 @@ private fun WeightRadio(
 
 @Composable
 private fun TimeUnitRadio(
-    pageState: AddDailyWorkoutPageState,
+    pageState: AddWorkoutUiState,
     modifier: Modifier = Modifier,
     onTimeUnitSelect: (TimeUnit) -> Unit,
 ) {

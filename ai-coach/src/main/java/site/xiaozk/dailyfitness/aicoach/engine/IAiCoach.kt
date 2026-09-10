@@ -2,6 +2,7 @@ package site.xiaozk.dailyfitness.aicoach.engine
 
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlinx.serialization.Serializable
 
 /**
  * Facade of the AI Coach feature, consumed by the UI module (:ai-coach-ui).
@@ -30,7 +31,10 @@ data class CoachMessage(
 /**
  * A machine-actionable recommendation (action/weight/reps, plus part/sets/duration
  * so timed actions and multi-action plans can be prefilled as well).
+ *
+ * `@Serializable` so it can travel as a navigation argument (M3.3 prefill).
  */
+@Serializable
 data class CoachSuggestion(
     val partName: String? = null,
     val actionName: String,

@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.flowredux)
     implementation(libs.koog.agents)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
@@ -95,4 +96,5 @@ dependencies {
     implementation(project(":settings"))
 
     testImplementation(libs.junit)
+    testImplementation(libs.coroutine.test)
 }

@@ -26,6 +26,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachPageContent
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachViewModel
+import site.xiaozk.dailyfitness.nav.AddWorkoutAction
 import site.xiaozk.dailyfitness.nav.AiCoachSettings
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
@@ -88,6 +89,7 @@ fun AiCoachHomePage() {
             ),
             onRefresh = viewModel::refresh,
             onOpenSettings = { navBackStack.add(AiCoachSettings) },
+            onAdoptSuggestion = { navBackStack.add(AddWorkoutAction(suggestion = it)) },
         )
     }
 }

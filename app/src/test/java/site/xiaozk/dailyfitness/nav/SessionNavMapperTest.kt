@@ -12,7 +12,7 @@ class SessionNavMapperTest {
 
     @Test
     fun `add set action maps to AddWorkoutAction`() {
-        assertEquals(AddWorkoutAction, sessionActionToNavKey(SessionIntents.ACTION_ADD_SET, today))
+        assertEquals(AddWorkoutAction(), sessionActionToNavKey(SessionIntents.ACTION_ADD_SET, today))
     }
 
     @Test

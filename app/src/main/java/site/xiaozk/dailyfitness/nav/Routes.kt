@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import site.xiaozk.dailyfitness.R
+import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 
 /**
  * Navigation 3 (androidx.navigation3) type-safe routes.
@@ -45,10 +46,16 @@ object HomeAiCoach : NavKey
 object AiCoachSettings : NavKey
 
 @Serializable
-object AddWorkoutAction : NavKey
-
-@Serializable
 object AddBodyDetail : NavKey
+
+/**
+ * Add-one-set page. [suggestion] is the optional AI Coach prefill (M3.3): when
+ * present the page prefills from it, otherwise it loads the last recorded action.
+ */
+@Serializable
+data class AddWorkoutAction(
+    val suggestion: CoachSuggestion? = null,
+) : NavKey
 
 // ---- Routes with arguments ----
 @Serializable
