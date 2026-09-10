@@ -18,8 +18,9 @@ import javax.inject.Singleton
  * Android-free: the [DataStore] instance is injected; acquiring it from a
  * Context is the host's job (see the `:app` AiCoachDataStoreModule binding).
  *
- * The API key is stored in plain DataStore preferences (v1). Device backup
- * exclusion of this file is tracked as a follow-up (M3).
+ * The API key is stored in plain DataStore preferences (v1). The host excludes
+ * `datastore/ai_coach_config.preferences_pb` from backup / device transfer
+ * (see the app's backup_rules.xml + data_extraction_rules.xml, M3.4).
  */
 @Singleton
 class DataStoreAiCoachConfigStore @Inject constructor(
