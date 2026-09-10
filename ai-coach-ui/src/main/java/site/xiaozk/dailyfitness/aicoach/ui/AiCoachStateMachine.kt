@@ -6,7 +6,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
-import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import site.xiaozk.dailyfitness.repository.IAiCoachConfigStore
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
@@ -87,6 +86,7 @@ class AiCoachStateMachine @Inject constructor(
             inState<AiCoachUiState.Loading> {
                 onEnter {
                     val setsToday = snapshot.setsToday
+                    // Full in-memory conversation; the 5-round/10-message request cap lives in AiCoachEngine.
                     val history = snapshot.history
                     val next = runCatching { aiCoach.recommendToday(history) }
                         .getOrElse { AiCoachResult.Failed(it.message ?: "unknown", retryable = true) }
@@ -102,7 +102,7 @@ class AiCoachStateMachine @Inject constructor(
                                 rounds = next.rounds,
                                 ignoredNames = next.ignoredNames,
                             ),
-                            history = history.appendTurn(next.newMessages),
+                            history = history + next.newMessages,
                         )
                         is AiCoachResult.NextAdvice -> AiCoachUiState.Idle(
                             setsToday = setsToday,
@@ -110,7 +110,7 @@ class AiCoachStateMachine @Inject constructor(
                                 advice = next.advice,
                                 ignoredNames = next.ignoredNames,
                             ),
-                            history = history.appendTurn(next.newMessages),
+                            history = history + next.newMessages,
                         )
                         is AiCoachResult.Failed -> AiCoachUiState.Error(
                             setsToday = setsToday,
@@ -126,9 +126,3 @@ class AiCoachStateMachine @Inject constructor(
     }
 
 }
-
-/** 5 rounds = 10 messages kept in the UI state (and sent to the LLM). */
-private const val HISTORY_MESSAGES = 10
-
-private fun List<CoachMessage>.appendTurn(newMessages: List<CoachMessage>): List<CoachMessage> =
-    if (newMessages.isEmpty()) this else (this + newMessages).takeLast(HISTORY_MESSAGES)

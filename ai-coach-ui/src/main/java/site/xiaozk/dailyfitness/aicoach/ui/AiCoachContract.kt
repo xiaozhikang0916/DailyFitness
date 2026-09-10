@@ -23,7 +23,7 @@ sealed interface AiCoachUiState {
     data class Idle(
         val setsToday: Int,
         val content: UiContent?,
-        /** Session memory, newest last (capped at 5 rounds = 10 messages). */
+        /** Full in-memory session memory, newest last (request side trims to 5 rounds). */
         val history: List<CoachMessage> = emptyList(),
     ) : AiCoachUiState
 

@@ -55,4 +55,5 @@ dependencies {
     implementation(project(":repository"))
 
     testImplementation(libs.junit)
+    testImplementation(libs.coroutine.test)
 }

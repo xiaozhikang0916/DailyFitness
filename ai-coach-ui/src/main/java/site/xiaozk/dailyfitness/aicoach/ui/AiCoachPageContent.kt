@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -22,10 +23,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,6 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
@@ -53,7 +58,7 @@ fun AiCoachPageContent(
     onRefresh: () -> Unit,
     onSaveConfig: (apiKey: String, model: AiCoachModel) -> Unit,
 ) {
-    val scroll = rememberScrollState()
+    val listState = rememberLazyListState()
     // When the latest result is rendered as a structured card, the trailing
     // assistant message would be duplicated; hide it from the chat list.
     val latestContent = (state as? AiCoachUiState.Idle)?.content
@@ -66,42 +71,60 @@ fun AiCoachPageContent(
     } else {
         history
     }
-    Column(
+
+    // Keep the newest turn/result in view: on first entry and whenever a new
+    // message or structured result arrives. Wait for the first layout pass so the
+    // item count is known before scrolling.
+    LaunchedEffect(chatHistory.size, latestContent, state is AiCoachUiState.Initial) {
+        snapshotFlow { listState.layoutInfo.totalItemsCount }
+            .filter { it > 0 }
+            .first()
+        listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+    }
+
+    val setsToday = (state as? AiCoachUiState.Idle)?.setsToday
+        ?: (state as? AiCoachUiState.Loading)?.setsToday
+        ?: (state as? AiCoachUiState.Error)?.setsToday
+        ?: 0
+
+    LazyColumn(
+        state = listState,
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding)
-            .verticalScroll(scroll)
-            .padding(horizontal = 16.dp),
+            .padding(contentPadding),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        val setsToday = (state as? AiCoachUiState.Idle)?.setsToday
-            ?: (state as? AiCoachUiState.Loading)?.setsToday
-            ?: (state as? AiCoachUiState.Error)?.setsToday
-            ?: 0
         if (state !is AiCoachUiState.Initial && state !is AiCoachUiState.ConfigMissing) {
-            ScenarioHeader(setsToday)
+            item(key = "scenario-header") { ScenarioHeader(setsToday) }
         }
         if (chatHistory.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.ai_chat_history_title),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.outline,
-            )
-            chatHistory.forEach { ChatBubble(it) }
+            item(key = "chat-history-title") {
+                Text(
+                    text = stringResource(R.string.ai_chat_history_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+            items(chatHistory) { message -> ChatBubble(message) }
         }
-        when (state) {
-            AiCoachUiState.Initial -> LoadingHint()
-            AiCoachUiState.ConfigMissing -> ConfigForm(onSaveConfig)
-            is AiCoachUiState.Idle -> when (val content = state.content) {
-                null -> RefreshCallToAction(onRefresh)
-                else -> when (content) {
-                    UiContent.NoTrainParts -> EmptyContentHint()
-                    is UiContent.TodayPlan -> TodayPlanContent(content, onRefresh)
-                    is UiContent.NextAdvice -> NextAdviceContent(content, onRefresh)
+        item(key = "content-tail") {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                when (state) {
+                    AiCoachUiState.Initial -> LoadingHint()
+                    AiCoachUiState.ConfigMissing -> ConfigForm(onSaveConfig)
+                    is AiCoachUiState.Idle -> when (val content = state.content) {
+                        null -> RefreshCallToAction(onRefresh)
+                        else -> when (content) {
+                            UiContent.NoTrainParts -> EmptyContentHint()
+                            is UiContent.TodayPlan -> TodayPlanContent(content, onRefresh)
+                            is UiContent.NextAdvice -> NextAdviceContent(content, onRefresh)
+                        }
+                    }
+                    is AiCoachUiState.Loading -> LoadingHint()
+                    is AiCoachUiState.Error -> ErrorContent(state, onRefresh)
                 }
             }
-            is AiCoachUiState.Loading -> LoadingHint()
-            is AiCoachUiState.Error -> ErrorContent(state, onRefresh)
         }
     }
 }
