@@ -18,6 +18,9 @@ import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
  * M2.7: the state machine must keep the **full** conversation in [AiCoachUiState]
  * (rendered by the LazyColumn) and hand the untrimmed list to the engine, which is
  * the single place applying the 5-round/10-message request cap.
+ *
+ * M3.2: with the inline config form removed, `ConfigMissing` must react to the
+ * settings page storing a key and move to `Idle` on its own.
  */
 class AiCoachStateMachineTest {
 
@@ -28,7 +31,7 @@ class AiCoachStateMachineTest {
         provider.config.first { it.configured }
 
         val coach = RecordingCoach()
-        val machine = AiCoachStateMachine(coach, provider, store).launchIn(backgroundScope)
+        val machine = AiCoachStateMachine(coach, provider).launchIn(backgroundScope)
 
         // Initial config probe -> Idle.
         machine.state.first { it is AiCoachUiState.Idle }
@@ -46,6 +49,34 @@ class AiCoachStateMachineTest {
         // proving the machine no longer truncates before calling the engine.
         assertEquals((0 until turns).map { it * 2 }, coach.histories.map { it.size })
         assertTrue(coach.histories.last().size > 10)
+    }
+
+    @Test
+    fun `ConfigMissing moves to Idle once the settings page stores a key`() = runTest {
+        val store = FakeConfigStore(AiCoachConfig(apiKey = ""))
+        val provider = AiCoachConfigProvider(store)
+        val machine = AiCoachStateMachine(RecordingCoach(), provider).launchIn(backgroundScope)
+
+        machine.state.first { it is AiCoachUiState.ConfigMissing }
+
+        // Simulates saving from the settings page (same store the provider observes).
+        store.save(AiCoachConfig(apiKey = "new-key"))
+
+        machine.state.first { it is AiCoachUiState.Idle }
+    }
+
+    @Test
+    fun `Idle goes back to ConfigMissing when the key is removed`() = runTest {
+        val store = FakeConfigStore(AiCoachConfig(apiKey = "test-key"))
+        val provider = AiCoachConfigProvider(store)
+        provider.config.first { it.configured }
+        val machine = AiCoachStateMachine(RecordingCoach(), provider).launchIn(backgroundScope)
+
+        machine.state.first { it is AiCoachUiState.Idle }
+
+        store.save(AiCoachConfig(apiKey = ""))
+
+        machine.state.first { it is AiCoachUiState.ConfigMissing }
     }
 
     private class FakeConfigStore(initial: AiCoachConfig) : IAiCoachConfigStore {

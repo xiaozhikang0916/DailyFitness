@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_settings_title">AI 教练设置</string>
+    <string name="ai_settings_privacy">API Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_settings_api_key">API Key</string>
+    <string name="ai_settings_model">模型</string>
+    <string name="ai_settings_model_flash">DeepSeek V4 Flash</string>
+    <string name="ai_settings_model_pro">DeepSeek V4 Pro</string>
+    <string name="ai_settings_base_url">API 地址（可选）</string>
+    <string name="ai_settings_base_url_hint">留空则使用 DeepSeek 官方地址。</string>
+    <string name="ai_settings_save">保存</string>
+    <string name="ai_settings_saved">已保存</string>
+    <string name="ai_settings_api_key_required">请填写 API Key 以启用 AI 教练。</string>
+</resources>

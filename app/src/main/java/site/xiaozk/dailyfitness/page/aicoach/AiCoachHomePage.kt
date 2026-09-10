@@ -3,8 +3,12 @@ package site.xiaozk.dailyfitness.page.aicoach
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
@@ -22,6 +26,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachPageContent
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachViewModel
+import site.xiaozk.dailyfitness.nav.AiCoachSettings
 import site.xiaozk.dailyfitness.nav.LocalAppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
 import site.xiaozk.dailyfitness.widget.AppBottomBar
@@ -58,6 +63,14 @@ fun AiCoachHomePage() {
                     )
                 },
                 scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(onClick = { navBackStack.add(AiCoachSettings) }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.action_desc_open_ai_settings),
+                        )
+                    }
+                },
             )
         },
         bottomBar = {
@@ -74,7 +87,7 @@ fun AiCoachHomePage() {
                 bottom = innerPadding.calculateBottomPadding() + 12.dp,
             ),
             onRefresh = viewModel::refresh,
-            onSaveConfig = viewModel::saveConfig,
+            onOpenSettings = { navBackStack.add(AiCoachSettings) },
         )
     }
 }

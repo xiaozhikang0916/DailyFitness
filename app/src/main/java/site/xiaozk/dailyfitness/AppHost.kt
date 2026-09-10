@@ -22,6 +22,7 @@ import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.nav.AddBodyDetail
 import site.xiaozk.dailyfitness.nav.AddTrainAction
 import site.xiaozk.dailyfitness.nav.AddWorkoutAction
+import site.xiaozk.dailyfitness.nav.AiCoachSettings
 import site.xiaozk.dailyfitness.nav.AppSnackbarHostState
 import site.xiaozk.dailyfitness.nav.HomeBody
 import site.xiaozk.dailyfitness.nav.HomeTrainPart
@@ -47,6 +48,7 @@ import site.xiaozk.dailyfitness.page.training.TrainingDayDetailPage
 import site.xiaozk.dailyfitness.page.training.WorkoutMonthlyPage
 import site.xiaozk.dailyfitness.page.training.add.AddDailyWorkoutAction
 import site.xiaozk.dailyfitness.page.aicoach.AiCoachHomePage
+import site.xiaozk.dailyfitness.page.settings.AiCoachSettingsPage
 import site.xiaozk.dailyfitness.theme.DailyFitnessTheme
 
 /**
@@ -115,6 +117,7 @@ fun AppHost(navIntentBus: NavIntentBus) {
                         is HomeBody -> NavEntry(key) { BodyDetailPage() }
                         is HomeTrainPart -> NavEntry(key) { TrainStaticPage() }
                         is HomeAiCoach -> NavEntry(key) { AiCoachHomePage() }
+                        is AiCoachSettings -> NavEntry(key) { AiCoachSettingsPage() }
                         is WorkoutMonth -> NavEntry(key) { WorkoutMonthlyPage(month = key.date) }
                         is TrainDay -> NavEntry(key) { TrainingDayDetailPage(date = key.date) }
                         is AddWorkoutAction -> NavEntry(key) { AddDailyWorkoutAction() }

@@ -8,12 +8,8 @@
     <string name="ai_loading">AI 正在分析你的训练历史…</string>
     <string name="ai_retry">重试</string>
     <string name="ai_config_missing_title">需要先配置 AI 教练</string>
-    <string name="ai_config_missing_hint">填写你的 DeepSeek API Key 以启用推荐。Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
-    <string name="ai_api_key_label">API Key</string>
-    <string name="ai_model_label">模型</string>
-    <string name="ai_model_deepseek_v4_flash">DeepSeek V4 Flash</string>
-    <string name="ai_model_deepseek_v4_pro">DeepSeek V4 Pro</string>
-    <string name="ai_save">保存</string>
+    <string name="ai_config_missing_hint">请在 AI 教练设置中填写 DeepSeek API Key 以启用推荐。Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_open_settings">前往 AI 教练设置</string>
     <string name="ai_error_title">出错了</string>
     <string name="ai_no_train_parts_hint">还没有任何训练部位与动作。请先添加训练部位及其动作，再向 AI 教练获取建议。</string>
     <string name="ai_plan_title">今日推荐</string>

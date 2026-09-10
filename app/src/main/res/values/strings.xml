@@ -70,4 +70,5 @@
     <string name="bottom_nav_title_body">Body</string>
     <string name="bottom_nav_title_train">Train</string>
     <string name="bottom_nav_title_ai">AI Coach</string>
+    <string name="action_desc_open_ai_settings">AI Coach settings</string>
 </resources>

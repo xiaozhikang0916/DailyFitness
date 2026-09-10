@@ -8,12 +8,8 @@
     <string name="ai_loading">AI is analyzing your training history…</string>
     <string name="ai_retry">Retry</string>
     <string name="ai_config_missing_title">AI Coach needs a configuration</string>
-    <string name="ai_config_missing_hint">Enter your DeepSeek API key to enable recommendations. The key is stored only on this device and training summaries are only sent to the AI service when you request a recommendation.</string>
-    <string name="ai_api_key_label">API Key</string>
-    <string name="ai_model_label">Model</string>
-    <string name="ai_model_deepseek_v4_flash">DeepSeek V4 Flash</string>
-    <string name="ai_model_deepseek_v4_pro">DeepSeek V4 Pro</string>
-    <string name="ai_save">Save</string>
+    <string name="ai_config_missing_hint">Add your DeepSeek API key in the AI Coach settings to enable recommendations. The key is stored only on this device, and training summaries are only sent to the AI service when you request a recommendation.</string>
+    <string name="ai_open_settings">Open AI Coach settings</string>
     <string name="ai_error_title">Something went wrong</string>
     <string name="ai_no_train_parts_hint">No train parts or actions exist yet. Add a train part and its actions first, then ask AI Coach for a recommendation.</string>
     <string name="ai_plan_title">Recommended for today</string>

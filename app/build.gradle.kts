@@ -92,6 +92,7 @@ dependencies {
     implementation(project(":database"))
     implementation(project(":calendar"))
     implementation(project(":chart"))
+    implementation(project(":settings"))
 
     testImplementation(libs.junit)
 }

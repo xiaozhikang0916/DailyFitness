@@ -42,6 +42,9 @@ object HomeTrainPart : NavKey
 object HomeAiCoach : NavKey
 
 @Serializable
+object AiCoachSettings : NavKey
+
+@Serializable
 object AddWorkoutAction : NavKey
 
 @Serializable
@@ -92,6 +95,7 @@ val NavKeySerializersModule: SerializersModule = SerializersModule {
         subclass(HomeBody::class, HomeBody.serializer())
         subclass(HomeTrainPart::class, HomeTrainPart.serializer())
         subclass(HomeAiCoach::class, HomeAiCoach.serializer())
+        subclass(AiCoachSettings::class, AiCoachSettings.serializer())
         subclass(AddWorkoutAction::class, AddWorkoutAction.serializer())
         subclass(AddBodyDetail::class, AddBodyDetail.serializer())
         subclass(WorkoutMonth::class, WorkoutMonth.serializer())

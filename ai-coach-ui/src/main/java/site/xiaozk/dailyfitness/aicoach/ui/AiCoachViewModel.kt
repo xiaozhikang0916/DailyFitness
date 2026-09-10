@@ -13,7 +13,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
-import site.xiaozk.dailyfitness.repository.model.AiCoachModel
 import javax.inject.Inject
 
 /**
@@ -49,10 +48,6 @@ class AiCoachViewModel @Inject constructor(
 
     fun refresh() {
         machine.dispatchAction(AiCoachUiAction.Refresh)
-    }
-
-    fun saveConfig(apiKey: String, model: AiCoachModel) {
-        machine.dispatchAction(AiCoachUiAction.SaveConfig(apiKey = apiKey, model = model))
     }
 
     private suspend fun observeTodaySets() {

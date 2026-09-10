@@ -3,12 +3,9 @@ package site.xiaozk.dailyfitness.aicoach.ui
 import com.freeletics.flowredux2.FlowReduxStateMachineFactory
 import com.freeletics.flowredux2.initializeWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
-import site.xiaozk.dailyfitness.repository.IAiCoachConfigStore
-import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import javax.inject.Inject
 
 /**
@@ -18,8 +15,10 @@ import javax.inject.Inject
  * (including the in-memory conversation) travels inside [AiCoachUiState].
  *
  * Transitions:
- * - [AiCoachUiState.Initial] probes the config -> ConfigMissing or Idle
- * - ConfigMissing: [AiCoachUiAction.SaveConfig] persists the key/model -> Idle
+ * - a single config observer registered on the [AiCoachUiState] upper bound runs in
+ *   every state: it routes `Initial` -> Idle/ConfigMissing, `ConfigMissing` -> Idle
+ *   once a key is stored, and any settled state -> ConfigMissing once the key is
+ *   removed
  * - Idle / Error: [AiCoachUiAction.Refresh] -> Loading (history carried over)
  * - Loading: on enter, runs [IAiCoach.recommendToday] with the state's history and
  *   appends the returned turn(s) into the next Idle/Error state
@@ -28,35 +27,26 @@ import javax.inject.Inject
 class AiCoachStateMachine @Inject constructor(
     private val aiCoach: IAiCoach,
     private val configProvider: AiCoachConfigProvider,
-    private val configStore: IAiCoachConfigStore,
 ) : FlowReduxStateMachineFactory<AiCoachUiState, AiCoachUiAction>() {
 
     init {
         initializeWith(reuseLastEmittedStateOnLaunch = false) { AiCoachUiState.Initial }
         spec {
-            inState<AiCoachUiState.Initial> {
-                onEnter {
-                    // Wait for the first real DataStore emission before deciding.
-                    val config = configProvider.config.first()
-                    override {
-                        if (config.configured) {
-                            AiCoachUiState.Idle(setsToday = 0, content = null)
-                        } else {
-                            AiCoachUiState.ConfigMissing
-                        }
-                    }
-                }
-            }
-
-            inState<AiCoachUiState.ConfigMissing> {
-                on<AiCoachUiAction.SaveConfig> { action ->
-                    configStore.save(AiCoachConfig(apiKey = action.apiKey.trim(), model = action.model))
-                    override {
-                        if (action.apiKey.isBlank()) {
-                            AiCoachUiState.ConfigMissing
-                        } else {
-                            AiCoachUiState.Idle(setsToday = 0, content = null)
-                        }
+            // Continuously observe the config in every state (registered on the
+            // sealed-interface upper bound). This is the single place that reconciles
+            // the screen with the config: Initial routes to Idle/ConfigMissing,
+            // ConfigMissing -> Idle once a key appears, and any settled state ->
+            // ConfigMissing once the key is removed.
+            inState<AiCoachUiState> {
+                collectWhileInState(configProvider.config) { config ->
+                    when {
+                        config.configured &&
+                            (snapshot is AiCoachUiState.Initial ||
+                                snapshot is AiCoachUiState.ConfigMissing) ->
+                            override { AiCoachUiState.Idle(setsToday = 0, content = null) }
+                        !config.configured && snapshot !is AiCoachUiState.ConfigMissing ->
+                            override { AiCoachUiState.ConfigMissing }
+                        else -> noChange()
                     }
                 }
             }

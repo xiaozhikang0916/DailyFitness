@@ -12,28 +12,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.filter
@@ -43,7 +35,6 @@ import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedAction
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
-import site.xiaozk.dailyfitness.repository.model.AiCoachModel
 
 /**
  * AI Coach tab content - purely presentational. The tab shell (top bar / bottom
@@ -56,7 +47,7 @@ fun AiCoachPageContent(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     onRefresh: () -> Unit,
-    onSaveConfig: (apiKey: String, model: AiCoachModel) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     // When the latest result is rendered as a structured card, the trailing
@@ -112,7 +103,7 @@ fun AiCoachPageContent(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 when (state) {
                     AiCoachUiState.Initial -> LoadingHint()
-                    AiCoachUiState.ConfigMissing -> ConfigForm(onSaveConfig)
+                    AiCoachUiState.ConfigMissing -> ConfigMissingHint(onOpenSettings)
                     is AiCoachUiState.Idle -> when (val content = state.content) {
                         null -> RefreshCallToAction(onRefresh)
                         else -> when (content) {
@@ -193,7 +184,7 @@ private fun RefreshCallToAction(onRefresh: () -> Unit) {
 }
 
 @Composable
-private fun ConfigForm(onSaveConfig: (String, AiCoachModel) -> Unit) {
+private fun ConfigMissingHint(onOpenSettings: () -> Unit) {
     Text(
         text = stringResource(R.string.ai_config_missing_title),
         style = MaterialTheme.typography.titleMedium,
@@ -202,35 +193,8 @@ private fun ConfigForm(onSaveConfig: (String, AiCoachModel) -> Unit) {
         text = stringResource(R.string.ai_config_missing_hint),
         style = MaterialTheme.typography.bodyMedium,
     )
-    var apiKey by remember { mutableStateOf("") }
-    var model by remember { mutableStateOf(AiCoachModel.DeepSeekV4Flash) }
-    OutlinedTextField(
-        value = apiKey,
-        onValueChange = { apiKey = it },
-        label = { Text(stringResource(R.string.ai_api_key_label)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = Modifier.fillMaxWidth(),
-    )
-    Text(
-        text = stringResource(R.string.ai_model_label),
-        style = MaterialTheme.typography.labelMedium,
-    )
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        AiCoachModel.entries.forEach { candidate ->
-            FilterChip(
-                selected = model == candidate,
-                onClick = { model = candidate },
-                label = { Text(stringResource(modelLabelRes(candidate))) },
-            )
-        }
-    }
-    Button(
-        onClick = { onSaveConfig(apiKey, model) },
-        enabled = apiKey.isNotBlank(),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text(stringResource(R.string.ai_save))
+    Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.ai_open_settings))
     }
 }
 
@@ -368,11 +332,6 @@ private fun adviceTitle(advice: Advice): String = when (advice.kind) {
         stringResource(R.string.ai_advice_switch_action, advice.actionName ?: "")
     AdviceKind.FINISH_PART -> stringResource(R.string.ai_advice_finish_part)
     AdviceKind.FINISH_DAY -> stringResource(R.string.ai_advice_finish_day)
-}
-
-private fun modelLabelRes(model: AiCoachModel): Int = when (model) {
-    AiCoachModel.DeepSeekV4Flash -> R.string.ai_model_deepseek_v4_flash
-    AiCoachModel.DeepSeekV4Pro -> R.string.ai_model_deepseek_v4_pro
 }
 
 private fun formatNumber(value: Double): String =
