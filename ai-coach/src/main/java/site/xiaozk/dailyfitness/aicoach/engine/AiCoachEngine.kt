@@ -28,11 +28,11 @@ import kotlin.math.min
 /**
  * Orchestrates the AI Coach flows.
  *
- * Configuration is injected via [AiCoachConfigProvider] (never fetched per call
- * by the engine); LLM calls go through [PlanExecutor], whose client cache is
- * rebuilt automatically on config change. All history shaping and the
- * need-more-history loop live here as pure orchestration, unit-testable with a
- * fake [PlanExecutor] (no network).
+ * Stateless with respect to the conversation: the caller passes its in-memory
+ * [CoachMessage] history (engine keeps only the last [HISTORY_MESSAGES] = 5
+ * rounds) and receives the new turn(s) inside the successful results. The LLM is
+ * reached through [PlanExecutor] (client cache rebuilt on config change), so the
+ * whole engine stays unit-testable with a fake executor (no network).
  */
 @Singleton
 class AiCoachEngine @Inject constructor(
@@ -45,10 +45,11 @@ class AiCoachEngine @Inject constructor(
 
     private val gate = Mutex()
 
-    override suspend fun recommendToday(): AiCoachResult = gate.withLock {
+    override suspend fun recommendToday(history: List<CoachMessage>): AiCoachResult = gate.withLock {
         if (!configProvider.current.configured) {
             return@withLock AiCoachResult.ConfigMissing
         }
+        val conversation = history.takeLast(HISTORY_MESSAGES)
         val user = userRepository.getCurrentUser()
         val today = todayLocalDate()
         val allWorkouts = workoutRepository.getAllWorkoutDayList(user).first()
@@ -59,9 +60,9 @@ class AiCoachEngine @Inject constructor(
 
         val todayWorkout = allWorkouts[today]
         return@withLock if (todayWorkout?.actions?.isNotEmpty() == true) {
-            nextAdvice(today, allWorkouts, todayWorkout, trainGroups)
+            nextAdvice(today, allWorkouts, todayWorkout, trainGroups, conversation)
         } else {
-            planToday(today, allWorkouts, trainGroups)
+            planToday(today, allWorkouts, trainGroups, conversation)
         }
     }
 
@@ -71,18 +72,19 @@ class AiCoachEngine @Inject constructor(
         today: LocalDate,
         allWorkouts: DailyWorkoutMap,
         trainGroups: List<TrainPartGroup>,
+        history: List<CoachMessage>,
     ): AiCoachResult {
         // All past sessions, oldest -> newest.
-        val history = allWorkouts.trainedDate.entries
+        val historyDays = allWorkouts.trainedDate.entries
             .filter { it.key < today }
             .sortedBy { it.key }
             .mapNotNull { HistorySummarizer.summarize(it.value, today) }
 
-        if (history.isEmpty()) {
+        if (historyDays.isEmpty()) {
             // No history at all: the model must answer with a plan (needMore is forbidden).
             val userText = AiPrompts.partPlanUser(trainGroups, emptyList())
             val reply = planExecutor.request(
-                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, PartPlanReply.serializer(),
+                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
             if (reply.needMore || reply.plan.isNullOrEmpty()) {
                 return AiCoachResult.Failed(
@@ -90,16 +92,26 @@ class AiCoachEngine @Inject constructor(
                     retryable = true,
                 )
             }
-            return mapPlan(reply, trainGroups, sessionsUsed = 0, rounds = 1)
+            val mapped = mapPlan(reply, trainGroups, sessionsUsed = 0, rounds = 1)
+            return if (mapped is AiCoachResult.TodayPlan) {
+                mapped.copy(
+                    newMessages = turn(
+                        userLabel = planRequestLabel(today, sessionsUsed = 0),
+                        assistantLabel = planSummary(mapped.parts),
+                    )
+                )
+            } else {
+                mapped
+            }
         }
 
-        var included = min(INITIAL_SESSIONS, history.size)
+        var included = min(INITIAL_SESSIONS, historyDays.size)
         var rounds = 0
         var forceFallback = false
 
         while (true) {
             rounds++
-            val window = history.subList(max(0, history.size - included), history.size)
+            val window = historyDays.subList(max(0, historyDays.size - included), historyDays.size)
             val additionalNote = if (forceFallback) {
                 "无法再提供更多训练历史（已包含最近 $included 个训练日）。请基于现有数据直接给出推荐。"
             } else {
@@ -107,20 +119,30 @@ class AiCoachEngine @Inject constructor(
             }
             val userText = AiPrompts.partPlanUser(trainGroups, window, additionalNote)
             val reply = planExecutor.request(
-                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, PartPlanReply.serializer(),
+                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
             if (!reply.needMore) {
-                return mapPlan(reply, trainGroups, sessionsUsed = included, rounds = rounds)
+                val mapped = mapPlan(reply, trainGroups, sessionsUsed = included, rounds = rounds)
+                return if (mapped is AiCoachResult.TodayPlan) {
+                    mapped.copy(
+                        newMessages = turn(
+                            userLabel = planRequestLabel(today, sessionsUsed = included),
+                            assistantLabel = planSummary(mapped.parts),
+                        )
+                    )
+                } else {
+                    mapped
+                }
             }
 
             val canExpand = !forceFallback &&
-                included < history.size &&
+                included < historyDays.size &&
                 included < MAX_SESSIONS &&
                 rounds <= MAX_ROUNDS
             if (canExpand) {
                 val want = (reply.wantSessions ?: 1).coerceAtLeast(1)
-                included = min(MAX_SESSIONS, max(included + 1, min(history.size, included + want)))
+                included = min(MAX_SESSIONS, max(included + 1, min(historyDays.size, included + want)))
                 continue
             }
             if (!forceFallback) {
@@ -204,11 +226,13 @@ class AiCoachEngine @Inject constructor(
         allWorkouts: DailyWorkoutMap,
         todayWorkout: DailyWorkout,
         trainGroups: List<TrainPartGroup>,
+        history: List<CoachMessage>,
     ): AiCoachResult {
         val todaySummary = HistorySummarizer.summarize(todayWorkout, today)
         if (todaySummary == null || todaySummary.parts.isEmpty()) {
             return AiCoachResult.Failed("无法确定今天已练的部位，请重试。", retryable = true)
         }
+        val setsToday = todayWorkout.actions.sumOf { it.trainAction.size }
         // The "current part" = part of the most recent set of today.
         val currentPartName = todayWorkout.actions
             .maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
@@ -234,7 +258,7 @@ class AiCoachEngine @Inject constructor(
 
         val userText = AiPrompts.nextAdviceUser(trainGroups, todaySummary, partHistory, lastPartDaysAgo)
         val reply = planExecutor.request(
-            "aicoach-next-advice", AiPrompts.nextAdviceSystem(), userText, NextAdviceReply.serializer(),
+            "aicoach-next-advice", AiPrompts.nextAdviceSystem(), userText, history, NextAdviceReply.serializer(),
         ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
         val ignored = mutableListOf<String>()
@@ -288,8 +312,63 @@ class AiCoachEngine @Inject constructor(
             nextPartName = nextPartName,
             reason = reply.reason,
         )
-        return AiCoachResult.NextAdvice(advice = advice, ignoredNames = ignored.distinct())
+        return AiCoachResult.NextAdvice(
+            advice = advice,
+            ignoredNames = ignored.distinct(),
+            newMessages = turn(
+                userLabel = adviceRequestLabel(today, setsToday, currentPartName),
+                assistantLabel = adviceSummary(advice),
+            ),
+        )
     }
+
+    // ------------------------------------------------------------- turn helpers
+
+    /** New conversation turn (compact user label + assistant summary) for the caller to append. */
+    private fun turn(userLabel: String, assistantLabel: String): List<CoachMessage> = listOf(
+        CoachMessage(fromUser = true, text = userLabel),
+        CoachMessage(fromUser = false, text = assistantLabel),
+    )
+
+    private fun planRequestLabel(today: LocalDate, sessionsUsed: Int): String =
+        "[$today][Case A] 今日尚无锻炼记录；基于最近 $sessionsUsed 个训练日请求推荐"
+
+    private fun adviceRequestLabel(today: LocalDate, setsToday: Int, currentPartName: String): String =
+        "[$today][Case B] 今日已练 $setsToday 组，当前部位：$currentPartName；请求下一步建议"
+
+    private fun planSummary(parts: List<RecommendedPart>): String = parts.joinToString("；") { part ->
+        val primary = if (part.isPrimary) "（主推）" else ""
+        part.partName + primary + "：" + part.actions.joinToString("、") { actionSummary(it) }
+    }
+
+    private fun actionSummary(action: RecommendedAction): String = buildList {
+        add(action.actionName)
+        add("${action.sets}组")
+        action.reps?.let { add("×$it") }
+        action.weightKg?.let { add("@${formatNumber(it)}kg") }
+        action.durationSec?.let { add("${it}秒") }
+    }.joinToString(" ")
+
+    private fun adviceSummary(advice: Advice): String {
+        val head = when (advice.kind) {
+            AdviceKind.CONTINUE_CURRENT -> "继续${advice.actionName ?: "当前动作"}"
+            AdviceKind.SWITCH_ACTION -> "换练${advice.actionName ?: "?（同部位其他动作）"}"
+            AdviceKind.FINISH_PART -> "该部位今天已够"
+            AdviceKind.FINISH_DAY -> "今天总量已够，建议收工"
+        }
+        val params = buildList {
+            if (advice.sets > 0) add("${advice.sets}组")
+            advice.reps?.let { add("×$it") }
+            advice.weightKg?.let { add("@${formatNumber(it)}kg") }
+            advice.durationSec?.let { add("每组${it}秒") }
+            advice.nextPartName?.let { add("下一步建议部位：$it") }
+        }.joinToString(" ")
+        val reason = advice.reason?.let { "；理由：$it" }.orEmpty()
+        return listOf(head, params).filter { it.isNotBlank() }.joinToString(" ") + reason
+    }
+
+    private fun formatNumber(value: Double): String =
+        if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
     private fun userFacingError(cause: Throwable): String {
         val message = cause.message ?: cause.javaClass.simpleName
@@ -309,6 +388,9 @@ class AiCoachEngine @Inject constructor(
         const val MAX_SESSIONS = 20
         const val MAX_ROUNDS = 2
         const val PART_HISTORY_SESSIONS = 5
+
+        /** 5 rounds = 10 messages carried into the next request. */
+        const val HISTORY_MESSAGES = 10
     }
 }
 

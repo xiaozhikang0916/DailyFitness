@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ai_chat_history_title">Chat history</string>
     <string name="ai_status_today_empty">No workout recorded today yet</string>
     <string name="ai_status_today_sets">Today: %1$d set(s)</string>
     <string name="ai_ready_hint">AI Coach will analyze your training history (parts, actions, weights and sets) and recommend what to train today or what to do next. Data is only sent to the AI service when you tap the button below.</string>

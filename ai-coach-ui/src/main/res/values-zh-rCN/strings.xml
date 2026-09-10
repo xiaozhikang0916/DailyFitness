@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ai_chat_history_title">对话记录</string>
     <string name="ai_status_today_empty">今天还没有开始锻炼</string>
     <string name="ai_status_today_sets">今天已练 %1$d 组</string>
     <string name="ai_ready_hint">AI 教练会分析你的训练历史（部位、动作、重量与组数），推荐今天练什么或下一步做什么。只有点击下方按钮时才会把训练摘要发送给 AI 服务。</string>

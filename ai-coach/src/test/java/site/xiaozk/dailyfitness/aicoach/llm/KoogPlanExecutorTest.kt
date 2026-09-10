@@ -27,6 +27,7 @@ class KoogPlanExecutorTest {
             promptId: String,
             systemText: String,
             userText: String,
+            history: List<site.xiaozk.dailyfitness.aicoach.engine.CoachMessage>,
             serializer: KSerializer<T>,
         ): Result<T> = Result.failure(IllegalStateException("not used in this test"))
 
@@ -61,14 +62,15 @@ class KoogPlanExecutorTest {
 
         // Seed the initial session synchronously via a request (fake session,
         // the returned failure is irrelevant).
-        executor.request("seed", "system", "user", PartPlanReply.serializer())
+        executor.request("seed", "system", "user", emptyList(), PartPlanReply.serializer())
         assertEquals(1, factory.createdCount.value)
         assertEquals(listOf(keyA), factory.createdKeys.value)
         assertEquals(emptyList<String>(), factory.closedKeys.value)
 
-        // Model-only change (same apiKey/baseUrl) must NOT rebuild.
+        // Model-only change (same apiKey/baseUrl) must NOT rebuild. No await on this
+        // intermediate state: it is irrelevant and StateFlow conflation may merge it
+        // into the next change, which still proves the point via the final counts.
         store.save(AiCoachConfig(apiKey = keyA, model = AiCoachModel.DeepSeekV4Pro))
-        awaitUntil { provider.config.value.model == AiCoachModel.DeepSeekV4Pro }
 
         // apiKey change -> old session (A) is closed, a new one (B) is created.
         store.save(AiCoachConfig(apiKey = keyB))

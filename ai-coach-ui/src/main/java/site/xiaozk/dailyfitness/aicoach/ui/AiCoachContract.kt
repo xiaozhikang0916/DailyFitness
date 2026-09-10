@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.aicoach.ui
 
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
 import site.xiaozk.dailyfitness.repository.model.AiCoachModel
 
@@ -38,18 +39,20 @@ sealed interface UiContent {
         val sessionsUsed: Int,
         val rounds: Int,
         val ignoredNames: List<String>,
+        val newMessages: List<CoachMessage> = emptyList(),
     ) : UiContent
 
     data class NextAdvice(
         val advice: Advice,
         val ignoredNames: List<String>,
+        val newMessages: List<CoachMessage> = emptyList(),
     ) : UiContent
 }
 
 /** Actions dispatched into the FlowRedux machine. */
 sealed interface AiCoachUiAction {
-    /** Fetch/re-fetch the recommendation for today. */
-    data object Refresh : AiCoachUiAction
+    /** Fetch/re-fetch the recommendation; carries the session-memory conversation. */
+    data class Refresh(val history: List<CoachMessage> = emptyList()) : AiCoachUiAction
 
     /** Live update of how many sets were recorded today (fed by the VM). */
     data class TodayInfo(val setsToday: Int) : AiCoachUiAction

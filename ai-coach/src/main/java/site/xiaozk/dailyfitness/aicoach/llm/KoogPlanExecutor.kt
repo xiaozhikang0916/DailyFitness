@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -68,6 +69,7 @@ class KoogPlanExecutor @Inject constructor(
         promptId: String,
         systemText: String,
         userText: String,
+        history: List<CoachMessage>,
         serializer: KSerializer<T>,
     ): Result<T> {
         val config = configProvider.current
@@ -75,7 +77,7 @@ class KoogPlanExecutor @Inject constructor(
             return Result.failure(IllegalStateException("AI 未配置 API Key"))
         }
         val cached = rebuildIfNeeded(config)
-        return cached.session.structuredRequest(config, promptId, systemText, userText, serializer)
+        return cached.session.structuredRequest(config, promptId, systemText, userText, history, serializer)
     }
 
     override fun close() {

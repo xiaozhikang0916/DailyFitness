@@ -19,6 +19,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedAction
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
 import site.xiaozk.dailyfitness.repository.model.AiCoachModel
@@ -48,10 +50,22 @@ fun AiCoachPageContent(
     state: AiCoachUiState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    history: List<CoachMessage> = emptyList(),
     onRefresh: () -> Unit,
     onSaveConfig: (apiKey: String, model: AiCoachModel) -> Unit,
 ) {
     val scroll = rememberScrollState()
+    // When the latest result is rendered as a structured card, the trailing
+    // assistant message would be duplicated; hide it from the chat list.
+    val latestContent = (state as? AiCoachUiState.Idle)?.content
+    val chatHistory = if (
+        (latestContent is UiContent.TodayPlan || latestContent is UiContent.NextAdvice) &&
+        history.lastOrNull()?.fromUser == false
+    ) {
+        history.dropLast(1)
+    } else {
+        history
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -67,6 +81,14 @@ fun AiCoachPageContent(
         if (state !is AiCoachUiState.Initial && state !is AiCoachUiState.ConfigMissing) {
             ScenarioHeader(setsToday)
         }
+        if (chatHistory.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.ai_chat_history_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            chatHistory.forEach { ChatBubble(it) }
+        }
         when (state) {
             AiCoachUiState.Initial -> LoadingHint()
             AiCoachUiState.ConfigMissing -> ConfigForm(onSaveConfig)
@@ -80,6 +102,30 @@ fun AiCoachPageContent(
             }
             is AiCoachUiState.Loading -> LoadingHint()
             is AiCoachUiState.Error -> ErrorContent(state, onRefresh)
+        }
+    }
+}
+
+@Composable
+private fun ChatBubble(message: CoachMessage) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (message.fromUser) Arrangement.End else Arrangement.Start,
+    ) {
+        Surface(
+            color = if (message.fromUser) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.width(300.dp),
+        ) {
+            Text(
+                text = message.text,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(10.dp),
+            )
         }
     }
 }

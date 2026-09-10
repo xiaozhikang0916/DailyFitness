@@ -11,6 +11,7 @@ import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import kotlinx.serialization.KSerializer
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import site.xiaozk.dailyfitness.repository.model.AiCoachModel
 import javax.inject.Inject
@@ -30,6 +31,7 @@ interface LlmSession : AutoCloseable {
         promptId: String,
         systemText: String,
         userText: String,
+        history: List<CoachMessage> = emptyList(),
         serializer: KSerializer<T>,
     ): Result<T>
 
@@ -51,13 +53,11 @@ internal class KoogLlmSession(
         promptId: String,
         systemText: String,
         userText: String,
+        history: List<CoachMessage>,
         serializer: KSerializer<T>,
     ): Result<T> {
         val model = config.model.toKoogModel()
-        val prompt = prompt(promptId) {
-            system(systemText)
-            user(userText)
-        }
+        val prompt = buildAiCoachPrompt(promptId, systemText, userText, history)
         return runCatching {
             executor.executeStructured(
                 prompt = prompt,
@@ -92,6 +92,26 @@ class RealLlmSessionFactory @Inject constructor(
         )
         return KoogLlmSession(MultiLLMPromptExecutor(LLMProvider.DeepSeek to client))
     }
+}
+
+/**
+ * Builds the multi-turn koog prompt: system rules, then the previous conversation
+ * as alternating user/assistant messages (newest last), then the fresh user turn.
+ *
+ * Extracted (internal) so unit tests can assert the exact message roles/texts
+ * without any network.
+ */
+internal fun buildAiCoachPrompt(
+    promptId: String,
+    systemText: String,
+    userText: String,
+    history: List<CoachMessage>,
+) = prompt(promptId) {
+    system(systemText)
+    history.forEach { message ->
+        if (message.fromUser) user(message.text) else assistant(message.text)
+    }
+    user(userText)
 }
 
 internal fun AiCoachModel.toKoogModel(): LLModel = when (this) {

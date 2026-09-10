@@ -6,6 +6,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import site.xiaozk.dailyfitness.repository.IAiCoachConfigStore
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
@@ -30,6 +31,9 @@ class AiCoachStateMachine @Inject constructor(
     private val configProvider: AiCoachConfigProvider,
     private val configStore: IAiCoachConfigStore,
 ) : FlowReduxStateMachineFactory<AiCoachUiState, AiCoachUiAction>() {
+
+    /** Request-scoped conversation snapshot handed over by the ViewModel. */
+    private var pendingHistory: List<CoachMessage> = emptyList()
 
     init {
         initializeWith(reuseLastEmittedStateOnLaunch = false) { AiCoachUiState.Initial }
@@ -65,7 +69,8 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> {
+                on<AiCoachUiAction.Refresh> { action ->
+                    pendingHistory = action.history
                     override { AiCoachUiState.Loading(setsToday = this.setsToday) }
                 }
             }
@@ -74,7 +79,8 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> {
+                on<AiCoachUiAction.Refresh> { action ->
+                    pendingHistory = action.history
                     override { AiCoachUiState.Loading(setsToday = this.setsToday) }
                 }
             }
@@ -82,7 +88,7 @@ class AiCoachStateMachine @Inject constructor(
             inState<AiCoachUiState.Loading> {
                 onEnter {
                     val setsToday = snapshot.setsToday
-                    val next = runCatching { aiCoach.recommendToday() }
+                    val next = runCatching { aiCoach.recommendToday(pendingHistory) }
                         .getOrElse { AiCoachResult.Failed(it.message ?: "unknown", retryable = true) }
                     val target = when (next) {
                         is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
@@ -95,11 +101,16 @@ class AiCoachStateMachine @Inject constructor(
                                 sessionsUsed = next.sessionsUsed,
                                 rounds = next.rounds,
                                 ignoredNames = next.ignoredNames,
+                                newMessages = next.newMessages,
                             ),
                         )
                         is AiCoachResult.NextAdvice -> AiCoachUiState.Idle(
                             setsToday,
-                            UiContent.NextAdvice(advice = next.advice, ignoredNames = next.ignoredNames),
+                            UiContent.NextAdvice(
+                                advice = next.advice,
+                                ignoredNames = next.ignoredNames,
+                                newMessages = next.newMessages,
+                            ),
                         )
                         is AiCoachResult.Failed -> AiCoachUiState.Error(
                             setsToday = setsToday,

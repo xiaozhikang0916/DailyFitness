@@ -79,13 +79,13 @@ class AiCoachEngineTest {
     @Test
     fun `config missing returns ConfigMissing`() = runTest {
         val engine = newEngine(config = AiCoachConfig())
-        assertEquals(AiCoachResult.ConfigMissing, engine.recommendToday())
+        assertEquals(AiCoachResult.ConfigMissing, engine.recommendToday(emptyList()))
     }
 
     @Test
     fun `no train parts returns NoTrainParts`() = runTest {
         val engine = newEngine(groups = emptyList())
-        assertEquals(AiCoachResult.NoTrainParts, engine.recommendToday())
+        assertEquals(AiCoachResult.NoTrainParts, engine.recommendToday(emptyList()))
     }
 
     // ------------------------------------------------------------- case A
@@ -106,7 +106,7 @@ class AiCoachEngineTest {
         )
         val engine = newEngine(map = workoutMap(), groups = groups, executor = executor)
 
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
 
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(0, plan.sessionsUsed)
@@ -129,7 +129,7 @@ class AiCoachEngineTest {
         val history = (1..3).map { day -> workoutOf(daysAgo(day), TestDayAction("胸部", "卧推", weighted = true, counted = true, sets = listOf(TestSetSpec(weight = 60.0, reps = 8)))) }
         val engine = newEngine(map = workoutMap(*history.toTypedArray()), executor = executor)
 
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
 
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(3, plan.sessionsUsed)
@@ -146,7 +146,7 @@ class AiCoachEngineTest {
         val history = (1..25).map { day -> workoutOf(daysAgo(day), TestDayAction("胸部", "卧推", weighted = true, counted = true, sets = listOf(TestSetSpec(weight = 60.0, reps = 8)))) }
         val engine = newEngine(map = workoutMap(*history.toTypedArray()), executor = executor)
 
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
 
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(4, executor.calls.size)
@@ -167,7 +167,7 @@ class AiCoachEngineTest {
             )
         }
         val engine = newEngine(executor = executor)
-        val result = engine.recommendToday() as? AiCoachResult.Failed
+        val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
         assertTrue(result.message.contains("无法匹配"))
         assertTrue(result.retryable)
@@ -179,7 +179,7 @@ class AiCoachEngineTest {
             enqueuePartPlan(Result.failure(RuntimeException("Connection timed out")))
         }
         val engine = newEngine(executor = executor)
-        val result = engine.recommendToday() as? AiCoachResult.Failed
+        val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
         assertTrue(result.message.contains("网络连接失败"))
         assertTrue(result.retryable)
@@ -224,7 +224,7 @@ class AiCoachEngineTest {
         )
         val engine = newEngine(map = map, executor = executor)
 
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
         val next = result as? AiCoachResult.NextAdvice ?: error("expected NextAdvice")
         val advice = next.advice
         assertEquals(AdviceKind.CONTINUE_CURRENT, advice.kind)
@@ -246,7 +246,7 @@ class AiCoachEngineTest {
             )
         }
         val engine = newEngine(map = todayChestWorkout(), executor = executor)
-        val result = engine.recommendToday() as? AiCoachResult.Failed
+        val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
         assertTrue(result.message.contains("不在你的动作库中"))
     }
@@ -257,14 +257,14 @@ class AiCoachEngineTest {
             enqueueNextAdvice(Result.success(NextAdviceReply(kind = AdviceKindReply.FINISH_DAY, reason = "今天够了")))
         }
         val engine = newEngine(map = todayChestWorkout(), executor = executor)
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
         val advice = (result as? AiCoachResult.NextAdvice)?.advice ?: error("expected NextAdvice")
         assertEquals(AdviceKind.FINISH_DAY, advice.kind)
         assertEquals(0, advice.sets)
     }
 
     @Test
-    fun `case B never trained part mentions first-time state`() = runTest {
+    fun `case A never trained part mentions first-time state`() = runTest {
         val executor = FakePlanExecutor().apply {
             enqueueNextAdvice(
                 Result.success(NextAdviceReply(kind = AdviceKindReply.CONTINUE_CURRENT, actionName = "卧推", sets = 1, reps = 8))
@@ -276,9 +276,58 @@ class AiCoachEngineTest {
             *todayChestWorkout().trainedDate.values.toTypedArray(),
         )
         val engine = newEngine(map = map, executor = executor)
-        val result = engine.recommendToday()
+        val result = engine.recommendToday(emptyList())
         assertTrue(result is AiCoachResult.NextAdvice)
         assertTrue(executor.nextAdviceRequests.single().contains("从未练过该部位"))
+    }
+
+    // ------------------------------------------------------- conversation memory
+
+    @Test
+    fun `conversation history is forwarded and capped to five rounds`() = runTest {
+        val executor = FakePlanExecutor().apply { enqueuePartPlan(Result.success(chestPlan())) }
+        val engine = newEngine(executor = executor)
+        val conversation = (1..14).map { index ->
+            site.xiaozk.dailyfitness.aicoach.engine.CoachMessage(
+                fromUser = index % 2 == 1,
+                text = "message-$index",
+            )
+        }
+
+        val result = engine.recommendToday(conversation)
+
+        // Engine keeps only the last 10 messages (5 rounds) and forwards them to the LLM.
+        assertEquals(conversation.takeLast(10), executor.histories.single())
+        val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
+        assertEquals(2, plan.newMessages.size)
+        assertTrue(plan.newMessages.first().fromUser)
+        assertTrue(plan.newMessages.first().text.contains("Case A"))
+    }
+
+    @Test
+    fun `case B result exposes a conversation turn`() = runTest {
+        val executor = FakePlanExecutor().apply {
+            enqueueNextAdvice(
+                Result.success(
+                    NextAdviceReply(
+                        kind = AdviceKindReply.CONTINUE_CURRENT,
+                        actionName = "卧推",
+                        sets = 1,
+                        reps = 8,
+                        weightKg = 62.5,
+                    )
+                )
+            )
+        }
+        val engine = newEngine(map = todayChestWorkout(), executor = executor)
+
+        val result = engine.recommendToday(emptyList())
+
+        val next = result as? AiCoachResult.NextAdvice ?: error("expected NextAdvice")
+        assertEquals(2, next.newMessages.size)
+        assertTrue(next.newMessages.first().text.contains("Case B"))
+        assertTrue(next.newMessages.last().text.contains("卧推"))
+        assertTrue(next.newMessages.last().text.contains("62.5kg"))
     }
 
     private companion object {

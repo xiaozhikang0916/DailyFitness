@@ -77,7 +77,7 @@ class AiCoachRealLlmTest {
 
     @Test
     fun `real LLM - case A without history returns a matched today plan`() = runTest {
-        val result = withContext(Dispatchers.Default) { newRealEngine().recommendToday() }
+        val result = withContext(Dispatchers.Default) { newRealEngine().recommendToday(emptyList()) }
         assertTrue("expected TodayPlan, got $result", result is AiCoachResult.TodayPlan)
     }
 
@@ -92,7 +92,7 @@ class AiCoachRealLlmTest {
             ),
         )
         val result = withContext(Dispatchers.Default) {
-            newRealEngine(map = workoutMap(todayWorkout)).recommendToday()
+            newRealEngine(map = workoutMap(todayWorkout)).recommendToday(emptyList())
         }
         assertTrue("expected NextAdvice, got $result", result is AiCoachResult.NextAdvice)
     }

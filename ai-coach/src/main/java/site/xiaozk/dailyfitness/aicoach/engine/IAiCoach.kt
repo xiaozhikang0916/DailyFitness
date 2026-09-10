@@ -6,10 +6,21 @@ package site.xiaozk.dailyfitness.aicoach.engine
  * [recommendToday] decides between:
  * - Case A: today has no workout records yet -> a full follow-along plan for today;
  * - Case B: today already has records -> advice for the next step.
+ *
+ * The engine is stateless: the caller (session-scoped ViewModel) passes its
+ * in-memory conversation [history] and receives the new turn(s) inside the
+ * successful results so it can append them.
  */
 interface IAiCoach {
-    suspend fun recommendToday(): AiCoachResult
+    suspend fun recommendToday(history: List<CoachMessage> = emptyList()): AiCoachResult
 }
+
+/** One in-memory conversation message (never persisted). */
+data class CoachMessage(
+    val fromUser: Boolean,
+    val text: String,
+    val at: kotlin.time.Instant = kotlin.time.Clock.System.now(),
+)
 
 sealed interface AiCoachResult {
     /** Case A: today's recommended plan (parts -> actions -> sets/weight/reps/duration). */
@@ -18,12 +29,16 @@ sealed interface AiCoachResult {
         val rounds: Int,
         val parts: List<RecommendedPart>,
         val ignoredNames: List<String>,
+        /** Turn produced by this request; caller appends it to its conversation. */
+        val newMessages: List<CoachMessage> = emptyList(),
     ) : AiCoachResult
 
     /** Case B: next-step advice. */
     data class NextAdvice(
         val advice: Advice,
         val ignoredNames: List<String> = emptyList(),
+        /** Turn produced by this request; caller appends it to its conversation. */
+        val newMessages: List<CoachMessage> = emptyList(),
     ) : AiCoachResult
 
     /** AI key/model not configured yet. */

@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.LocalActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.ViewModelStoreOwner
 import site.xiaozk.dailyfitness.R
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachPageContent
 import site.xiaozk.dailyfitness.aicoach.ui.AiCoachViewModel
@@ -32,8 +34,16 @@ import site.xiaozk.dailyfitness.widget.AppBottomBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiCoachHomePage() {
-    val viewModel: AiCoachViewModel = hiltViewModel()
+    // Activity-scoped so the in-memory conversation survives bottom-tab switches
+    // (switching tabs clears the nav back stack and its entry-scoped ViewModels).
+    val activityOwner = LocalActivity.current as? ViewModelStoreOwner
+    val viewModel: AiCoachViewModel = if (activityOwner != null) {
+        hiltViewModel(viewModelStoreOwner = activityOwner)
+    } else {
+        hiltViewModel()
+    }
     val state by viewModel.state.collectAsState()
+    val history by viewModel.history.collectAsState()
     val navBackStack = LocalNavBackStack.current
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -64,6 +74,7 @@ fun AiCoachHomePage() {
                 top = innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 12.dp,
             ),
+            history = history,
             onRefresh = viewModel::refresh,
             onSaveConfig = viewModel::saveConfig,
         )

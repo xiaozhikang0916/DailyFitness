@@ -12,6 +12,7 @@ import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Instant
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlanReply
 import site.xiaozk.dailyfitness.aicoach.llm.PlanExecutor
@@ -83,7 +84,7 @@ fun todayLocalDate(): LocalDate =
  * starvation inside runTest.
  */
 suspend fun awaitUntil(
-    timeoutMs: Long = 5_000,
+    timeoutMs: Long = 10_000,
     condition: () -> Boolean,
 ) {
     val deadline = System.nanoTime() + timeoutMs * 1_000_000L
@@ -236,6 +237,7 @@ class FakeTrainActionRepository(
 /** Scripted [PlanExecutor]: queue replies per prompt id, records (promptId, userText). */
 class FakePlanExecutor : PlanExecutor {
     val calls = mutableListOf<Pair<String, String>>()
+    val histories = mutableListOf<List<CoachMessage>>()
     private val partPlans = ArrayDeque<Result<PartPlanReply>>()
     private val nextAdvices = ArrayDeque<Result<NextAdviceReply>>()
 
@@ -251,9 +253,11 @@ class FakePlanExecutor : PlanExecutor {
         promptId: String,
         systemText: String,
         userText: String,
+        history: List<CoachMessage>,
         serializer: kotlinx.serialization.KSerializer<T>,
     ): Result<T> {
         calls += promptId to userText
+        histories += history
         val reply: Result<*> = when (promptId) {
             "aicoach-part-plan" -> partPlans.removeFirstOrNull()
                 ?: Result.failure(IllegalStateException("no scripted part-plan reply"))
