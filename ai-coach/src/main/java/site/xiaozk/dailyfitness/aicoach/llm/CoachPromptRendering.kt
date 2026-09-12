@@ -14,7 +14,7 @@ import site.xiaozk.dailyfitness.aicoach.engine.RecommendedAction
  */
 internal fun CoachMessageContent.toPromptText(): String = when (this) {
     is CoachMessageContent.PlanRequest ->
-        "[$date][Case A] 今日尚无锻炼记录；基于最近 $sessionsUsed 个训练日请求推荐"
+        "[$date][Case A] 今日尚无锻炼记录；基于训练历史请求推荐"
 
     is CoachMessageContent.AdviceRequest ->
         "[$date][Case B] 今日已练 $setsToday 组，当前部位：$partName；请求下一步建议"
@@ -26,6 +26,10 @@ internal fun CoachMessageContent.toPromptText(): String = when (this) {
         }
 
     is CoachMessageContent.AdviceSummary -> advice.toPromptText()
+
+    // Transient UI placeholder: never part of the request history, so it renders
+    // to nothing if it ever leaks here.
+    CoachMessageContent.Loading -> ""
 }
 
 private fun RecommendedAction.toPromptText(): String = buildList {

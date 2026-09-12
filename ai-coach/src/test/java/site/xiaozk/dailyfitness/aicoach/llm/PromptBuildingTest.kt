@@ -17,9 +17,9 @@ import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
  */
 class PromptBuildingTest {
 
-    private val first = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1), sessionsUsed = 1)
+    private val first = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))
     private val second = CoachMessageContent.AdviceRequest(LocalDate(2025, 1, 2), setsToday = 2, partName = "胸部")
-    private val third = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 3), sessionsUsed = 3)
+    private val third = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 3))
     private val fourth = CoachMessageContent.AdviceRequest(LocalDate(2025, 1, 4), setsToday = 4, partName = "背部")
 
     @Test

@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
@@ -291,7 +292,7 @@ class AiCoachEngineTest {
         val conversation = (1..14).map { index ->
             CoachMessage(
                 fromUser = index % 2 == 1,
-                content = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1), sessionsUsed = index),
+                content = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1)),
             )
         }
 
@@ -300,17 +301,16 @@ class AiCoachEngineTest {
         // Engine keeps only the last 10 messages (5 rounds) and forwards them to the LLM.
         assertEquals(conversation.takeLast(10), executor.histories.single())
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
-        assertEquals(2, plan.newMessages.size)
-        assertTrue(plan.newMessages.first().fromUser)
-        assertTrue(plan.newMessages.first().content is CoachMessageContent.PlanRequest)
+        val reply = plan.assistantMessage
+        assertFalse(reply.fromUser)
+        assertTrue(reply.content is CoachMessageContent.PlanSummary)
         // Structured suggestions for M3.3 prefill: one per planned action.
-        val suggestions = plan.newMessages.last().suggestions
+        val suggestions = reply.suggestions
         assertEquals(2, suggestions.size)
         assertEquals(listOf("卧推", "哑铃飞鸟"), suggestions.map { it.actionName })
         assertEquals(listOf("胸部", "胸部"), suggestions.map { it.partName })
         assertEquals(60.0, suggestions.first().weightKg!!, 0.001)
         assertEquals(4, suggestions.first().sets)
-        assertTrue(plan.newMessages.first().suggestions.isEmpty())
     }
 
     @Test
@@ -333,14 +333,14 @@ class AiCoachEngineTest {
         val result = engine.recommendToday(emptyList())
 
         val next = result as? AiCoachResult.NextAdvice ?: error("expected NextAdvice")
-        assertEquals(2, next.newMessages.size)
-        assertTrue(next.newMessages.first().content is CoachMessageContent.AdviceRequest)
-        val summary = next.newMessages.last().content as? CoachMessageContent.AdviceSummary
+        val reply = next.assistantMessage
+        assertFalse(reply.fromUser)
+        val summary = reply.content as? CoachMessageContent.AdviceSummary
             ?: error("expected AdviceSummary")
         assertEquals("卧推", summary.advice.actionName)
         assertEquals(62.5, summary.advice.weightKg!!, 0.001)
         // Single machine-actionable suggestion for the next set (M3.3 prefill).
-        val suggestion = next.newMessages.last().suggestions.single()
+        val suggestion = reply.suggestions.single()
         assertEquals("胸部", suggestion.partName)
         assertEquals("卧推", suggestion.actionName)
         assertEquals(1, suggestion.sets)

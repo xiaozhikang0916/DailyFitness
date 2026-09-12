@@ -30,7 +30,8 @@ import kotlin.math.min
  *
  * Stateless with respect to the conversation: the caller passes its in-memory
  * [CoachMessage] history (engine keeps only the last [HISTORY_MESSAGES] = 5
- * rounds) and receives the new turn(s) inside the successful results. The LLM is
+ * rounds) and receives the assistant reply inside the successful results (the
+ * user turn is built locally by the caller). The LLM is
  * reached through [PlanExecutor] (client cache rebuilt on config change), so the
  * whole engine stays unit-testable with a fake executor (no network).
  */
@@ -90,17 +91,7 @@ class AiCoachEngine @Inject constructor(
                 return AiCoachResult.Failed(CoachFailure.NeedMoreWithoutHistory, retryable = true)
             }
             val mapped = mapPlan(reply, trainGroups, sessionsUsed = 0, rounds = 1)
-            return if (mapped is AiCoachResult.TodayPlan) {
-                mapped.copy(
-                    newMessages = turn(
-                        userContent = CoachMessageContent.PlanRequest(today, sessionsUsed = 0),
-                        assistantContent = CoachMessageContent.PlanSummary(mapped.parts),
-                        suggestions = suggestionsOf(mapped.parts),
-                    )
-                )
-            } else {
-                mapped
-            }
+            return mapped
         }
 
         var included = min(INITIAL_SESSIONS, historyDays.size)
@@ -121,18 +112,7 @@ class AiCoachEngine @Inject constructor(
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
             if (!reply.needMore) {
-                val mapped = mapPlan(reply, trainGroups, sessionsUsed = included, rounds = rounds)
-                return if (mapped is AiCoachResult.TodayPlan) {
-                    mapped.copy(
-                        newMessages = turn(
-                            userContent = CoachMessageContent.PlanRequest(today, sessionsUsed = included),
-                            assistantContent = CoachMessageContent.PlanSummary(mapped.parts),
-                            suggestions = suggestionsOf(mapped.parts),
-                        )
-                    )
-                } else {
-                    mapped
-                }
+                return mapPlan(reply, trainGroups, sessionsUsed = included, rounds = rounds)
             }
 
             val canExpand = !forceFallback &&
@@ -210,11 +190,17 @@ class AiCoachEngine @Inject constructor(
                 retryable = true,
             )
         }
+        val distinctIgnored = ignored.distinct()
         return AiCoachResult.TodayPlan(
             sessionsUsed = sessionsUsed,
             rounds = rounds,
             parts = parts,
-            ignoredNames = ignored.distinct(),
+            ignoredNames = distinctIgnored,
+            assistantMessage = CoachMessage(
+                fromUser = false,
+                content = CoachMessageContent.PlanSummary(parts, distinctIgnored),
+                suggestions = suggestionsOf(parts),
+            ),
         )
     }
 
@@ -231,7 +217,6 @@ class AiCoachEngine @Inject constructor(
         if (todaySummary == null || todaySummary.parts.isEmpty()) {
             return AiCoachResult.Failed(CoachFailure.CannotDetermineTodayParts, retryable = true)
         }
-        val setsToday = todayWorkout.actions.sumOf { it.trainAction.size }
         // The "current part" = part of the most recent set of today.
         val currentPartName = todayWorkout.actions
             .maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
@@ -311,31 +296,19 @@ class AiCoachEngine @Inject constructor(
             nextPartName = nextPartName,
             reason = reply.reason,
         )
+        val distinctIgnored = ignored.distinct()
         return AiCoachResult.NextAdvice(
             advice = advice,
-            ignoredNames = ignored.distinct(),
-            newMessages = turn(
-                userContent = CoachMessageContent.AdviceRequest(today, setsToday, currentPartName),
-                assistantContent = CoachMessageContent.AdviceSummary(advice),
+            ignoredNames = distinctIgnored,
+            assistantMessage = CoachMessage(
+                fromUser = false,
+                content = CoachMessageContent.AdviceSummary(advice, distinctIgnored),
                 suggestions = suggestionOf(currentPartName, advice),
             ),
         )
     }
 
     // ------------------------------------------------------------- turn helpers
-
-    /**
-     * New conversation turn (UI-agnostic content descriptors). The assistant
-     * message also carries machine-actionable suggestions for M3.3 prefill.
-     */
-    private fun turn(
-        userContent: CoachMessageContent,
-        assistantContent: CoachMessageContent,
-        suggestions: List<CoachSuggestion> = emptyList(),
-    ): List<CoachMessage> = listOf(
-        CoachMessage(fromUser = true, content = userContent),
-        CoachMessage(fromUser = false, content = assistantContent, suggestions = suggestions),
-    )
 
     private fun suggestionsOf(parts: List<RecommendedPart>): List<CoachSuggestion> =
         parts.flatMap { part ->

@@ -6,6 +6,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
 import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import javax.inject.Inject
 
@@ -56,9 +57,13 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> {
+                on<AiCoachUiAction.Refresh> { action ->
                     override {
-                        AiCoachUiState.Loading(setsToday = this.setsToday, history = this.history)
+                        AiCoachUiState.Loading(
+                            setsToday = this.setsToday,
+                            requestHistory = this.history,
+                            pendingUserContent = action.userContent,
+                        )
                     }
                 }
             }
@@ -67,9 +72,13 @@ class AiCoachStateMachine @Inject constructor(
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> {
+                on<AiCoachUiAction.Refresh> { action ->
                     override {
-                        AiCoachUiState.Loading(setsToday = this.setsToday, history = this.history)
+                        AiCoachUiState.Loading(
+                            setsToday = this.setsToday,
+                            requestHistory = this.history,
+                            pendingUserContent = action.userContent,
+                        )
                     }
                 }
             }
@@ -77,8 +86,13 @@ class AiCoachStateMachine @Inject constructor(
             inState<AiCoachUiState.Loading> {
                 onEnter {
                     val setsToday = snapshot.setsToday
-                    // Full in-memory conversation; the 5-round/10-message request cap lives in AiCoachEngine.
-                    val history = snapshot.history
+                    val turnId = snapshot.pendingTurnId
+                    // Raw conversation only: the pending user/loading bubbles added by
+                    // Loading.history must never be sent to the engine/LLM.
+                    val history = snapshot.requestHistory
+                    // Rendered history minus the trailing pending loading bubble; the
+                    // reply replaces it, keeping the pending user bubble in place.
+                    val baseHistory = snapshot.history.dropLast(1)
                     val next = runCatching { aiCoach.recommendToday(history) }
                         .getOrElse {
                             AiCoachResult.Failed(
@@ -92,22 +106,13 @@ class AiCoachStateMachine @Inject constructor(
                             AiCoachUiState.Idle(setsToday, UiContent.NoTrainParts, history)
                         is AiCoachResult.TodayPlan -> AiCoachUiState.Idle(
                             setsToday = setsToday,
-                            content = UiContent.TodayPlan(
-                                parts = next.parts,
-                                sessionsUsed = next.sessionsUsed,
-                                rounds = next.rounds,
-                                ignoredNames = next.ignoredNames,
-                            ),
-                            history = history + next.newMessages,
+                            content = null,
+                            history = baseHistory + next.assistantMessage.taggedAsAssistant(turnId),
                         )
                         is AiCoachResult.NextAdvice -> AiCoachUiState.Idle(
                             setsToday = setsToday,
-                            content = UiContent.NextAdvice(
-                                advice = next.advice,
-                                ignoredNames = next.ignoredNames,
-                                suggestions = next.newMessages.flatMap { it.suggestions },
-                            ),
-                            history = history + next.newMessages,
+                            content = null,
+                            history = baseHistory + next.assistantMessage.taggedAsAssistant(turnId),
                         )
                         is AiCoachResult.Failed -> AiCoachUiState.Error(
                             setsToday = setsToday,
@@ -123,3 +128,11 @@ class AiCoachStateMachine @Inject constructor(
     }
 
 }
+
+/**
+ * Stamps the assistant reply with the id of the pending loading bubble
+ * (`<turnId>:assistant`), so the LazyColumn reuses the same item when the reply
+ * arrives and the loading bubble can animate into it in place.
+ */
+private fun CoachMessage.taggedAsAssistant(turnId: String): CoachMessage =
+    copy(id = "$turnId:assistant")

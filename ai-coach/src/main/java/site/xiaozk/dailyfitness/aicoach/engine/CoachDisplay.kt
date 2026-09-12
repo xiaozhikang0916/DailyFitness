@@ -11,10 +11,14 @@ import kotlinx.datetime.LocalDate
  */
 sealed interface CoachMessageContent {
 
-    /** Case A request: today has no workout records yet. */
+    /**
+     * Case A request: today has no workout records yet.
+     *
+     * Built locally by the UI layer (today's state is client-side data), so it can be
+     * shown immediately without waiting for the LLM round-trip.
+     */
     data class PlanRequest(
         val date: LocalDate,
-        val sessionsUsed: Int,
     ) : CoachMessageContent
 
     /** Case B request: today already has records, asking for the next step. */
@@ -25,10 +29,22 @@ sealed interface CoachMessageContent {
     ) : CoachMessageContent
 
     /** Assistant turn summarizing a recommended plan. */
-    data class PlanSummary(val parts: List<RecommendedPart>) : CoachMessageContent
+    data class PlanSummary(
+        val parts: List<RecommendedPart>,
+        val ignoredNames: List<String> = emptyList(),
+    ) : CoachMessageContent
 
     /** Assistant turn summarizing a next-step advice. */
-    data class AdviceSummary(val advice: Advice) : CoachMessageContent
+    data class AdviceSummary(
+        val advice: Advice,
+        val ignoredNames: List<String> = emptyList(),
+    ) : CoachMessageContent
+
+    /**
+     * Transient placeholder appended to the UI conversation while a request is in
+     * flight. The UI renders it as a loading bubble and it is never sent to the LLM.
+     */
+    data object Loading : CoachMessageContent
 }
 
 /**

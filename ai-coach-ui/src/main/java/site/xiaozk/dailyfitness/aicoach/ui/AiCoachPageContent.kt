@@ -1,5 +1,17 @@
 package site.xiaozk.dailyfitness.aicoach.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,11 +21,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -25,6 +38,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +66,10 @@ import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
  * AI Coach tab content - purely presentational. The tab shell (top bar / bottom
  * navigation) lives in the app; this composable only renders the states produced
  * by [AiCoachViewModel].
+ *
+ * The chat is a single flat [LazyColumn]: the last assistant bubble is either the
+ * pending loading bubble or the real reply, and both share the same stable item id
+ * so the loading bubble animates into the reply in place.
  */
 @Composable
 fun AiCoachPageContent(
@@ -55,23 +81,12 @@ fun AiCoachPageContent(
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
     val listState = rememberLazyListState()
-    // When the latest result is rendered as a structured card, the trailing
-    // assistant message would be duplicated; hide it from the chat list.
-    val latestContent = (state as? AiCoachUiState.Idle)?.content
-    val history = state.conversation
-    val chatHistory = if (
-        (latestContent is UiContent.TodayPlan || latestContent is UiContent.NextAdvice) &&
-        history.lastOrNull()?.fromUser == false
-    ) {
-        history.dropLast(1)
-    } else {
-        history
-    }
+    val chatHistory = state.history
 
-    // Keep the newest turn/result in view: on first entry and whenever a new
-    // message or structured result arrives. Wait for the first layout pass so the
-    // item count is known before scrolling.
-    LaunchedEffect(chatHistory.size, latestContent, state is AiCoachUiState.Initial) {
+    // Keep the newest turn in view: on first entry and whenever a new message (e.g.
+    // the pending bubble or the user turn) arrives. Wait for the first layout pass
+    // so the item count is known before scrolling.
+    LaunchedEffect(chatHistory.size, state is AiCoachUiState.Initial) {
         snapshotFlow { listState.layoutInfo.totalItemsCount }
             .filter { it > 0 }
             .first()
@@ -102,24 +117,31 @@ fun AiCoachPageContent(
                     color = MaterialTheme.colorScheme.outline,
                 )
             }
-            items(chatHistory) { message -> ChatBubble(message) }
+            itemsIndexed(
+                items = chatHistory,
+                // Stable ids let the pending bubble and its real reply share one item,
+                // so the message slides down (animateItem) and morphs in place.
+                key = { index, message -> message.id ?: "msg-$index" },
+            ) { _, message ->
+                ChatBubble(
+                    message = message,
+                    onAdoptSuggestion = onAdoptSuggestion,
+                    modifier = Modifier.animateItem(),
+                )
+            }
         }
         item(key = "content-tail") {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 when (state) {
-                    AiCoachUiState.Initial -> LoadingHint()
+                    AiCoachUiState.Initial -> Unit
                     AiCoachUiState.ConfigMissing -> ConfigMissingHint(onOpenSettings)
-                    is AiCoachUiState.Idle -> when (val content = state.content) {
-                        null -> RefreshCallToAction(onRefresh)
-                        else -> when (content) {
-                            UiContent.NoTrainParts -> EmptyContentHint()
-                            is UiContent.TodayPlan ->
-                                TodayPlanContent(content, onRefresh, onAdoptSuggestion)
-                            is UiContent.NextAdvice ->
-                                NextAdviceContent(content, onRefresh, onAdoptSuggestion)
-                        }
+                    is AiCoachUiState.Idle -> when {
+                        state.content is UiContent.NoTrainParts -> EmptyContentHint()
+                        // No assistant turn yet: the first-run call to action.
+                        state.history.none { !it.fromUser } -> RefreshCallToAction(onRefresh)
+                        else -> RefreshFooter(onRefresh)
                     }
-                    is AiCoachUiState.Loading -> LoadingHint()
+                    is AiCoachUiState.Loading -> Unit // The pending assistant bubble is the loading affordance.
                     is AiCoachUiState.Error -> ErrorContent(state, onRefresh)
                 }
             }
@@ -127,10 +149,149 @@ fun AiCoachPageContent(
     }
 }
 
+/** Bubble corner radii: large rounded sides, one pointed "tail" corner. */
+private val BubbleCornerRadius = 20.dp
+private val BubbleTailCornerRadius = 4.dp
+
+/**
+ * Material3-card-like speech bubble shape: large rounded corners everywhere except
+ * the corner pointing at the sender side (top-start for left/assistant bubbles,
+ * top-end for right/user bubbles), which is left pointed like a tail.
+ */
+private fun chatBubbleShape(fromUser: Boolean): RoundedCornerShape =
+    if (fromUser) {
+        RoundedCornerShape(
+            topStart = BubbleCornerRadius,
+            topEnd = BubbleTailCornerRadius,
+            bottomEnd = BubbleCornerRadius,
+            bottomStart = BubbleCornerRadius,
+        )
+    } else {
+        RoundedCornerShape(
+            topStart = BubbleTailCornerRadius,
+            topEnd = BubbleCornerRadius,
+            bottomEnd = BubbleCornerRadius,
+            bottomStart = BubbleCornerRadius,
+        )
+    }
+
+// Timing mirrors Material3's indeterminate CircularProgressIndicator (1.4.0):
+// 6000ms loop, 1080 deg global rotation + stepped 4x90 deg extra rotation, and a
+// highlighted sweep growing 0.1 -> 0.87 of the perimeter and back.
+private const val BubbleBorderDurationMillis = 6000
+private const val BubbleBorderGlobalRotationDegrees = 1080f
+private const val BubbleBorderSweepMin = 0.1f
+private const val BubbleBorderSweepMax = 0.87f
+
+/** M3 `MotionTokens.EasingEmphasizedDecelerateCubicBezier`. */
+private val BubbleBorderStepEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
+
+/** M3 `MotionTokens.EasingStandardCubicBezier`. */
+private val BubbleBorderSweepEasing = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
+
+/**
+ * Loading border: a highlighted segment of the bubble outline travels along the
+ * exact [shape] contour (incl. the pointed tail corner) while a faint track stays
+ * visible. Length and cycle follow Material3's circular loading animation.
+ */
 @Composable
-private fun ChatBubble(message: CoachMessage) {
+private fun Modifier.bubbleLoadingBorder(shape: Shape): Modifier {
+    val transition = rememberInfiniteTransition(label = "bubbleLoadingBorder")
+    val globalRotation = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = BubbleBorderGlobalRotationDegrees,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = BubbleBorderDurationMillis, easing = LinearEasing),
+        ),
+        label = "bubbleBorderGlobalRotation",
+    )
+    val additionalRotation = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = BubbleBorderDurationMillis
+                90f at 300 using BubbleBorderStepEasing
+                90f at 1500
+                180f at 1800
+                180f at 3000
+                270f at 3300
+                270f at 4500
+                360f at 4800
+                360f at 6000
+            },
+        ),
+        label = "bubbleBorderAdditionalRotation",
+    )
+    val sweepFraction = transition.animateFloat(
+        initialValue = BubbleBorderSweepMin,
+        targetValue = BubbleBorderSweepMax,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = BubbleBorderDurationMillis
+                BubbleBorderSweepMax at 3000 using BubbleBorderSweepEasing
+                BubbleBorderSweepMin at 6000
+            },
+        ),
+        label = "bubbleBorderSweep",
+    )
+
+    val trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+    val highlightColor = MaterialTheme.colorScheme.primary
+
+    return drawWithCache {
+        val strokeWidth = 2.dp.toPx()
+        val inset = strokeWidth / 2f
+        val insetSize = Size(
+            width = (size.width - strokeWidth).coerceAtLeast(0f),
+            height = (size.height - strokeWidth).coerceAtLeast(0f),
+        )
+        val outline = shape.createOutline(insetSize, layoutDirection, this)
+        val path = Path().apply {
+            when (outline) {
+                is Outline.Rounded -> addRoundRect(outline.roundRect)
+                is Outline.Rectangle -> addRect(outline.rect)
+                is Outline.Generic -> addPath(outline.path)
+                else -> Unit
+            }
+            translate(Offset(inset, inset))
+        }
+        val measure = PathMeasure().apply { setPath(path, false) }
+        val length = measure.length
+        val segment = Path()
+        val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        onDrawWithContent {
+            drawContent()
+            if (length <= 0f) return@onDrawWithContent
+            drawPath(path, color = trackColor, style = stroke)
+            // Anchor the *leading* edge to the rotation and let the sweep trail behind
+            // it, so shrinking pulls the tail forward instead of retracting the head.
+            val leading = ((globalRotation.value + additionalRotation.value) / 360f * length) % length
+            val sweep = (sweepFraction.value * length).coerceIn(0f, length)
+            val trailing = (leading - sweep + length) % length
+            segment.reset()
+            if (trailing <= leading) {
+                measure.getSegment(trailing, leading, segment, true)
+            } else {
+                measure.getSegment(trailing, length, segment, true)
+                measure.getSegment(0f, leading, segment, true)
+            }
+            drawPath(segment, color = highlightColor, style = stroke)
+        }
+    }
+}
+
+@Composable
+private fun ChatBubble(
+    message: CoachMessage,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = chatBubbleShape(message.fromUser)
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier),
         horizontalArrangement = if (message.fromUser) Arrangement.End else Arrangement.Start,
     ) {
         Surface(
@@ -139,16 +300,51 @@ private fun ChatBubble(message: CoachMessage) {
             } else {
                 MaterialTheme.colorScheme.surfaceVariant
             },
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.width(300.dp),
+            shape = shape,
+            // Hug up to 300dp and animate the size change (loading is tiny, the reply
+            // is a full card).
+            modifier = Modifier
+                .widthIn(max = 300.dp)
+                .animateContentSize(),
         ) {
-            Text(
-                text = coachMessageText(message.content),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(10.dp),
-            )
+            // Single AnimatedContent keeps one composition slot across
+            // loading -> reply, which is what makes the morph animation possible.
+            AnimatedContent(
+                targetState = message.isLoading,
+                modifier = if (message.isLoading) Modifier.bubbleLoadingBorder(shape) else Modifier,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "ai-coach-bubble",
+            ) { loading ->
+                when {
+                    loading -> LoadingBubbleContent()
+                    else -> when (val content = message.content) {
+                        is CoachMessageContent.PlanSummary ->
+                            PlanResultContent(content, onAdoptSuggestion)
+                        is CoachMessageContent.AdviceSummary ->
+                            AdviceResultContent(content, message.suggestions, onAdoptSuggestion)
+                        is CoachMessageContent.PlanRequest,
+                        is CoachMessageContent.AdviceRequest ->
+                            Text(
+                                text = userMessageText(content),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(10.dp),
+                            )
+                        CoachMessageContent.Loading -> LoadingBubbleContent()
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun LoadingBubbleContent() {
+    // Text-only loading state; the animated border on the bubble carries the motion.
+    Text(
+        text = stringResource(R.string.ai_loading),
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(10.dp),
+    )
 }
 
 @Composable
@@ -165,27 +361,19 @@ private fun ScenarioHeader(setsToday: Int) {
 }
 
 @Composable
-private fun LoadingHint() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(stringResource(R.string.ai_loading))
-    }
-}
-
-@Composable
 private fun RefreshCallToAction(onRefresh: () -> Unit) {
     Text(
         text = stringResource(R.string.ai_ready_hint),
         style = MaterialTheme.typography.bodyMedium,
     )
     Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.ai_refresh))
+    }
+}
+
+@Composable
+private fun RefreshFooter(onRefresh: () -> Unit) {
+    OutlinedButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.ai_refresh))
     }
 }
@@ -205,27 +393,71 @@ private fun ConfigMissingHint(onOpenSettings: () -> Unit) {
     }
 }
 
+/** Rich plan reply, rendered inside the assistant bubble. */
 @Composable
-private fun TodayPlanContent(
-    content: UiContent.TodayPlan,
-    onRefresh: () -> Unit,
+private fun PlanResultContent(
+    content: CoachMessageContent.PlanSummary,
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
-    Text(
-        text = stringResource(R.string.ai_plan_title),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-    )
-    content.parts.forEach { RecommendedPartCard(it, onAdoptSuggestion) }
-    content.ignoredNames.takeIf { it.isNotEmpty() }?.let { ignored ->
+    Column(modifier = Modifier.padding(10.dp)) {
+        Text(
+            text = stringResource(R.string.ai_plan_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        content.parts.forEach { RecommendedPartCard(it, onAdoptSuggestion) }
+        IgnoredHint(content.ignoredNames)
+    }
+}
+
+/** Rich next-step reply, rendered inside the assistant bubble. */
+@Composable
+private fun AdviceResultContent(
+    content: CoachMessageContent.AdviceSummary,
+    suggestions: List<CoachSuggestion>,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
+    Column(modifier = Modifier.padding(10.dp)) {
+        Text(
+            text = stringResource(R.string.ai_advice_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            text = adviceTitle(content.advice),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        content.advice.reason?.let {
+            Text(
+                text = stringResource(R.string.ai_advice_reason, it),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        IgnoredHint(content.ignoredNames)
+        suggestions.firstOrNull()?.let { suggestion ->
+            Button(
+                onClick = { onAdoptSuggestion(suggestion) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+            ) {
+                Text(stringResource(R.string.ai_adopt_to_add_set))
+            }
+        }
+    }
+}
+
+@Composable
+private fun IgnoredHint(names: List<String>) {
+    names.takeIf { it.isNotEmpty() }?.let { ignored ->
         Text(
             text = stringResource(R.string.ai_ignored_hint, ignored.joinToString("、")),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.padding(top = 6.dp),
         )
-    }
-    OutlinedButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.ai_refresh))
     }
 }
 
@@ -235,7 +467,10 @@ private fun RecommendedPartCard(
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 6.dp),
+        ) {
             Text(
                 text = part.partName,
                 style = MaterialTheme.typography.titleMedium,
@@ -299,49 +534,6 @@ private fun ActionLine(action: RecommendedAction, onAdopt: () -> Unit) {
 }
 
 @Composable
-private fun NextAdviceContent(
-    content: UiContent.NextAdvice,
-    onRefresh: () -> Unit,
-    onAdoptSuggestion: (CoachSuggestion) -> Unit,
-) {
-    Text(
-        text = stringResource(R.string.ai_advice_title),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-    )
-    Text(
-        text = adviceTitle(content.advice),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary,
-    )
-    content.advice.reason?.let {
-        Text(
-            text = stringResource(R.string.ai_advice_reason, it),
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-    content.ignoredNames.takeIf { it.isNotEmpty() }?.let { ignored ->
-        Text(
-            text = stringResource(R.string.ai_ignored_hint, ignored.joinToString("、")),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
-        )
-    }
-    content.suggestions.firstOrNull()?.let { suggestion ->
-        Button(
-            onClick = { onAdoptSuggestion(suggestion) },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.ai_adopt_to_add_set))
-        }
-    }
-    OutlinedButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.ai_refresh))
-    }
-}
-
-@Composable
 private fun EmptyContentHint() {
     Text(
         text = stringResource(R.string.ai_no_train_parts_hint),
@@ -368,42 +560,15 @@ private fun ErrorContent(state: AiCoachUiState.Error, onRefresh: () -> Unit) {
 // ---------------------------------------------------------------- text helpers
 
 @Composable
-private fun coachMessageText(content: CoachMessageContent): String = when (content) {
+private fun userMessageText(content: CoachMessageContent): String = when (content) {
     is CoachMessageContent.PlanRequest ->
-        stringResource(R.string.ai_chat_plan_request, content.sessionsUsed)
+        stringResource(R.string.ai_chat_plan_request)
     is CoachMessageContent.AdviceRequest ->
         stringResource(R.string.ai_chat_advice_request, content.setsToday, content.partName)
-    is CoachMessageContent.PlanSummary -> planSummaryText(content.parts)
-    is CoachMessageContent.AdviceSummary -> adviceSummaryText(content.advice)
-}
-
-@Composable
-private fun planSummaryText(parts: List<RecommendedPart>): String {
-    val partSeparator = stringResource(R.string.ai_summary_part_separator)
-    val actionSeparator = stringResource(R.string.ai_summary_action_separator)
-    val primarySuffix = stringResource(R.string.ai_summary_primary_suffix)
-    val partColon = stringResource(R.string.ai_summary_part_colon)
-    // `map` is inline, so composable helpers may be called in its lambda; the
-    // non-inline joins run over the already-resolved strings.
-    val actions = parts.map { part -> part.actions.map { actionLineText(it) } }
-    return parts.mapIndexed { index, part ->
-        val primary = if (part.isPrimary) primarySuffix else ""
-        part.partName + primary + partColon + actions[index].joinToString(actionSeparator)
-    }.joinToString(partSeparator)
-}
-
-@Composable
-private fun adviceSummaryText(advice: Advice): String {
-    val head = adviceTitle(advice)
-    val params = buildList {
-        if (advice.sets > 0) add(stringResource(R.string.ai_advice_params_sets, advice.sets))
-        advice.reps?.let { add(stringResource(R.string.ai_action_reps, it)) }
-        advice.weightKg?.let { add(stringResource(R.string.ai_action_weight, formatNumber(it))) }
-        advice.durationSec?.let { add(stringResource(R.string.ai_advice_params_duration, it)) }
-        advice.nextPartName?.let { add(stringResource(R.string.ai_advice_params_next_part, it)) }
-    }.joinToString(" ")
-    val reason = advice.reason?.let { stringResource(R.string.ai_advice_reason_inline, it) }.orEmpty()
-    return listOf(head, params).filter { it.isNotBlank() }.joinToString(" ") + reason
+    // Assistant replies and the loading placeholder are rendered as rich content.
+    is CoachMessageContent.PlanSummary,
+    is CoachMessageContent.AdviceSummary,
+    CoachMessageContent.Loading -> ""
 }
 
 @Composable

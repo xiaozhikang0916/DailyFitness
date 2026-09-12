@@ -31,7 +31,15 @@ data class CoachMessage(
     /** Structured suggestions carried by assistant turns, for M3.3 one-click adopt/prefill. */
     val suggestions: List<CoachSuggestion> = emptyList(),
     val at: Instant = Clock.System.now(),
-)
+    /**
+     * Stable identity assigned by the UI layer so a pending assistant bubble and the
+     * real reply that replaces it share one list item (in-place recomposition/animation).
+     */
+    val id: String? = null,
+) {
+    /** True while this is the transient "AI is thinking" bubble (see [CoachMessageContent.Loading]). */
+    val isLoading: Boolean get() = content is CoachMessageContent.Loading
+}
 
 /**
  * A machine-actionable recommendation (action/weight/reps, plus part/sets/duration
@@ -56,16 +64,16 @@ sealed interface AiCoachResult {
         val rounds: Int,
         val parts: List<RecommendedPart>,
         val ignoredNames: List<String>,
-        /** Turn produced by this request; caller appends it to its conversation. */
-        val newMessages: List<CoachMessage> = emptyList(),
+        /** Assistant reply; the matching user turn is built locally by the UI layer. */
+        val assistantMessage: CoachMessage,
     ) : AiCoachResult
 
     /** Case B: next-step advice. */
     data class NextAdvice(
         val advice: Advice,
         val ignoredNames: List<String> = emptyList(),
-        /** Turn produced by this request; caller appends it to its conversation. */
-        val newMessages: List<CoachMessage> = emptyList(),
+        /** Assistant reply; the matching user turn is built locally by the UI layer. */
+        val assistantMessage: CoachMessage,
     ) : AiCoachResult
 
     /** AI key/model not configured yet. */
