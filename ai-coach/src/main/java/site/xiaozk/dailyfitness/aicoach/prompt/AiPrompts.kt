@@ -11,63 +11,76 @@ import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 object AiPrompts {
 
     private val PART_PLAN_SYSTEM = """
-你是用户的私人健身教练。用户采用 4 分化训练：每天练 1~2 个部位，通常 4 次训练完成一个循环。
-你的任务：根据【训练历史】与【动作库】，推荐今天应训练的部位，并给出可直接照着练的完整计划。
+You are the user's personal fitness coach.
+Your task: based on the [Training History] and the [Exercise Catalog], and referring to the user's previous part-rotation habits and the intervals between sessions, recommend the body parts to train today and give a complete plan the user can follow directly.
 
-硬性规则：
-1. 部位名与动作名必须逐字复制自【动作库】，禁止自造、缩写或近似名称。
-2. 只能推荐【动作库】中真实存在的部位与动作。
-3. 数值单位：重量一律 kg，次数为整数次，时长为整数秒。
-4. 动作标注“负重/计数/计时”决定可填字段：负重→weightKg；计数→reps；计时→durationSec。不具备该能力的字段不要填。
-5. 每个动作给 3~5 组（sets）；若为首次训练或久未训练可适当降低。
-6. 正常情况 recommend 1~2 个部位，主推部位 isPrimary=true，另一个为备选；每个部位给 1~4 个动作。
-7. 若判定历史不足以给出可靠建议：needMore=true 并给出 wantSessions=还需要多少个完整训练日；此时不要填 plan。
-8. 若历史已足够（或已明确告知只能提供这些历史）：needMore=false，必须填 plan。
-9. reason 用一两句简短中文说明推荐理由。
+Hard rules:
+1. Part names and action names must be copied verbatim from the [Exercise Catalog]; inventing, abbreviating, or using similar names is forbidden.
+2. Only recommend parts and actions that actually exist in the [Exercise Catalog].
+3. Units: weight is always kg, reps are integers, duration is integer seconds.
+4. An action's "weighted/counted/timed" markers decide which fields may be filled: weighted -> weightKg; counted -> reps; timed -> durationSec. Do not fill fields the action does not support.
+5. Based on the number of sets the user habitually trains, give the recommended number of sets (sets); lower it appropriately for a first session or after a long break.
+6. Normally recommend 1-2 parts; the primary part has isPrimary=true and the other one is an alternative; give 1-4 actions per part.
+7. If you judge the history to be insufficient for a reliable recommendation: set needMore=true and give wantSessions=how many more complete training days are needed; do not fill plan in this case.
+8. If the history is sufficient (or you have been explicitly told that only this history can be provided): needMore=false, and plan must be filled.
+9. reason: explain the recommendation in one or two short sentences.
 """.trimIndent()
 
     private val NEXT_ADVICE_SYSTEM = """
-你是用户的私人健身教练。用户正在训练，你负责判断下一步该做什么。
-输入包含：【今日已练内容】【该部位近期历史】以及【动作库】。
-请你从下面四种动作中选且只选一种：
-- continue_current：当前动作继续做下一组 → 填 actionName(当前动作) + sets(建议再加几组,通常1~3) + weightKg/reps 或 durationSec（按动作类型，基于上一组微调，一般不超过上一组重量+2.5kg 的递增）；
-- switch_action：当前动作组数已够，建议换同部位的另一个动作 → actionName 填新动作名 + 新动作的建议 sets/reps/weightKg/durationSec；
-- finish_part：该部位今天训练量已够 → 可填 nextPartName 建议接下来练的部位（须来自动作库；不确定可不填）；
-- finish_day：今天总量已够，建议结束训练。
+You are the user's personal fitness coach. The user is training and you decide what to do next.
+The input contains: [Today's Completed Sets], the [Recent History for This Part], and the [Exercise Catalog].
+Base your recommendation on the user's habits with this action - whether they start light and work up, how many sets they usually do, and whether today's session so far can handle a higher intensity - and then recommend the next action.
+Choose exactly one of the following four actions:
+- continue_current: continue the current action with another set -> fill actionName (the current action) + sets (how many more sets to add) + weightKg/reps or durationSec (per action type, adjusted from the previous set);
+- switch_action: the current action has enough sets; switch to another action for the same part -> actionName is the new action name + the new action's recommended sets/reps/weightKg/durationSec;
+- finish_part: this part has had enough volume today -> optionally fill nextPartName with the part to train next (must come from the catalog; leave it empty if unsure);
+- finish_day: today's total volume is enough; recommend ending the workout.
 
-硬性规则：
-1. 所有部位名/动作名必须逐字来自【动作库】。
-2. 单位：重量 kg、次数整数次、时长整数秒；只填动作类型允许的字段。
-3. reason 用一两句中文解释（如训练量、间隔天数、渐进超负荷等）。
+Hard rules:
+1. All part names/action names must come verbatim from the [Exercise Catalog].
+2. Units: weight in kg, reps as integers, duration as integer seconds; only fill the fields allowed by the action type.
+3. reason: explain in one or two sentences (e.g. training volume, days since the last session, progressive overload).
 """.trimIndent()
 
-    fun partPlanSystem(): String = PART_PLAN_SYSTEM
+    /**
+     * Language contract appended to every system prompt.
+     *
+     * Free-text fields follow the caller's locale, while names taken from the
+     * catalog must stay verbatim (they are user data, not model copy).
+     */
+    private fun languageInstruction(localeTag: String): String = """
+Output language:
+- The user's locale is "$localeTag". Write every free-text field (such as reason) in the language matching that locale.
+- Part names and action names copied from the [Exercise Catalog] must keep their original wording and must never be translated.
+""".trimIndent()
 
-    fun nextAdviceSystem(): String = NEXT_ADVICE_SYSTEM
+    fun partPlanSystem(localeTag: String): String =
+        PART_PLAN_SYSTEM + "\n\n" + languageInstruction(localeTag)
 
-    /** 【动作库】section text, names only (+ type markers). Groups come straight from the repository models. */
+    fun nextAdviceSystem(localeTag: String): String =
+        NEXT_ADVICE_SYSTEM + "\n\n" + languageInstruction(localeTag)
+
+    /** [Exercise Catalog] section text, names only (+ type markers). Groups come straight from the repository models. */
     fun formatCatalog(groups: List<TrainPartGroup>): String = buildString {
-        appendLine("【动作库】（只能从这里选名称）")
+        appendLine("[Exercise Catalog] (choose names only from here)")
         groups.forEach { group ->
-            val actions = group.actions.joinToString("、") { action ->
+            val actions = group.actions.joinToString(", ") { action ->
                 action.actionName + actionTypeMark(action.isWeightedAction, action.isCountedAction, action.isTimedAction)
             }
-            appendLine("- ${group.part.partName}: ${actions}")
+            appendLine("- ${group.part.partName}: $actions")
         }
     }.trimEnd()
 
-    /** One session block, e.g. "3天前(2025-01-05)" + parts/actions/sets. */
+    /** One session block, e.g. "3 days ago (2025-01-05)" + parts/actions/sets. */
     fun formatSessionDay(session: SessionSummary, orderLabel: String? = null): String = buildString {
-        val header = buildString {
-            if (!orderLabel.isNullOrBlank()) append("$orderLabel ")
-            append("${session.daysAgo}天前(${session.date})")
-        }
-        appendLine(header)
+        val relative = if (session.daysAgo == 0) "today" else "${session.daysAgo} days ago"
+        val prefix = if (orderLabel.isNullOrBlank()) "" else "$orderLabel "
+        appendLine("$prefix$relative (${session.date})")
         session.parts.forEach { part ->
-            appendLine("  部位[${part.partName}]")
+            appendLine("  Part[${part.partName}]")
             part.actions.forEach { action ->
                 appendLine("    - ${action.actionName}${actionTypeMark(action)}")
-                val suffix = if (action.truncated) "（共${action.sets.size}组以上，仅列前${MAX_SETS_PER_ACTION}组）" else ""
+                val suffix = if (action.truncated) " (more than ${action.sets.size} sets total; showing first $MAX_SETS_PER_ACTION)" else ""
                 action.sets.forEach { set ->
                     appendLine("      ${formatSet(action, set)}")
                 }
@@ -77,9 +90,9 @@ object AiPrompts {
     }
 
     fun formatHistory(sessions: List<SessionSummary>): String = buildString {
-        appendLine("【训练历史】共 ${sessions.size} 个训练日")
+        appendLine("[Training History] ${sessions.size} training day(s)")
         sessions.forEachIndexed { index, session ->
-            append(formatSessionDay(session, orderLabel = "第${sessions.size - index}次"))
+            append(formatSessionDay(session, orderLabel = "Session ${sessions.size - index}"))
         }
     }.trimEnd()
 
@@ -92,14 +105,14 @@ object AiPrompts {
         appendLine(formatCatalog(groups))
         appendLine()
         if (history.isEmpty()) {
-            appendLine("【训练历史】空：没有可参考的历史记录。请直接基于【动作库】给出合理的首次推荐计划；")
-            appendLine("不要设置 needMore（没有更多历史可提供），必须返回完整 plan。")
+            appendLine("[Training History] empty: there are no past sessions to reference. Give a reasonable first-time recommendation based directly on the [Exercise Catalog];")
+            appendLine("do not set needMore (there is no more history to provide) and you must return a complete plan.")
         } else {
             appendLine(formatHistory(history))
         }
         if (!additionalNote.isNullOrBlank()) {
             appendLine()
-            appendLine("【补充说明】$additionalNote")
+            appendLine("[Additional Note] $additionalNote")
         }
     }.trimEnd()
 
@@ -112,17 +125,17 @@ object AiPrompts {
     ): String = buildString {
         appendLine(formatCatalog(groups))
         appendLine()
-        appendLine("【今日已练内容】")
-        appendLine(formatSessionDay(todaySession, orderLabel = "今天"))
+        appendLine("[Today's Completed Sets]")
+        appendLine(formatSessionDay(todaySession))
         appendLine()
         if (partHistory.isEmpty()) {
             if (lastPartDaysAgo == null) {
-                appendLine("【该部位近期历史】空：今天之前从未练过该部位，请主要依据今日已练内容与动作库判断。")
+                appendLine("[Recent History for This Part] empty: this part has never been trained before today; base your judgment mainly on today's completed sets and the catalog.")
             } else {
-                appendLine("【该部位近期历史】空（该部位最近一次训练在 ${lastPartDaysAgo} 天前，但不在下方历史窗口中）。")
+                appendLine("[Recent History for This Part] empty (this part was last trained $lastPartDaysAgo days ago, but that session is outside the history window below).")
             }
         } else {
-            appendLine("【该部位近期历史】距上次练该部位：${lastPartDaysAgo}天前")
+            appendLine("[Recent History for This Part] last trained this part: $lastPartDaysAgo days ago")
             appendLine(formatHistory(partHistory))
         }
     }.trimEnd()
@@ -136,9 +149,9 @@ object AiPrompts {
             parts += "×" + set.reps
         }
         if (action.isTimedAction && set.durationSec != null) {
-            parts += formatNumber(set.durationSec.toDouble()) + "秒"
+            parts += formatNumber(set.durationSec.toDouble()) + "s"
         }
-        if (parts.isEmpty()) parts += "(无参数记录)"
+        if (parts.isEmpty()) parts += "(no recorded parameters)"
         return parts.joinToString("")
     }
 
@@ -152,10 +165,10 @@ object AiPrompts {
 
     private fun actionTypeMark(weighted: Boolean, counted: Boolean, timed: Boolean): String {
         val marks = buildList {
-            if (weighted) add("负重")
-            if (counted) add("计数")
-            if (timed) add("计时")
+            if (weighted) add("weighted")
+            if (counted) add("counted")
+            if (timed) add("timed")
         }
-        return if (marks.isEmpty()) "(无参数)" else "(${marks.joinToString("+")})"
+        return if (marks.isEmpty()) "(no parameters)" else "(${marks.joinToString("+")})"
     }
 }

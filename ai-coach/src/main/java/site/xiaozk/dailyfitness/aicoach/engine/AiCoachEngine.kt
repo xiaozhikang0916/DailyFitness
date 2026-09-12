@@ -42,6 +42,7 @@ class AiCoachEngine @Inject constructor(
     private val workoutRepository: IDailyWorkoutRepository,
     private val trainRepository: ITrainActionRepository,
     private val planExecutor: PlanExecutor,
+    private val coachLocaleProvider: CoachLocaleProvider,
 ) : IAiCoach {
 
     private val gate = Mutex()
@@ -85,7 +86,7 @@ class AiCoachEngine @Inject constructor(
             // No history at all: the model must answer with a plan (needMore is forbidden).
             val userText = AiPrompts.partPlanUser(trainGroups, emptyList())
             val reply = planExecutor.request(
-                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, history, PartPlanReply.serializer(),
+                "aicoach-part-plan", AiPrompts.partPlanSystem(coachLocaleProvider.languageTag()), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
             if (reply.needMore || reply.plan.isNullOrEmpty()) {
                 return AiCoachResult.Failed(CoachFailure.NeedMoreWithoutHistory, retryable = true)
@@ -102,13 +103,13 @@ class AiCoachEngine @Inject constructor(
             rounds++
             val window = historyDays.subList(max(0, historyDays.size - included), historyDays.size)
             val additionalNote = if (forceFallback) {
-                "无法再提供更多训练历史（已包含最近 $included 个训练日）。请基于现有数据直接给出推荐。"
+                "No more training history can be provided (the most recent $included training days are already included). Give a recommendation based on the available data now."
             } else {
                 null
             }
             val userText = AiPrompts.partPlanUser(trainGroups, window, additionalNote)
             val reply = planExecutor.request(
-                "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, history, PartPlanReply.serializer(),
+                "aicoach-part-plan", AiPrompts.partPlanSystem(coachLocaleProvider.languageTag()), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
             if (!reply.needMore) {
@@ -242,7 +243,7 @@ class AiCoachEngine @Inject constructor(
 
         val userText = AiPrompts.nextAdviceUser(trainGroups, todaySummary, partHistory, lastPartDaysAgo)
         val reply = planExecutor.request(
-            "aicoach-next-advice", AiPrompts.nextAdviceSystem(), userText, history, NextAdviceReply.serializer(),
+            "aicoach-next-advice", AiPrompts.nextAdviceSystem(coachLocaleProvider.languageTag()), userText, history, NextAdviceReply.serializer(),
         ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
         val ignored = mutableListOf<String>()

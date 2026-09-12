@@ -43,6 +43,7 @@ class AiCoachEngineTest {
         map: DailyWorkoutMap = workoutMap(),
         groups: List<TrainPartGroup>? = null,
         executor: FakePlanExecutor = FakePlanExecutor(),
+        locale: CoachLocaleProvider = CoachLocaleProvider { "en-US" },
     ): AiCoachEngine {
         val resolvedGroups = groups ?: chestGroups()
         val store = FakeConfigStore(config)
@@ -58,6 +59,7 @@ class AiCoachEngineTest {
             workoutRepository = FakeWorkoutRepository(map),
             trainRepository = FakeTrainActionRepository(resolvedGroups),
             planExecutor = executor,
+            coachLocaleProvider = locale,
         )
     }
 
@@ -118,7 +120,7 @@ class AiCoachEngineTest {
         assertEquals(listOf(4, 3), plan.parts.single().actions.map { it.sets })
         assertEquals(emptyList<String>(), plan.ignoredNames)
         assertEquals(1, executor.calls.size)
-        assertTrue(executor.partPlanRequests.single().contains("【训练历史】空"))
+        assertTrue(executor.partPlanRequests.single().contains("[Training History] empty"))
     }
 
     @Test
@@ -136,7 +138,7 @@ class AiCoachEngineTest {
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(3, plan.sessionsUsed)
         assertEquals(2, executor.calls.size)
-        assertTrue(executor.partPlanRequests.last().contains("无法再提供更多训练历史"))
+        assertTrue(executor.partPlanRequests.last().contains("No more training history can be provided"))
     }
 
     @Test
@@ -153,7 +155,7 @@ class AiCoachEngineTest {
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(4, executor.calls.size)
         assertTrue(plan.rounds >= 3)
-        assertTrue(executor.partPlanRequests.last().contains("无法再提供更多训练历史"))
+        assertTrue(executor.partPlanRequests.last().contains("No more training history can be provided"))
     }
 
     @Test
@@ -236,8 +238,8 @@ class AiCoachEngineTest {
         assertEquals(62.5, advice.weightKg!!, 0.001)
         assertEquals(emptyList<String>(), next.ignoredNames)
         val userText = executor.nextAdviceRequests.single()
-        assertTrue(userText.contains("【今日已练内容】"))
-        assertTrue(userText.contains("距上次练该部位：4天前"))
+        assertTrue(userText.contains("[Today's Completed Sets]"))
+        assertTrue(userText.contains("last trained this part: 4 days ago"))
     }
 
     @Test
@@ -280,7 +282,7 @@ class AiCoachEngineTest {
         val engine = newEngine(map = map, executor = executor)
         val result = engine.recommendToday(emptyList())
         assertTrue(result is AiCoachResult.NextAdvice)
-        assertTrue(executor.nextAdviceRequests.single().contains("从未练过该部位"))
+        assertTrue(executor.nextAdviceRequests.single().contains("never been trained before today"))
     }
 
     // ------------------------------------------------------- conversation memory

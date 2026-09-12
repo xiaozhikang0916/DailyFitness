@@ -72,6 +72,7 @@ class AiCoachRealLlmTest {
             workoutRepository = FakeWorkoutRepository(map),
             trainRepository = FakeTrainActionRepository(chestGroups()),
             planExecutor = executor,
+            coachLocaleProvider = CoachLocaleProvider { "zh-CN" },
         )
     }
 

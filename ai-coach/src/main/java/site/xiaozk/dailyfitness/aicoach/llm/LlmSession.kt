@@ -12,6 +12,7 @@ import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import kotlinx.serialization.KSerializer
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
+import site.xiaozk.dailyfitness.aicoach.prompt.toPromptText
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import site.xiaozk.dailyfitness.repository.model.AiCoachModel
 import javax.inject.Inject

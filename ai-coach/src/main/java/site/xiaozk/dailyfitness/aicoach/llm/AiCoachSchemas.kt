@@ -14,37 +14,37 @@ import kotlinx.serialization.Serializable
 /** Case A reply: today's part plan, or a request for more history. */
 @Serializable
 data class PartPlanReply(
-    @property:LLMDescription("是否需要更多训练历史才能可靠推荐")
+    @property:LLMDescription("Whether more training history is needed for a reliable recommendation")
     val needMore: Boolean = false,
-    @property:LLMDescription("needMore=true 时：还需要多少个完整的训练日（天数）")
+    @property:LLMDescription("When needMore=true: how many more complete training days are needed")
     val wantSessions: Int? = null,
-    @property:LLMDescription("needMore=false 时的推荐计划，1~2 个部位")
+    @property:LLMDescription("Recommendation plan when needMore=false, 1-2 parts")
     val plan: List<PartPlan>? = null,
 )
 
 @Serializable
 data class PartPlan(
-    @property:LLMDescription("部位名，必须逐字来自动作库")
+    @property:LLMDescription("Part name; must be copied verbatim from the exercise catalog")
     val partName: String,
-    @property:LLMDescription("是否主推部位")
+    @property:LLMDescription("Whether this is the primary part")
     val isPrimary: Boolean = false,
-    @property:LLMDescription("推荐理由（简短中文）")
+    @property:LLMDescription("Short reason for the recommendation")
     val reason: String? = null,
-    @property:LLMDescription("该部位建议的动作，1~4 个")
+    @property:LLMDescription("Recommended actions for this part, 1-4")
     val actions: List<ActionPlan> = emptyList(),
 )
 
 @Serializable
 data class ActionPlan(
-    @property:LLMDescription("动作名，必须逐字来自动作库")
+    @property:LLMDescription("Action name; must be copied verbatim from the exercise catalog")
     val actionName: String,
-    @property:LLMDescription("建议组数，通常 3~5")
+    @property:LLMDescription("Recommended number of sets, usually 3-5")
     val sets: Int? = null,
-    @property:LLMDescription("每组建议次数（仅计数类动作）")
+    @property:LLMDescription("Recommended reps per set (counted actions only)")
     val reps: Int? = null,
-    @property:LLMDescription("建议重量 kg（仅负重类动作）")
+    @property:LLMDescription("Recommended weight in kg (weighted actions only)")
     val weightKg: Double? = null,
-    @property:LLMDescription("建议时长秒（仅计时类动作）")
+    @property:LLMDescription("Recommended duration in seconds (timed actions only)")
     val durationSec: Int? = null,
 )
 
@@ -52,37 +52,37 @@ data class ActionPlan(
 @Serializable
 enum class AdviceKindReply {
     @SerialName("continue_current")
-    @LLMDescription("继续当前动作做下一组")
+    @LLMDescription("Continue the current action with another set")
     CONTINUE_CURRENT,
 
     @SerialName("switch_action")
-    @LLMDescription("当前动作已够，换本部位另一动作")
+    @LLMDescription("Current action has enough sets; switch to another action for the same part")
     SWITCH_ACTION,
 
     @SerialName("finish_part")
-    @LLMDescription("该部位今天已够，可换部位")
+    @LLMDescription("This part has had enough today; can switch parts")
     FINISH_PART,
 
     @SerialName("finish_day")
-    @LLMDescription("今天总量已够，建议结束")
+    @LLMDescription("Today's total volume is enough; recommend ending")
     FINISH_DAY,
 }
 
 @Serializable
 data class NextAdviceReply(
     val kind: AdviceKindReply,
-    @property:LLMDescription("涉及的动作名（continue_current 或 switch_action 时），须来自动作库")
+    @property:LLMDescription("Involved action name (for continue_current or switch_action); must come from the exercise catalog")
     val actionName: String? = null,
-    @property:LLMDescription("建议再加/改做几组，通常 1~3")
+    @property:LLMDescription("Recommended additional/changed sets, usually 1-3")
     val sets: Int? = null,
-    @property:LLMDescription("每组建议次数（仅计数类）")
+    @property:LLMDescription("Recommended reps per set (counted actions only)")
     val reps: Int? = null,
-    @property:LLMDescription("建议重量 kg（仅负重类）")
+    @property:LLMDescription("Recommended weight in kg (weighted actions only)")
     val weightKg: Double? = null,
-    @property:LLMDescription("建议时长秒（仅计时类）")
+    @property:LLMDescription("Recommended duration in seconds (timed actions only)")
     val durationSec: Int? = null,
-    @property:LLMDescription("finish_part 时建议的下一个部位名，须来自动作库")
+    @property:LLMDescription("For finish_part: recommended next part name, must come from the exercise catalog")
     val nextPartName: String? = null,
-    @property:LLMDescription("建议理由（简短中文）")
+    @property:LLMDescription("Short reason for the advice")
     val reason: String? = null,
 )

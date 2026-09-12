@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
+import site.xiaozk.dailyfitness.aicoach.prompt.toPromptText
 
 /**
  * Verifies the exact LLM request built for the AI Coach: a system rule message,
