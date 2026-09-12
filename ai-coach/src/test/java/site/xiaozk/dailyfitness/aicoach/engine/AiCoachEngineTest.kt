@@ -2,6 +2,7 @@ package site.xiaozk.dailyfitness.aicoach.engine
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -169,7 +170,7 @@ class AiCoachEngineTest {
         val engine = newEngine(executor = executor)
         val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
-        assertTrue(result.message.contains("无法匹配"))
+        assertEquals(CoachFailure.PlanNotMatched, result.failure)
         assertTrue(result.retryable)
     }
 
@@ -181,7 +182,7 @@ class AiCoachEngineTest {
         val engine = newEngine(executor = executor)
         val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
-        assertTrue(result.message.contains("网络连接失败"))
+        assertEquals(CoachFailure.Network, result.failure)
         assertTrue(result.retryable)
     }
 
@@ -248,7 +249,7 @@ class AiCoachEngineTest {
         val engine = newEngine(map = todayChestWorkout(), executor = executor)
         val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
-        assertTrue(result.message.contains("不在你的动作库中"))
+        assertEquals(CoachFailure.SuggestedActionNotInLibrary, result.failure)
     }
 
     @Test
@@ -288,9 +289,9 @@ class AiCoachEngineTest {
         val executor = FakePlanExecutor().apply { enqueuePartPlan(Result.success(chestPlan())) }
         val engine = newEngine(executor = executor)
         val conversation = (1..14).map { index ->
-            site.xiaozk.dailyfitness.aicoach.engine.CoachMessage(
+            CoachMessage(
                 fromUser = index % 2 == 1,
-                text = "message-$index",
+                content = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1), sessionsUsed = index),
             )
         }
 
@@ -301,7 +302,7 @@ class AiCoachEngineTest {
         val plan = result as? AiCoachResult.TodayPlan ?: error("expected TodayPlan")
         assertEquals(2, plan.newMessages.size)
         assertTrue(plan.newMessages.first().fromUser)
-        assertTrue(plan.newMessages.first().text.contains("Case A"))
+        assertTrue(plan.newMessages.first().content is CoachMessageContent.PlanRequest)
         // Structured suggestions for M3.3 prefill: one per planned action.
         val suggestions = plan.newMessages.last().suggestions
         assertEquals(2, suggestions.size)
@@ -333,9 +334,11 @@ class AiCoachEngineTest {
 
         val next = result as? AiCoachResult.NextAdvice ?: error("expected NextAdvice")
         assertEquals(2, next.newMessages.size)
-        assertTrue(next.newMessages.first().text.contains("Case B"))
-        assertTrue(next.newMessages.last().text.contains("卧推"))
-        assertTrue(next.newMessages.last().text.contains("62.5kg"))
+        assertTrue(next.newMessages.first().content is CoachMessageContent.AdviceRequest)
+        val summary = next.newMessages.last().content as? CoachMessageContent.AdviceSummary
+            ?: error("expected AdviceSummary")
+        assertEquals("卧推", summary.advice.actionName)
+        assertEquals(62.5, summary.advice.weightKg!!, 0.001)
         // Single machine-actionable suggestion for the next set (M3.3 prefill).
         val suggestion = next.newMessages.last().suggestions.single()
         assertEquals("胸部", suggestion.partName)

@@ -19,10 +19,15 @@ interface IAiCoach {
     suspend fun recommendToday(history: List<CoachMessage> = emptyList()): AiCoachResult
 }
 
-/** One in-memory conversation message (never persisted). */
+/**
+ * One in-memory conversation message (never persisted).
+ *
+ * [content] is a UI-agnostic descriptor: the engine never hardcodes display text,
+ * the UI layer resolves it to localized string resources.
+ */
 data class CoachMessage(
     val fromUser: Boolean,
-    val text: String,
+    val content: CoachMessageContent,
     /** Structured suggestions carried by assistant turns, for M3.3 one-click adopt/prefill. */
     val suggestions: List<CoachSuggestion> = emptyList(),
     val at: Instant = Clock.System.now(),
@@ -70,7 +75,7 @@ sealed interface AiCoachResult {
     data object NoTrainParts : AiCoachResult
 
     data class Failed(
-        val message: String,
+        val failure: CoachFailure,
         val retryable: Boolean,
     ) : AiCoachResult
 }

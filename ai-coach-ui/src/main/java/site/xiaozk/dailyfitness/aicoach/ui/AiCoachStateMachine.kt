@@ -5,6 +5,7 @@ import com.freeletics.flowredux2.initializeWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
+import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import javax.inject.Inject
 
@@ -79,7 +80,12 @@ class AiCoachStateMachine @Inject constructor(
                     // Full in-memory conversation; the 5-round/10-message request cap lives in AiCoachEngine.
                     val history = snapshot.history
                     val next = runCatching { aiCoach.recommendToday(history) }
-                        .getOrElse { AiCoachResult.Failed(it.message ?: "unknown", retryable = true) }
+                        .getOrElse {
+                            AiCoachResult.Failed(
+                                CoachFailure.ModelError(it.message ?: it.javaClass.simpleName),
+                                retryable = true,
+                            )
+                        }
                     val target = when (next) {
                         is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
                         AiCoachResult.NoTrainParts ->
@@ -105,7 +111,7 @@ class AiCoachStateMachine @Inject constructor(
                         )
                         is AiCoachResult.Failed -> AiCoachUiState.Error(
                             setsToday = setsToday,
-                            message = next.message,
+                            failure = next.failure,
                             retryable = next.retryable,
                             history = history,
                         )

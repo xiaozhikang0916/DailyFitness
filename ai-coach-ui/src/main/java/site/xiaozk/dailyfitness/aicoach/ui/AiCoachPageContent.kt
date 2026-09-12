@@ -33,7 +33,9 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
+import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
 import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedAction
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
@@ -141,7 +143,7 @@ private fun ChatBubble(message: CoachMessage) {
             modifier = Modifier.width(300.dp),
         ) {
             Text(
-                text = message.text,
+                text = coachMessageText(message.content),
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(10.dp),
             )
@@ -355,7 +357,7 @@ private fun ErrorContent(state: AiCoachUiState.Error, onRefresh: () -> Unit) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
     )
-    Text(text = state.message, style = MaterialTheme.typography.bodyMedium)
+    Text(text = failureText(state.failure), style = MaterialTheme.typography.bodyMedium)
     if (state.retryable) {
         Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.ai_retry))
@@ -365,13 +367,70 @@ private fun ErrorContent(state: AiCoachUiState.Error, onRefresh: () -> Unit) {
 
 // ---------------------------------------------------------------- text helpers
 
+@Composable
+private fun coachMessageText(content: CoachMessageContent): String = when (content) {
+    is CoachMessageContent.PlanRequest ->
+        stringResource(R.string.ai_chat_plan_request, content.sessionsUsed)
+    is CoachMessageContent.AdviceRequest ->
+        stringResource(R.string.ai_chat_advice_request, content.setsToday, content.partName)
+    is CoachMessageContent.PlanSummary -> planSummaryText(content.parts)
+    is CoachMessageContent.AdviceSummary -> adviceSummaryText(content.advice)
+}
+
+@Composable
+private fun planSummaryText(parts: List<RecommendedPart>): String {
+    val partSeparator = stringResource(R.string.ai_summary_part_separator)
+    val actionSeparator = stringResource(R.string.ai_summary_action_separator)
+    val primarySuffix = stringResource(R.string.ai_summary_primary_suffix)
+    val partColon = stringResource(R.string.ai_summary_part_colon)
+    // `map` is inline, so composable helpers may be called in its lambda; the
+    // non-inline joins run over the already-resolved strings.
+    val actions = parts.map { part -> part.actions.map { actionLineText(it) } }
+    return parts.mapIndexed { index, part ->
+        val primary = if (part.isPrimary) primarySuffix else ""
+        part.partName + primary + partColon + actions[index].joinToString(actionSeparator)
+    }.joinToString(partSeparator)
+}
+
+@Composable
+private fun adviceSummaryText(advice: Advice): String {
+    val head = adviceTitle(advice)
+    val params = buildList {
+        if (advice.sets > 0) add(stringResource(R.string.ai_advice_params_sets, advice.sets))
+        advice.reps?.let { add(stringResource(R.string.ai_action_reps, it)) }
+        advice.weightKg?.let { add(stringResource(R.string.ai_action_weight, formatNumber(it))) }
+        advice.durationSec?.let { add(stringResource(R.string.ai_advice_params_duration, it)) }
+        advice.nextPartName?.let { add(stringResource(R.string.ai_advice_params_next_part, it)) }
+    }.joinToString(" ")
+    val reason = advice.reason?.let { stringResource(R.string.ai_advice_reason_inline, it) }.orEmpty()
+    return listOf(head, params).filter { it.isNotBlank() }.joinToString(" ") + reason
+}
+
+@Composable
 private fun actionLineText(action: RecommendedAction): String {
-    val params = mutableListOf<String>()
-    if (action.weightKg != null) params += formatNumber(action.weightKg!!) + "kg"
-    if (action.reps != null) params += "×" + action.reps
-    if (action.durationSec != null) params += action.durationSec.toString() + "s"
-    val paramsText = params.joinToString(" ")
-    return "${action.actionName} · ${action.sets}组 ${paramsText}".trimEnd()
+    val params = buildList {
+        action.weightKg?.let { add(stringResource(R.string.ai_action_weight, formatNumber(it))) }
+        action.reps?.let { add(stringResource(R.string.ai_action_reps, it)) }
+        action.durationSec?.let { add(stringResource(R.string.ai_action_duration, it)) }
+    }.joinToString(" ")
+    val head = action.actionName + " · " + stringResource(R.string.ai_action_sets, action.sets)
+    return listOf(head, params).filter { it.isNotBlank() }.joinToString(" ")
+}
+
+@Composable
+private fun failureText(failure: CoachFailure): String = when (failure) {
+    CoachFailure.InvalidKey -> stringResource(R.string.ai_error_invalid_key)
+    CoachFailure.Network -> stringResource(R.string.ai_error_network)
+    CoachFailure.RateLimited -> stringResource(R.string.ai_error_rate_limited)
+    is CoachFailure.ModelError -> stringResource(R.string.ai_error_model, failure.detail)
+    CoachFailure.NeedMoreWithoutHistory -> stringResource(R.string.ai_error_need_more_without_history)
+    CoachFailure.InsufficientHistory -> stringResource(R.string.ai_error_insufficient_history)
+    CoachFailure.EmptyPlan -> stringResource(R.string.ai_error_empty_plan)
+    CoachFailure.PlanNotMatched -> stringResource(R.string.ai_error_plan_not_matched)
+    CoachFailure.CannotDetermineTodayParts -> stringResource(R.string.ai_error_cannot_determine_today_parts)
+    CoachFailure.CannotDetermineCurrentPart -> stringResource(R.string.ai_error_cannot_determine_current_part)
+    CoachFailure.CurrentPartNotInLibrary -> stringResource(R.string.ai_error_current_part_not_in_library)
+    CoachFailure.SuggestedActionNotInLibrary -> stringResource(R.string.ai_error_suggested_action_not_in_library)
 }
 
 @Composable

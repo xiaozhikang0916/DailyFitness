@@ -4,12 +4,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
+import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import site.xiaozk.dailyfitness.repository.IAiCoachConfigStore
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
@@ -97,8 +99,14 @@ class AiCoachStateMachineTest {
                 parts = emptyList(),
                 ignoredNames = emptyList(),
                 newMessages = listOf(
-                    CoachMessage(fromUser = true, text = "req ${histories.size}"),
-                    CoachMessage(fromUser = false, text = "plan ${histories.size}"),
+                    CoachMessage(
+                        fromUser = true,
+                        content = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1), histories.size),
+                    ),
+                    CoachMessage(
+                        fromUser = false,
+                        content = CoachMessageContent.PlanSummary(emptyList()),
+                    ),
                 ),
             )
         }

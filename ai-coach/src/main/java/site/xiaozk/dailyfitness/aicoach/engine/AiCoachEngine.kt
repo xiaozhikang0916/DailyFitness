@@ -87,17 +87,14 @@ class AiCoachEngine @Inject constructor(
                 "aicoach-part-plan", AiPrompts.partPlanSystem(), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
             if (reply.needMore || reply.plan.isNullOrEmpty()) {
-                return AiCoachResult.Failed(
-                    "AI 在没有任何历史可提供时仍请求更多数据或返回了空计划，请重试。",
-                    retryable = true,
-                )
+                return AiCoachResult.Failed(CoachFailure.NeedMoreWithoutHistory, retryable = true)
             }
             val mapped = mapPlan(reply, trainGroups, sessionsUsed = 0, rounds = 1)
             return if (mapped is AiCoachResult.TodayPlan) {
                 mapped.copy(
                     newMessages = turn(
-                        userLabel = planRequestLabel(today, sessionsUsed = 0),
-                        assistantLabel = planSummary(mapped.parts),
+                        userContent = CoachMessageContent.PlanRequest(today, sessionsUsed = 0),
+                        assistantContent = CoachMessageContent.PlanSummary(mapped.parts),
                         suggestions = suggestionsOf(mapped.parts),
                     )
                 )
@@ -128,8 +125,9 @@ class AiCoachEngine @Inject constructor(
                 return if (mapped is AiCoachResult.TodayPlan) {
                     mapped.copy(
                         newMessages = turn(
-                            userLabel = planRequestLabel(today, sessionsUsed = included),
-                            assistantLabel = planSummary(mapped.parts),
+                            userContent = CoachMessageContent.PlanRequest(today, sessionsUsed = included),
+                            assistantContent = CoachMessageContent.PlanSummary(mapped.parts),
+                            suggestions = suggestionsOf(mapped.parts),
                         )
                     )
                 } else {
@@ -152,7 +150,7 @@ class AiCoachEngine @Inject constructor(
                 continue
             }
             return AiCoachResult.Failed(
-                "AI 在多次补充训练历史后仍认为数据不足，无法给出建议。请稍后重试或更换模型。",
+                CoachFailure.InsufficientHistory,
                 retryable = true,
             )
         }
@@ -167,7 +165,7 @@ class AiCoachEngine @Inject constructor(
         val ignored = mutableListOf<String>()
         val rawParts = reply.plan.orEmpty()
         if (rawParts.isEmpty()) {
-            return AiCoachResult.Failed("AI 未返回可用的训练计划，请重试。", retryable = true)
+            return AiCoachResult.Failed(CoachFailure.EmptyPlan, retryable = true)
         }
         val parts = rawParts.mapNotNull { planPart ->
             val group = trainGroups.firstOrNull {
@@ -208,7 +206,7 @@ class AiCoachEngine @Inject constructor(
 
         if (parts.isEmpty()) {
             return AiCoachResult.Failed(
-                "AI 返回的计划无法匹配到你的动作库（可能给出了不存在的部位/动作），请重试。",
+                CoachFailure.PlanNotMatched,
                 retryable = true,
             )
         }
@@ -231,7 +229,7 @@ class AiCoachEngine @Inject constructor(
     ): AiCoachResult {
         val todaySummary = HistorySummarizer.summarize(todayWorkout, today)
         if (todaySummary == null || todaySummary.parts.isEmpty()) {
-            return AiCoachResult.Failed("无法确定今天已练的部位，请重试。", retryable = true)
+            return AiCoachResult.Failed(CoachFailure.CannotDetermineTodayParts, retryable = true)
         }
         val setsToday = todayWorkout.actions.sumOf { it.trainAction.size }
         // The "current part" = part of the most recent set of today.
@@ -239,11 +237,11 @@ class AiCoachEngine @Inject constructor(
             .maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
             ?.action?.part?.partName
         if (currentPartName == null) {
-            return AiCoachResult.Failed("无法确定当前训练部位，请重试。", retryable = true)
+            return AiCoachResult.Failed(CoachFailure.CannotDetermineCurrentPart, retryable = true)
         }
         val currentGroup = trainGroups.firstOrNull {
             it.part.partName.normalizeForMatch() == currentPartName.normalizeForMatch()
-        } ?: return AiCoachResult.Failed("当前训练部位不在动作库中，无法继续。", retryable = true)
+        } ?: return AiCoachResult.Failed(CoachFailure.CurrentPartNotInLibrary, retryable = true)
 
         // Same-part history: sessions before today that trained currentPartName,
         // restricted to that part only, most recent 5.
@@ -284,7 +282,7 @@ class AiCoachEngine @Inject constructor(
 
         if (kind == AdviceKind.SWITCH_ACTION && actionName == null) {
             return AiCoachResult.Failed(
-                "AI 建议更换动作，但给出的动作不在你的动作库中，请重试。",
+                CoachFailure.SuggestedActionNotInLibrary,
                 retryable = true,
             )
         }
@@ -317,8 +315,8 @@ class AiCoachEngine @Inject constructor(
             advice = advice,
             ignoredNames = ignored.distinct(),
             newMessages = turn(
-                userLabel = adviceRequestLabel(today, setsToday, currentPartName),
-                assistantLabel = adviceSummary(advice),
+                userContent = CoachMessageContent.AdviceRequest(today, setsToday, currentPartName),
+                assistantContent = CoachMessageContent.AdviceSummary(advice),
                 suggestions = suggestionOf(currentPartName, advice),
             ),
         )
@@ -327,16 +325,16 @@ class AiCoachEngine @Inject constructor(
     // ------------------------------------------------------------- turn helpers
 
     /**
-     * New conversation turn (compact user label + assistant summary). The assistant
+     * New conversation turn (UI-agnostic content descriptors). The assistant
      * message also carries machine-actionable suggestions for M3.3 prefill.
      */
     private fun turn(
-        userLabel: String,
-        assistantLabel: String,
+        userContent: CoachMessageContent,
+        assistantContent: CoachMessageContent,
         suggestions: List<CoachSuggestion> = emptyList(),
     ): List<CoachMessage> = listOf(
-        CoachMessage(fromUser = true, text = userLabel),
-        CoachMessage(fromUser = false, text = assistantLabel, suggestions = suggestions),
+        CoachMessage(fromUser = true, content = userContent),
+        CoachMessage(fromUser = false, content = assistantContent, suggestions = suggestions),
     )
 
     private fun suggestionsOf(parts: List<RecommendedPart>): List<CoachSuggestion> =
@@ -367,56 +365,16 @@ class AiCoachEngine @Inject constructor(
         )
     }
 
-    private fun planRequestLabel(today: LocalDate, sessionsUsed: Int): String =
-        "[$today][Case A] 今日尚无锻炼记录；基于最近 $sessionsUsed 个训练日请求推荐"
-
-    private fun adviceRequestLabel(today: LocalDate, setsToday: Int, currentPartName: String): String =
-        "[$today][Case B] 今日已练 $setsToday 组，当前部位：$currentPartName；请求下一步建议"
-
-    private fun planSummary(parts: List<RecommendedPart>): String = parts.joinToString("；") { part ->
-        val primary = if (part.isPrimary) "（主推）" else ""
-        part.partName + primary + "：" + part.actions.joinToString("、") { actionSummary(it) }
-    }
-
-    private fun actionSummary(action: RecommendedAction): String = buildList {
-        add(action.actionName)
-        add("${action.sets}组")
-        action.reps?.let { add("×$it") }
-        action.weightKg?.let { add("@${formatNumber(it)}kg") }
-        action.durationSec?.let { add("${it}秒") }
-    }.joinToString(" ")
-
-    private fun adviceSummary(advice: Advice): String {
-        val head = when (advice.kind) {
-            AdviceKind.CONTINUE_CURRENT -> "继续${advice.actionName ?: "当前动作"}"
-            AdviceKind.SWITCH_ACTION -> "换练${advice.actionName ?: "?（同部位其他动作）"}"
-            AdviceKind.FINISH_PART -> "该部位今天已够"
-            AdviceKind.FINISH_DAY -> "今天总量已够，建议收工"
-        }
-        val params = buildList {
-            if (advice.sets > 0) add("${advice.sets}组")
-            advice.reps?.let { add("×$it") }
-            advice.weightKg?.let { add("@${formatNumber(it)}kg") }
-            advice.durationSec?.let { add("每组${it}秒") }
-            advice.nextPartName?.let { add("下一步建议部位：$it") }
-        }.joinToString(" ")
-        val reason = advice.reason?.let { "；理由：$it" }.orEmpty()
-        return listOf(head, params).filter { it.isNotBlank() }.joinToString(" ") + reason
-    }
-
-    private fun formatNumber(value: Double): String =
-        if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
-
-    private fun userFacingError(cause: Throwable): String {
+    private fun userFacingError(cause: Throwable): CoachFailure {
         val message = cause.message ?: cause.javaClass.simpleName
         val lower = message.lowercase()
         return when {
             "401" in message || "403" in message || "api key" in lower || "unauthorized" in lower ||
-                "authentication" in lower -> "API Key 无效或无权限，请检查 AI 设置中的配置。"
+                "authentication" in lower -> CoachFailure.InvalidKey
             "timeout" in lower || "timed out" in lower || "connect" in lower ||
-                "network" in lower || "socket" in lower -> "网络连接失败或超时，请检查网络后重试。"
-            "429" in message || "rate limit" in lower -> "请求过于频繁（限流），请稍后重试。"
-            else -> "AI 请求失败：$message"
+                "network" in lower || "socket" in lower -> CoachFailure.Network
+            "429" in message || "rate limit" in lower -> CoachFailure.RateLimited
+            else -> CoachFailure.ModelError(message)
         }
     }
 

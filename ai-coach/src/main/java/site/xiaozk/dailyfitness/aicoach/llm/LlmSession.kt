@@ -109,7 +109,8 @@ internal fun buildAiCoachPrompt(
 ) = prompt(promptId) {
     system(systemText)
     history.forEach { message ->
-        if (message.fromUser) user(message.text) else assistant(message.text)
+        val text = message.content.toPromptText()
+        if (message.fromUser) user(text) else assistant(text)
     }
     user(userText)
 }

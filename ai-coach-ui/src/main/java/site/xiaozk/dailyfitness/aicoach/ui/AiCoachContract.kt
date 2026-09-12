@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.aicoach.ui
 
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
+import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
@@ -35,7 +36,7 @@ sealed interface AiCoachUiState {
 
     data class Error(
         val setsToday: Int,
-        val message: String,
+        val failure: CoachFailure,
         val retryable: Boolean,
         val history: List<CoachMessage> = emptyList(),
     ) : AiCoachUiState
