@@ -64,6 +64,10 @@ fun AiCoachHomePage() {
                     )
                 },
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    // Empty holder for center align
+                    IconButton(onClick = {}, enabled = false) { }
+                },
                 actions = {
                     IconButton(onClick = { navBackStack.add(AiCoachSettings) }) {
                         Icon(

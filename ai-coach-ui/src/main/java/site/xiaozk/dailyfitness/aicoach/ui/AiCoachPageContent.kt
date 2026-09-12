@@ -171,7 +171,7 @@ private fun LoadingHint() {
             .padding(vertical = 24.dp),
         horizontalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator(modifier = Modifier.width(24.dp))
+        CircularProgressIndicator()
         Spacer(modifier = Modifier.width(12.dp))
         Text(stringResource(R.string.ai_loading))
     }
