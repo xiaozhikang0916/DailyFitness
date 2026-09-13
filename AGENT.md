@@ -222,7 +222,30 @@ derived from repositories; only `active`/`startedAt` are persisted.
 
 - **Pull requests:** `assembleDebug` + `test` (parallel jobs).
 - **Push to `main`:** `assemble` (all variants, needs signing secrets) + `test`.
-- **Tags `v*`:** `assembleRelease`, then publishes the APK + `mapping.txt` to a GitHub Release.
+- **Tags `v*`:** `assembleRelease`, generates the release notes from the MRs merged since the
+  previous tag, then **publishes** the GitHub Release with the APK + `mapping.txt` (see
+  [Release Process](#release-process)).
+
+## Release Process
+
+When the user asks to **create or publish a new version**, the tag CI job does the release work —
+there is no manual draft/release bookkeeping, and the release is published directly by CI.
+
+1. **Bump the version** in `app/build.gradle.kts`: increment `versionCode` by 1 and set
+   `versionName` to the new `X.Y.Z` (it must match the tag). A new release is typically a single
+   commit (e.g. `Update version to X.Y.Z`) on `main`; merge it through the normal MR flow.
+2. **Create tag** pointing at that commit: `git tag vX.Y.Z`.
+3. **Ask the user whether push the tag** with command `git push origin vX.Y.Z`.
+   Pushing the tag starts the `release` job in `.github/workflows/ci.yml`.
+
+Guidelines:
+
+- The release notes are generated **by CI**, so do not create the release yourself with
+  `gh release create` — it would race with the `release` job.
+- The notes list the **titles and links** of the MRs merged between the previous tag and the new
+  one; this is the changelog users see.
+- Keep signing material out of the repo: `release.keystore` and the `KEY*` env vars come from CI
+  secrets / environment only.
 
 ## Testing Guidelines
 

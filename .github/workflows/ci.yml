@@ -101,9 +101,11 @@ jobs:
 
   # ===================== tag 触发的 release =====================
 
-  # 3) main 分支上的新 tag：assembleRelease 并把产物发布到 GitHub Release
+  # 3) main 分支上的新 tag：assembleRelease，收集本版本相对上一个 tag 合入的 MR，
+  #    用 action-gh-release 的 external release notes（body_path）把 MR 名字+链接写入
+  #    release notes，并上传 APK/mapping，最后直接发布该 Release。
   release:
-    name: Release APK (tag)
+    name: Publish release (tag)
     if: github.event_name == 'push' && github.ref_type == 'tag'
     runs-on: ubuntu-latest
     environment: Build release
@@ -111,6 +113,9 @@ jobs:
       contents: write   # 允许向 GitHub Release 上传产物
     steps:
       - uses: actions/checkout@v7
+        with:
+          # 需要完整历史与 tag，才能找到上一个 release tag 并收集区间内的 MR
+          fetch-depth: 0
       - name: Set up JDK 17
         uses: actions/setup-java@v6
         with:
@@ -130,9 +135,39 @@ jobs:
           KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
-      - name: Publish APK & mapping to GitHub Release
+      - name: Generate release notes from merged MRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+
+          # 上一个 release tag；没有则退化为全部历史
+          prev_tag="$(git describe --tags --abbrev=0 "${tag}^" 2>/dev/null || true)"
+          if [ -n "$prev_tag" ]; then
+            range="${prev_tag}..${tag}"
+          else
+            range="${tag}"
+          fi
+          echo "Collecting merged MRs in: ${range}"
+
+          {
+            echo "## Merged MRs"
+            echo
+            git log --merges --pretty=format:'%s' "$range" \
+              | grep -oE '#[0-9]+' | tr -d '#' | sort -un \
+              | xargs -r -I{} gh pr view {} --json title,url \
+                  --jq '"- [\(.title)](\(.url))"' || true
+          } > release-notes.md
+
+          echo "----- release-notes.md -----"
+          cat release-notes.md
+      - name: Publish release (APK + mapping + notes)
         uses: softprops/action-gh-release@v3
         with:
+          # external release notes：notes 由上一步生成，从文件读取
+          body_path: release-notes.md
+          # 不设置 draft，上传产物后直接发布 Release
           files: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/mapping/release/mapping.txt
