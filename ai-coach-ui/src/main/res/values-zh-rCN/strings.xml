@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_chat_history_title">对话记录</string>
+    <string name="ai_status_today_empty">今天还没有开始锻炼</string>
+    <string name="ai_status_today_sets">今天已练 %1$d 组</string>
+    <string name="ai_ready_hint">AI 教练会分析你的训练历史（部位、动作、重量与组数），推荐今天练什么或下一步做什么。只有点击下方按钮时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_refresh">获取 AI 建议</string>
+    <string name="ai_loading">AI 正在分析你的训练历史…</string>
+    <string name="ai_retry">重试</string>
+    <string name="ai_config_missing_title">需要先配置 AI 教练</string>
+    <string name="ai_config_missing_hint">请在 AI 教练设置中填写 DeepSeek API Key 以启用推荐。Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_open_settings">前往 AI 教练设置</string>
+    <string name="ai_error_title">出错了</string>
+    <string name="ai_no_train_parts_hint">还没有任何训练部位与动作。请先添加训练部位及其动作，再向 AI 教练获取建议。</string>
+    <string name="ai_plan_title">今日推荐</string>
+    <string name="ai_part_primary">主推</string>
+    <string name="ai_part_secondary">备选</string>
+    <string name="ai_reason_label">理由：%1$s</string>
+    <string name="ai_ignored_hint">已忽略不在动作库中的建议项：%1$s</string>
+    <string name="ai_advice_title">下一步建议</string>
+    <string name="ai_adopt">采纳</string>
+    <string name="ai_adopt_to_add_set">采纳并添加一组</string>
+    <string name="ai_advice_continue_current">继续练 %1$s</string>
+    <string name="ai_advice_switch_action">换练 %1$s</string>
+    <string name="ai_advice_finish_part">该部位今天练够了</string>
+    <string name="ai_advice_finish_day">今天总量已够，建议收工</string>
+    <string name="ai_advice_reason">理由：%1$s</string>
+    <string name="ai_chat_plan_request">基于训练历史，推荐今天的计划。</string>
+    <string name="ai_chat_advice_request">今日已练 %1$d 组，当前部位：%2$s。下一步做什么？</string>
+    <string name="ai_action_sets">%1$d组</string>
+    <string name="ai_action_reps">×%1$d</string>
+    <string name="ai_action_weight">\@%1$skg</string>
+    <string name="ai_action_duration">%1$d秒</string>
+    <string name="ai_error_invalid_key">API Key 无效或无权限，请检查 AI 设置中的配置。</string>
+    <string name="ai_error_network">网络连接失败或超时，请检查网络后重试。</string>
+    <string name="ai_error_rate_limited">请求过于频繁（限流），请稍后重试。</string>
+    <string name="ai_error_model">AI 请求失败：%1$s</string>
+    <string name="ai_error_need_more_without_history">AI 在没有任何历史可提供时仍请求更多数据或返回了空计划，请重试。</string>
+    <string name="ai_error_insufficient_history">AI 在多次补充训练历史后仍认为数据不足，无法给出建议。请稍后重试或更换模型。</string>
+    <string name="ai_error_empty_plan">AI 未返回可用的训练计划，请重试。</string>
+    <string name="ai_error_plan_not_matched">AI 返回的计划无法匹配到你的动作库（可能给出了不存在的部位/动作），请重试。</string>
+    <string name="ai_error_cannot_determine_today_parts">无法确定今天已练的部位，请重试。</string>
+    <string name="ai_error_cannot_determine_current_part">无法确定当前训练部位，请重试。</string>
+    <string name="ai_error_current_part_not_in_library">当前训练部位不在动作库中，无法继续。</string>
+    <string name="ai_error_suggested_action_not_in_library">AI 建议更换动作，但给出的动作不在你的动作库中，请重试。</string>
+</resources>

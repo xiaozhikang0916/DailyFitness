@@ -11,7 +11,7 @@ import site.xiaozk.dailyfitness.session.SessionIntents
  * Extracted from AppHost so the contract can be unit tested without Compose.
  */
 internal fun sessionActionToNavKey(action: String?, today: LocalDate): NavKey? = when (action) {
-    SessionIntents.ACTION_ADD_SET -> AddWorkoutAction
+    SessionIntents.ACTION_ADD_SET -> AddWorkoutAction()
     SessionIntents.ACTION_OPEN_TODAY -> TrainDay(date = today)
     else -> null
 }

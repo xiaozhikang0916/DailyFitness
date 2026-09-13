@@ -25,6 +25,11 @@ accompanist = "0.32.0"
 
 vico = "1.6.4"
 
+koog = "1.2.0"
+koog-additions = "1.2.0-beta"
+ktor = "3.3.3"
+flowredux = "2.1.1"
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
 android-library = { id = "com.android.library", version.ref = "android_build_tools" }
@@ -41,6 +46,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 coroutine-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
 coroutine-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
+androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "androidx-datastore" }
 android-hilt-lib = { module = "com.google.dagger:hilt-android", version.ref = "hilt_version" }
 android-hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_version" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
@@ -69,6 +75,12 @@ datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "d
 vico-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vico"}
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico"}
 vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico"}
+
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-agents-additions = { module = "ai.koog:koog-agents-additions", version.ref = "koog-additions" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+flowredux = { module = "com.freeletics.flowredux2:flowredux-android", version.ref = "flowredux" }
 
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]

@@ -73,7 +73,7 @@ fun TrainingDayDetailPage(date: LocalDate) {
         onBack = { systemBack?.onBackPressed() },
         actions = {
             IconButton(
-                onClick = { navBackStack.add(AddWorkoutAction) }
+                onClick = { navBackStack.add(AddWorkoutAction()) }
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = descAdd)
             }

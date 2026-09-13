@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_settings_title">AI Coach settings</string>
+    <string name="ai_settings_privacy">Your API key is stored only on this device. Training summaries are only sent to the AI service when you request a recommendation.</string>
+    <string name="ai_settings_api_key">API Key</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_model_flash">DeepSeek V4 Flash</string>
+    <string name="ai_settings_model_pro">DeepSeek V4 Pro</string>
+    <string name="ai_settings_base_url">API Base URL (optional)</string>
+    <string name="ai_settings_base_url_hint">Leave empty to use the official DeepSeek endpoint.</string>
+    <string name="ai_settings_save">Save</string>
+    <string name="ai_settings_saved">Saved</string>
+    <string name="ai_settings_api_key_required">Enter an API key to enable AI Coach.</string>
+</resources>

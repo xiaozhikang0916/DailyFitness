@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import kotlinx.datetime.LocalDate
@@ -15,6 +16,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import site.xiaozk.dailyfitness.R
+import site.xiaozk.dailyfitness.aicoach.engine.CoachSuggestion
 
 /**
  * Navigation 3 (androidx.navigation3) type-safe routes.
@@ -38,10 +40,22 @@ object HomeBody : NavKey
 object HomeTrainPart : NavKey
 
 @Serializable
-object AddWorkoutAction : NavKey
+object HomeAiCoach : NavKey
+
+@Serializable
+object AiCoachSettings : NavKey
 
 @Serializable
 object AddBodyDetail : NavKey
+
+/**
+ * Add-one-set page. [suggestion] is the optional AI Coach prefill (M3.3): when
+ * present the page prefills from it, otherwise it loads the last recorded action.
+ */
+@Serializable
+data class AddWorkoutAction(
+    val suggestion: CoachSuggestion? = null,
+) : NavKey
 
 // ---- Routes with arguments ----
 @Serializable
@@ -87,6 +101,8 @@ val NavKeySerializersModule: SerializersModule = SerializersModule {
         subclass(HomeTraining::class, HomeTraining.serializer())
         subclass(HomeBody::class, HomeBody.serializer())
         subclass(HomeTrainPart::class, HomeTrainPart.serializer())
+        subclass(HomeAiCoach::class, HomeAiCoach.serializer())
+        subclass(AiCoachSettings::class, AiCoachSettings.serializer())
         subclass(AddWorkoutAction::class, AddWorkoutAction.serializer())
         subclass(AddBodyDetail::class, AddBodyDetail.serializer())
         subclass(WorkoutMonth::class, WorkoutMonth.serializer())
@@ -109,4 +125,5 @@ enum class HomeTab(
     TRAINING(HomeTraining, Icons.Default.Home, R.string.bottom_nav_title_home),
     BODY(HomeBody, Icons.Default.AccountBox, R.string.bottom_nav_title_body),
     TRAIN_PART(HomeTrainPart, Icons.AutoMirrored.Filled.List, R.string.bottom_nav_title_train),
+    AI_COACH(HomeAiCoach, Icons.Default.Star, R.string.bottom_nav_title_ai),
 }

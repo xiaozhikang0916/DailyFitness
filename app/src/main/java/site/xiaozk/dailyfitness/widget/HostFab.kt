@@ -118,7 +118,7 @@ fun HostFab(
                             icon = Icons.Default.Add,
                             text = stringResource(R.string.fab_action_add_workout),
                         ) {
-                            backStack.add(AddWorkoutAction)
+                            backStack.add(AddWorkoutAction())
                             showFabMenu = false
                         }
                         FloatingActionListButton(text = stringResource(R.string.fab_action_add_body_data)) {

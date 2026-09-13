@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -47,5 +48,12 @@ dependencies {
     implementation(libs.serializationx.json)
     implementation(libs.datetime)
 
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.androidx.compose)
+    implementation(libs.androidx.composeMaterialIconsCore)
+
     implementation(project(":repository"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutine.test)
 }

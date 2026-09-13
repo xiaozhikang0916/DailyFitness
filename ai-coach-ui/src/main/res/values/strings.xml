@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_chat_history_title">Chat history</string>
+    <string name="ai_status_today_empty">No workout recorded today yet</string>
+    <string name="ai_status_today_sets">Today: %1$d set(s)</string>
+    <string name="ai_ready_hint">AI Coach will analyze your training history (parts, actions, weights and sets) and recommend what to train today or what to do next. Data is only sent to the AI service when you tap the button below.</string>
+    <string name="ai_refresh">Get AI recommendation</string>
+    <string name="ai_loading">AI is analyzing your training history…</string>
+    <string name="ai_retry">Retry</string>
+    <string name="ai_config_missing_title">AI Coach needs a configuration</string>
+    <string name="ai_config_missing_hint">Add your DeepSeek API key in the AI Coach settings to enable recommendations. The key is stored only on this device, and training summaries are only sent to the AI service when you request a recommendation.</string>
+    <string name="ai_open_settings">Open AI Coach settings</string>
+    <string name="ai_error_title">Something went wrong</string>
+    <string name="ai_no_train_parts_hint">No train parts or actions exist yet. Add a train part and its actions first, then ask AI Coach for a recommendation.</string>
+    <string name="ai_plan_title">Recommended for today</string>
+    <string name="ai_part_primary">Main</string>
+    <string name="ai_part_secondary">Backup</string>
+    <string name="ai_reason_label">Reason: %1$s</string>
+    <string name="ai_ignored_hint">Ignored suggestions not in your action library: %1$s</string>
+    <string name="ai_advice_title">Next step</string>
+    <string name="ai_adopt">Adopt</string>
+    <string name="ai_adopt_to_add_set">Adopt and add a set</string>
+    <string name="ai_advice_continue_current">Continue %1$s</string>
+    <string name="ai_advice_switch_action">Switch to %1$s</string>
+    <string name="ai_advice_finish_part">This part is enough for today</string>
+    <string name="ai_advice_finish_day">Enough for today - stop training</string>
+    <string name="ai_advice_reason">Reason: %1$s</string>
+    <string name="ai_chat_plan_request">Based on your training history, here is today\'s plan.</string>
+    <string name="ai_chat_advice_request">Today: %1$d set(s), current part: %2$s. What\'s next?</string>
+    <string name="ai_action_sets">%1$d set(s)</string>
+    <string name="ai_action_reps">×%1$d</string>
+    <string name="ai_action_weight">\@%1$skg</string>
+    <string name="ai_action_duration">%1$ds</string>
+    <string name="ai_error_invalid_key">Invalid or unauthorized API key. Check the AI settings.</string>
+    <string name="ai_error_network">Network connection failed or timed out. Check your connection and retry.</string>
+    <string name="ai_error_rate_limited">Too many requests (rate limited). Please retry later.</string>
+    <string name="ai_error_model">AI request failed: %1$s</string>
+    <string name="ai_error_need_more_without_history">The AI asked for more data even though no history could be provided and returned no plan. Please retry.</string>
+    <string name="ai_error_insufficient_history">The AI still considered the data insufficient after expanding the training history and could not give a recommendation. Retry later or switch models.</string>
+    <string name="ai_error_empty_plan">The AI did not return a usable training plan. Please retry.</string>
+    <string name="ai_error_plan_not_matched">The returned plan could not be matched to your action library (it may contain unknown parts/actions). Please retry.</string>
+    <string name="ai_error_cannot_determine_today_parts">Could not determine the parts trained today. Please retry.</string>
+    <string name="ai_error_cannot_determine_current_part">Could not determine the current training part. Please retry.</string>
+    <string name="ai_error_current_part_not_in_library">The current training part is not in your action library, so the advice cannot continue.</string>
+    <string name="ai_error_suggested_action_not_in_library">The AI suggested switching actions, but the suggested action is not in your library. Please retry.</string>
+</resources>

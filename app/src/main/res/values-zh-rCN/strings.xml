@@ -70,4 +70,6 @@
     <string name="bottom_nav_title_home">首页</string>
     <string name="bottom_nav_title_body">身体</string>
     <string name="bottom_nav_title_train">训练</string>
+    <string name="bottom_nav_title_ai">AI 教练</string>
+    <string name="action_desc_open_ai_settings">AI 教练设置</string>
 </resources>
