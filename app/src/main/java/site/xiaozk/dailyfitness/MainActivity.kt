@@ -1,10 +1,12 @@
 package site.xiaozk.dailyfitness
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
-import androidx.core.view.WindowCompat
+import androidx.activity.enableEdgeToEdge
 import dagger.hilt.android.AndroidEntryPoint
 import site.xiaozk.dailyfitness.nav.NavIntentBus
 import javax.inject.Inject
@@ -24,7 +26,14 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             navIntentBus.emit(intent)
         }
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Go edge-to-edge: draw behind the system bars and handle insets in Compose.
+        // The app is light-themed only, so keep fully transparent bars with dark
+        // (light-colored) system bar icons. This replaces Accompanist's
+        // SystemUiController, which was used only to set the bar colors.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         setContent {
             AppHost(navIntentBus = navIntentBus)
         }

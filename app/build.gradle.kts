@@ -77,7 +77,6 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.composeMaterialIconsCore)
     implementation(libs.bundles.androidx.compose)
-    implementation(libs.bundles.accompanist)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)

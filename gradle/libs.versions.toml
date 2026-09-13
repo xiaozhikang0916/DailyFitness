@@ -21,7 +21,6 @@ room = "2.8.4"
 navigation3 = "1.1.7"
 lifecycle-viewmodel-navigation3 = "2.11.0"
 hilt-lifecycle-viewmodel-compose = "1.4.0"
-accompanist = "0.32.0"
 
 vico = "1.6.4"
 
@@ -67,8 +66,6 @@ androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecy
 androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hilt-lifecycle-viewmodel-compose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 
-accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist"}
-
 serializationx-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization"}
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
@@ -84,5 +81,4 @@ flowredux = { module = "com.freeletics.flowredux2:flowredux-android", version.re
 
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]
-accompanist = ["accompanist-systemuicontroller"]
 vico = ["vico-core", "vico-compose", "vico-compose-m3"]
