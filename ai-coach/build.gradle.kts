@@ -62,7 +62,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences.core)
 
     implementation(libs.koog.agents)
-    implementation(libs.koog.agents.additions)
+    implementation(libs.koog.prompt.executor.llms.all)
 
     implementation(project(":repository"))
 

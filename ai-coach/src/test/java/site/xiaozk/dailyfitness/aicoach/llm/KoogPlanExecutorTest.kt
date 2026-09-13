@@ -54,7 +54,7 @@ class KoogPlanExecutorTest {
         val provider = AiCoachConfigProvider(store)
 
         // Wait until the provider has settled on A, then construct the executor:
-        // its observer sees A as the *first* emission, which drop(1) discards
+        // A is captured as the construction-time snapshot the observer skips
         // (the initial session is seeded lazily by the first request instead).
         awaitUntil { provider.config.value.apiKey == keyA }
         val factory = FakeSessionFactory()

@@ -6,7 +6,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -45,6 +45,13 @@ class KoogPlanExecutor @Inject constructor(
     private var cached: Cached? = null
 
     init {
+        // Snapshot taken at construction time: this exact value is the only one the
+        // observer skips, because the initial session is seeded lazily by the first
+        // request. Comparing against a captured snapshot (instead of blindly dropping
+        // the collector's first emission) guarantees that a config change happening
+        // around executor startup is never lost, no matter when the observer coroutine
+        // is actually scheduled.
+        val constructionConfig = configProvider.config.value
         // Cleanup: when the scope is cancelled (close()), destroy the cached session
         // in a NonCancellable context so teardown always completes.
         scope.launch {
@@ -58,7 +65,7 @@ class KoogPlanExecutor @Inject constructor(
         // key is cleared).
         scope.launch {
             configProvider.config
-                .drop(1) // initial value is applied lazily by the first request
+                .dropWhile { it == constructionConfig }
                 .collect { config ->
                     if (config.apiKey.isBlank()) destroyCached() else rebuildIfNeeded(config)
                 }

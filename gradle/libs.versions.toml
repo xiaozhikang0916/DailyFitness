@@ -26,7 +26,7 @@ hilt-lifecycle-viewmodel-compose = "1.4.0"
 vico = "1.6.4"
 
 koog = "1.2.0"
-koog-additions = "1.2.0-beta"
+koog-beta = "1.2.0-beta"
 ktor = "3.3.3"
 flowredux = "2.1.1"
 
@@ -76,7 +76,7 @@ vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vi
 vico-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vico"}
 
 koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
-koog-agents-additions = { module = "ai.koog:koog-agents-additions", version.ref = "koog-additions" }
+koog-prompt-executor-llms-all = { module = "ai.koog:prompt-executor-llms-all", version.ref = "koog-beta" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 flowredux = { module = "com.freeletics.flowredux2:flowredux-android", version.ref = "flowredux" }
