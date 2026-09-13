@@ -252,7 +252,6 @@ private fun Modifier.bubbleLoadingBorder(shape: Shape): Modifier {
                 is Outline.Rounded -> addRoundRect(outline.roundRect)
                 is Outline.Rectangle -> addRect(outline.rect)
                 is Outline.Generic -> addPath(outline.path)
-                else -> Unit
             }
             translate(Offset(inset, inset))
         }

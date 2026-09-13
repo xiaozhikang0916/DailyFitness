@@ -8,6 +8,7 @@ ksp_version = "2.3.11"
 coroutine = "1.11.0"
 serialization = "1.11.0"
 datetime = "0.8.0"
+kotlinx-io = "0.9.1"
 
 junit = "4.13.2"
 androidx-core = "1.19.0"
@@ -68,6 +69,7 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 
 serializationx-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization"}
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 
 vico-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vico"}
 vico-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vico"}

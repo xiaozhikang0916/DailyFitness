@@ -1,4 +1,4 @@
-package site.xiaozk.dailyfitness.settings.ai
+package site.xiaozk.dailyfitness.settings.ui.ai
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

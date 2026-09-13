@@ -35,7 +35,8 @@ Gradle modules are declared in `settings.gradle`:
 :repository     Pure interfaces + domain models shared across modules (no Android deps)
 :calendar       Reusable Compose calendar widgets
 :chart          Reusable Compose line-chart widgets (Vico wrapper)
-:settings       Settings/data import-export feature
+:settings       Settings logic + data definitions (import/export, settings bindings)
+:settings-ui    Settings Compose UI + ViewModels (AI settings, data export)
 :ai-coach       AI Coach domain layer (engine, prompts, LLM plan executor, config store)
 :ai-coach-ui    AI Coach Compose UI + FlowRedux state machine
 ```
@@ -43,21 +44,25 @@ Gradle modules are declared in `settings.gradle`:
 ### Dependency direction
 
 ```
-              :app
-   ┌───────────┼──────────┬──────────┬─────────┬──────────┐
-   ▼           ▼          ▼          ▼         ▼          ▼
-:session   :ai-coach-ui :settings :database :calendar  :chart
-   │           │          │          │         │
-   │           ▼          │          ▼         │
-   │        :ai-coach     │      :repository ◄─┘
-   │           │          │          ▲
-   └───────────┴──────────┴──────────┘
+                    :app
+   ┌─────────┬───────────┬────────────┬──────────┬─────────┬──────────┐
+   ▼         ▼           ▼            ▼          ▼         ▼          ▼
+:session :ai-coach-ui :settings-ui :settings :database :calendar  :chart
+   │         │            │            │          │         │
+   │         ▼            ▼            │          ▼         │
+   │      :ai-coach     :settings      │      :repository ◄─┘
+   │         │            │            │          ▲
+   └─────────┴────────────┴────────────┴──────────┘
 ```
 
 Rules of thumb:
 
 - `:repository` is dependency-free (interfaces + models only) and is depended on by feature/data modules.
 - `:database` **implements** the `:repository` interfaces and provides them via Hilt.
+- `:settings` holds the data definitions and export/import logic only; its Compose UI
+  (including the ViewModels) lives in `:settings-ui`, mirroring `:ai-coach` / `:ai-coach-ui`.
+- `:settings-ui` never touches the platform file picker: the app injects an
+  `ExportDirectoryProvider` (implemented with the Storage Access Framework in `:app`).
 - `:app` is the only module that knows about `MainActivity`, `NavKey`s, and concrete DI graphs.
 - Feature modules (`:session`, `:ai-coach`) expose interfaces/facades; `:app` wires entry points only.
 - Never introduce an upward dependency (e.g. `:ai-coach` must not depend on `:app` or `:ai-coach-ui`).
@@ -75,7 +80,7 @@ app/src/main/java/site/xiaozk/dailyfitness/
 │   ├── body/                    # Body data pages
 │   ├── action/                  # Train part/action library pages
 │   ├── aicoach/                 # AI Coach host page
-│   └── settings/                # In-app settings entry
+│   └── settings/                # Settings tab, AI settings + data export pages
 ├── widget/                      # Reusable app widgets (scaffold, FAB, dropdown, chips…)
 ├── theme/                       # Compose theme (Color/Type/Theme)
 ├── di/                          # App-level Hilt modules (AI Coach HTTP/DataStore/locale)

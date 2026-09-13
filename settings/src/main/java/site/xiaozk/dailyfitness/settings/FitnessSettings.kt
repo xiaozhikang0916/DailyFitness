@@ -1,23 +1,29 @@
 package site.xiaozk.dailyfitness.settings
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
+import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.IPersonDailyRepository
 import site.xiaozk.dailyfitness.repository.ISettingRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
-import java.io.File
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * @author: xiaozhikang
  * @create: 2023/11/25
  */
+@Singleton
 class FitnessSettings
 @Inject constructor(
     private val userRepo: IUserRepository,
@@ -30,42 +36,46 @@ class FitnessSettings
         prettyPrint = false
     }
 
-    override suspend fun exportAllDataTo(file: File): Unit = withContext(Dispatchers.IO) {
-        try {
-            val allTranins = trainRepo.getAllTrainParts().first()
-            val user = userRepo.getCurrentUser()
-            val bodyData = personDataRepo.getAllPersonDailyDataFlow(user).toList()
-            val workouts = dailyWorkoutRepo.getAllWorkoutDayList(user).first()
-
-            val exportData = ExportedData(
-                userTrains = listOf(
-                    UserData(
-                        user = user,
-                        bodys = bodyData.flatMap { it.personData.values }.flatten(),
-                        workouts = workouts.trainedDate.flatMap { it.value.actions }
-                            .flatMap { it.map.second },
-                    ),
-                ),
-                trainParts = allTranins
-            )
-            val outputJson = json.encodeToString(exportData)
-            if (file.exists().not()) {
-                file.createNewFile()
-            }
-
-            file.outputStream().use {
-                it.write(
-                    outputJson.encodeToByteArray()
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("FitnessSettings", "fail to export data", e)
+    override suspend fun exportAllDataTo(path: Path): Unit = withContext(Dispatchers.IO) {
+        // kotlinx-io creates the file when needed; no java.io.File involved.
+        // Failures propagate so the export UI can report them to the user.
+        SystemFileSystem.sink(path).buffered().use { sink ->
+            exportAllDataTo(sink)
         }
     }
 
-    override suspend fun importAllDataFrom(file: File): Unit = withContext(Dispatchers.IO) {
-        val jsonStr = file.readBytes().decodeToString()
-        val data = json.decodeFromString<ExportedData>(jsonStr)
+    override suspend fun exportAllDataTo(sink: Sink): Unit = withContext(Dispatchers.IO) {
+        val allTranins = trainRepo.getAllTrainParts().first()
+        val user = userRepo.getCurrentUser()
+        // `getAllPersonDailyDataFlow` is a Room Flow that never completes (it keeps
+        // observing the table), so take the current snapshot with `first()` instead
+        // of `toList()` - the latter would hang the export forever.
+        val bodyData = personDataRepo.getAllPersonDailyDataFlow(user).first()
+        val workouts = dailyWorkoutRepo.getAllWorkoutDayList(user).first()
+
+        val exportData = ExportedData(
+            userTrains = listOf(
+                UserData(
+                    user = user,
+                    bodys = bodyData.personData.values.flatten(),
+                    workouts = workouts.trainedDate.flatMap { it.value.actions }
+                        .flatMap { it.map.second },
+                ),
+            ),
+            trainParts = allTranins
+        )
+        sink.writeString(json.encodeToString(exportData))
+        sink.flush()
+    }
+
+    override suspend fun importAllDataFrom(path: Path): Unit = withContext(Dispatchers.IO) {
+        SystemFileSystem.source(path).buffered().use { source ->
+            importAllDataFrom(source)
+        }
+    }
+
+    override suspend fun importAllDataFrom(source: Source): Unit = withContext(Dispatchers.IO) {
+        val data = json.decodeFromString<ExportedData>(source.readString())
         val user = userRepo.getCurrentUser()
 
         data.trainParts.forEach {
@@ -82,29 +92,6 @@ class FitnessSettings
             it.workouts.forEach {
                 dailyWorkoutRepo.addWorkoutAction(user, it)
             }
-        }
-
-    }
-
-    private suspend fun clearCurrentData() {
-        val user = userRepo.getCurrentUser()
-        dailyWorkoutRepo.getAllWorkoutDayList(user).first().trainedDate.flatMap { it.value.actions }.flatMap {
-            it.trainAction
-        }.forEach {
-            dailyWorkoutRepo.deleteWorkoutAction(user, it)
-        }
-
-        trainRepo.getAllTrainParts().first().forEach { group ->
-            group.actions.forEach { action ->
-                trainRepo.removeTrainAction(action.action)
-            }
-            trainRepo.removeTrainPart(group.part)
-        }
-
-        personDataRepo.getAllPersonDailyDataFlow(user).first().personData.flatMap {
-            it.value
-        }.forEach {
-            personDataRepo.removePersonDailyData(it)
         }
     }
 }

@@ -1,4 +1,4 @@
-package site.xiaozk.dailyfitness.settings.ai
+package site.xiaozk.dailyfitness.settings.ui.ai
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,12 +21,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import site.xiaozk.dailyfitness.repository.model.AiCoachModel
-import site.xiaozk.dailyfitness.settings.R
+import site.xiaozk.dailyfitness.settings.ui.R
 
 /**
  * AI Coach settings form - purely presentational.
  *
- * Owned by `:settings` but rendered by the app inside its `SubPageScaffold`, so it
+ * Owned by `:settings-ui` but rendered by the app inside its `SubPageScaffold`, so it
  * receives the scaffold padding and emits edit/save callbacks. It only knows the
  * `:repository` models, never `:ai-coach`.
  */

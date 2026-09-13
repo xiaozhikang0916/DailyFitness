@@ -1,11 +1,13 @@
+@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.serialization)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "site.xiaozk.dailyfitness.repository"
+    namespace = "site.xiaozk.dailyfitness.settings.ui"
     compileSdk = 37
 
     defaultConfig {
@@ -16,9 +18,12 @@ android {
     }
 
     buildTypes {
-        getByName("release") {
+        release {
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
@@ -36,10 +41,19 @@ kotlin {
 dependencies {
     ksp(libs.android.hilt.compiler)
     implementation(libs.android.hilt.lib)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.coroutine.core)
-    implementation(libs.serializationx.json)
     implementation(libs.datetime)
     implementation(libs.kotlinx.io.core)
+    implementation(libs.androidx.core.ktx)
+
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.androidx.compose)
+    implementation(libs.androidx.composeMaterialIconsCore)
+
+    implementation(project(":settings"))
+    implementation(project(":repository"))
+
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutine.test)
 }
