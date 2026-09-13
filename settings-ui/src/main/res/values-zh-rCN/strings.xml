@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">设置</string>
+    <string name="settings_ai_entry_title">AI 教练设置</string>
+    <string name="settings_ai_entry_summary">配置 API Key、模型与接口地址</string>
+    <string name="settings_export_entry_title">导出数据</string>
+    <string name="settings_export_entry_summary">将全部训练与身体数据导出为 JSON 文件</string>
+
+    <string name="export_title">导出数据</string>
+    <string name="export_description">选择一个文件夹，将本机全部数据导出为 JSON 文件。数据不会上传，只会写入你选择的文件夹。</string>
+    <string name="export_action">选择文件夹并导出</string>
+    <string name="export_exporting">正在导出…</string>
+    <string name="export_success">已导出到 %1$s</string>
+    <string name="export_failed">导出失败，请更换文件夹后重试。</string>
+
+    <string name="ai_settings_title">AI 教练设置</string>
+    <string name="ai_settings_privacy">API Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
+    <string name="ai_settings_api_key">API Key</string>
+    <string name="ai_settings_model">模型</string>
+    <string name="ai_settings_model_flash">DeepSeek V4 Flash</string>
+    <string name="ai_settings_model_pro">DeepSeek V4 Pro</string>
+    <string name="ai_settings_base_url">API 地址（可选）</string>
+    <string name="ai_settings_base_url_hint">留空则使用 DeepSeek 官方地址。</string>
+    <string name="ai_settings_save">保存</string>
+    <string name="ai_settings_saved">已保存</string>
+    <string name="ai_settings_api_key_required">请填写 API Key 以启用 AI 教练。</string>
+</resources>

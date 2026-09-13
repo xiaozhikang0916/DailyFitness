@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -43,14 +42,10 @@ dependencies {
     ksp(libs.android.hilt.compiler)
     implementation(libs.android.hilt.lib)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.coroutine.core)
     implementation(libs.serializationx.json)
     implementation(libs.datetime)
-
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.bundles.androidx.compose)
-    implementation(libs.androidx.composeMaterialIconsCore)
+    implementation(libs.kotlinx.io.core)
 
     implementation(project(":repository"))
 

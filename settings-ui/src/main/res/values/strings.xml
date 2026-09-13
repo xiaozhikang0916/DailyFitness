@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_ai_entry_title">AI Coach settings</string>
+    <string name="settings_ai_entry_summary">Configure the API key, model and endpoint</string>
+    <string name="settings_export_entry_title">Export data</string>
+    <string name="settings_export_entry_summary">Export all workout and body data as a JSON file</string>
+
+    <string name="export_title">Export data</string>
+    <string name="export_description">Pick a folder and export all of your local data as a JSON file. Nothing is uploaded; the file is only written to the folder you choose.</string>
+    <string name="export_action">Choose folder and export</string>
+    <string name="export_exporting">Exporting…</string>
+    <string name="export_success">Exported to %1$s</string>
+    <string name="export_failed">Export failed. Please choose another folder and try again.</string>
+
     <string name="ai_settings_title">AI Coach settings</string>
     <string name="ai_settings_privacy">Your API key is stored only on this device. Training summaries are only sent to the AI service when you request a recommendation.</string>
     <string name="ai_settings_api_key">API Key</string>

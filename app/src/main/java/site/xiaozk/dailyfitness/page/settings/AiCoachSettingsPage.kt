@@ -6,14 +6,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import site.xiaozk.dailyfitness.nav.LocalNavBackStack
-import site.xiaozk.dailyfitness.settings.R as SettingsR
-import site.xiaozk.dailyfitness.settings.ai.AiCoachSettingsContent
-import site.xiaozk.dailyfitness.settings.ai.AiCoachSettingsViewModel
+import site.xiaozk.dailyfitness.settings.ui.R as SettingsR
+import site.xiaozk.dailyfitness.settings.ui.ai.AiCoachSettingsContent
+import site.xiaozk.dailyfitness.settings.ui.ai.AiCoachSettingsViewModel
 import site.xiaozk.dailyfitness.widget.SubPageScaffold
 
 /**
  * App-side shell of the AI Coach settings page: owns the app's [SubPageScaffold]
- * (top bar + back button) and hosts the `:settings` ViewModel, while the form
+ * (top bar + back button) and hosts the `:settings-ui` ViewModel, while the form
  * itself is rendered by [AiCoachSettingsContent].
  */
 @Composable

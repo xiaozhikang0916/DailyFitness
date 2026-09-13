@@ -93,6 +93,7 @@ dependencies {
     implementation(project(":calendar"))
     implementation(project(":chart"))
     implementation(project(":settings"))
+    implementation(project(":settings-ui"))
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutine.test)
