@@ -59,6 +59,7 @@ fun AiCoachSettingsContent(
             label = { Text(stringResource(R.string.ai_settings_api_key)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = LeadingVisiblePasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
