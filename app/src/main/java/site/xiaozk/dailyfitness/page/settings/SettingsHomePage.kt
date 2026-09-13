@@ -44,10 +44,6 @@ fun SettingsHomePage() {
                         textAlign = TextAlign.Center,
                     )
                 },
-                navigationIcon = {
-                    // Empty holder so the title stays centered.
-                    IconButton(onClick = {}, enabled = false) { }
-                },
             )
         },
         bottomBar = {

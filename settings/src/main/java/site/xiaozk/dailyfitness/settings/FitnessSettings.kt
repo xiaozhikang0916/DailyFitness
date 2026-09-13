@@ -2,8 +2,9 @@ package site.xiaozk.dailyfitness.settings
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -36,36 +37,45 @@ class FitnessSettings
     }
 
     override suspend fun exportAllDataTo(path: Path): Unit = withContext(Dispatchers.IO) {
+        // kotlinx-io creates the file when needed; no java.io.File involved.
+        // Failures propagate so the export UI can report them to the user.
+        SystemFileSystem.sink(path).buffered().use { sink ->
+            exportAllDataTo(sink)
+        }
+    }
+
+    override suspend fun exportAllDataTo(sink: Sink): Unit = withContext(Dispatchers.IO) {
         val allTranins = trainRepo.getAllTrainParts().first()
         val user = userRepo.getCurrentUser()
-        val bodyData = personDataRepo.getAllPersonDailyDataFlow(user).toList()
+        // `getAllPersonDailyDataFlow` is a Room Flow that never completes (it keeps
+        // observing the table), so take the current snapshot with `first()` instead
+        // of `toList()` - the latter would hang the export forever.
+        val bodyData = personDataRepo.getAllPersonDailyDataFlow(user).first()
         val workouts = dailyWorkoutRepo.getAllWorkoutDayList(user).first()
 
         val exportData = ExportedData(
             userTrains = listOf(
                 UserData(
                     user = user,
-                    bodys = bodyData.flatMap { it.personData.values }.flatten(),
+                    bodys = bodyData.personData.values.flatten(),
                     workouts = workouts.trainedDate.flatMap { it.value.actions }
                         .flatMap { it.map.second },
                 ),
             ),
             trainParts = allTranins
         )
-        val outputJson = json.encodeToString(exportData)
-
-        // kotlinx-io creates the file when needed; no java.io.File involved.
-        // Failures propagate so the export UI can report them to the user.
-        SystemFileSystem.sink(path).buffered().use { sink ->
-            sink.writeString(outputJson)
-        }
+        sink.writeString(json.encodeToString(exportData))
+        sink.flush()
     }
 
     override suspend fun importAllDataFrom(path: Path): Unit = withContext(Dispatchers.IO) {
-        val jsonStr = SystemFileSystem.source(path).buffered().use { source ->
-            source.readString()
+        SystemFileSystem.source(path).buffered().use { source ->
+            importAllDataFrom(source)
         }
-        val data = json.decodeFromString<ExportedData>(jsonStr)
+    }
+
+    override suspend fun importAllDataFrom(source: Source): Unit = withContext(Dispatchers.IO) {
+        val data = json.decodeFromString<ExportedData>(source.readString())
         val user = userRepo.getCurrentUser()
 
         data.trainParts.forEach {
@@ -83,6 +93,5 @@ class FitnessSettings
                 dailyWorkoutRepo.addWorkoutAction(user, it)
             }
         }
-
     }
 }

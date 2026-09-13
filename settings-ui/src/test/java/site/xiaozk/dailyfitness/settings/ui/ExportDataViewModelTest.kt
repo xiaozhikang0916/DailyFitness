@@ -1,5 +1,6 @@
 package site.xiaozk.dailyfitness.settings.ui
 
+import kotlin.time.Clock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -7,7 +8,11 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.io.Buffer
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.io.files.Path
+import kotlinx.io.writeString
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,7 +21,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import site.xiaozk.dailyfitness.repository.ISettingRepository
-import kotlin.time.Clock
 
 /**
  * The export screen must use the app-injected directory provider and write a
@@ -39,14 +43,12 @@ class ExportDataViewModelTest {
     }
 
     @Test
-    fun `exports a json file into the picked directory`() = runTest(dispatcher) {
+    fun `writes a timestamped json file into the picked directory`() = runTest(dispatcher) {
         val repository = FakeSettingRepository()
-        val directory = Path("/tmp/exports")
-        val viewModel = ExportDataViewModel(
-            settingRepository = repository,
-            directoryProvider = FakeDirectoryProvider(directory),
-            clock = Clock.System,
-        )
+        val provider = FakeDirectoryProvider { name ->
+            ExportTarget(displayPath = "/tmp/exports/$name", sink = Buffer())
+        }
+        val viewModel = ExportDataViewModel(repository, provider, Clock.System)
 
         viewModel.export()
         advanceUntilIdle()
@@ -54,11 +56,11 @@ class ExportDataViewModelTest {
         val state = viewModel.state.value
         assertFalse(state.exporting)
         assertFalse(state.failed)
-        val exported = requireNotNull(repository.exportedPath)
-        assertEquals(directory, exported.parent)
-        assertTrue(exported.name.startsWith("dailyfitness-export-"))
-        assertTrue(exported.name.endsWith(".json"))
-        assertEquals(exported.toString(), state.exportedPath)
+        val fileName = requireNotNull(provider.lastFileName)
+        assertTrue(fileName.startsWith("dailyfitness-export-"))
+        assertTrue(fileName.endsWith(".json"))
+        assertEquals("/tmp/exports/$fileName", state.exportedPath)
+        assertTrue(repository.exported)
     }
 
     @Test
@@ -66,7 +68,7 @@ class ExportDataViewModelTest {
         val repository = FakeSettingRepository()
         val viewModel = ExportDataViewModel(
             settingRepository = repository,
-            directoryProvider = FakeDirectoryProvider(null),
+            directoryProvider = FakeDirectoryProvider { null },
             clock = Clock.System,
         )
 
@@ -77,7 +79,7 @@ class ExportDataViewModelTest {
         assertFalse(state.exporting)
         assertFalse(state.failed)
         assertNull(state.exportedPath)
-        assertNull(repository.exportedPath)
+        assertFalse(repository.exported)
     }
 
     @Test
@@ -85,7 +87,9 @@ class ExportDataViewModelTest {
         val repository = FakeSettingRepository(fail = true)
         val viewModel = ExportDataViewModel(
             settingRepository = repository,
-            directoryProvider = FakeDirectoryProvider(Path("/tmp/exports")),
+            directoryProvider = FakeDirectoryProvider { name ->
+                ExportTarget(displayPath = "/tmp/exports/$name", sink = Buffer())
+            },
             clock = Clock.System,
         )
 
@@ -98,18 +102,30 @@ class ExportDataViewModelTest {
         assertNull(state.exportedPath)
     }
 
-    private class FakeDirectoryProvider(private val directory: Path?) : ExportDirectoryProvider {
-        override suspend fun pickExportDirectory(): Path? = directory
+    private class FakeDirectoryProvider(
+        private val buildTarget: (String) -> ExportTarget?,
+    ) : ExportDirectoryProvider {
+        var lastFileName: String? = null
+
+        override suspend fun createExportTarget(fileName: String): ExportTarget? {
+            lastFileName = fileName
+            return buildTarget(fileName)
+        }
     }
 
     private class FakeSettingRepository(private val fail: Boolean = false) : ISettingRepository {
-        var exportedPath: Path? = null
+        var exported: Boolean = false
 
-        override suspend fun exportAllDataTo(path: Path) {
+        override suspend fun exportAllDataTo(path: Path) = Unit
+
+        override suspend fun exportAllDataTo(sink: Sink) {
             if (fail) error("boom")
-            exportedPath = path
+            sink.writeString("{}")
+            exported = true
         }
 
         override suspend fun importAllDataFrom(path: Path) = Unit
+
+        override suspend fun importAllDataFrom(source: Source) = Unit
     }
 }

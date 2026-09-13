@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.android.hilt.lib)
     implementation(libs.datetime)
     implementation(libs.serializationx.json)
+    implementation(libs.kotlinx.io.core)
     ksp(libs.android.hilt.compiler)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.composeMaterialIconsCore)

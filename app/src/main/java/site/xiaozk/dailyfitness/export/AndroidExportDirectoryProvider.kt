@@ -1,12 +1,15 @@
 package site.xiaozk.dailyfitness.export
 
+import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import android.provider.DocumentsContract
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.io.files.Path
+import kotlinx.io.asSink
+import kotlinx.io.buffered
 import site.xiaozk.dailyfitness.settings.ui.ExportDirectoryProvider
+import site.xiaozk.dailyfitness.settings.ui.ExportTarget
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
@@ -14,19 +17,23 @@ import kotlin.coroutines.resume
 /**
  * App-layer implementation of [ExportDirectoryProvider].
  *
- * The actual folder picker is a platform concern, so this class does not launch it
+ * The folder picker is a platform concern, so this class does not launch it
  * directly: `MainActivity` registers an `OpenDocumentTree` launcher and attaches it
- * via [attachLauncher]. The export ViewModel simply suspends in
- * [pickExportDirectory] until the user picks a folder (or cancels).
+ * via [attachLauncher]. The export ViewModel suspends in [createExportTarget] until
+ * the user picks a folder (or cancels).
  *
- * The chosen Storage Access Framework tree URI is mapped back to a kotlinx-io
- * [Path] so the `:settings` layer can write with `SystemFileSystem` (no `java.io`).
+ * A user-chosen directory is only writable through the Storage Access Framework
+ * (scoped storage forbids raw file writes there), so this class creates the export
+ * document via `DocumentsContract` and exposes its output stream as a kotlinx-io
+ * [kotlinx.io.Sink] for `:settings` to write into.
  */
 @Singleton
-class AndroidExportDirectoryProvider @Inject constructor() : ExportDirectoryProvider {
+class AndroidExportDirectoryProvider @Inject constructor(
+    @ApplicationContext private val context: Context,
+) : ExportDirectoryProvider {
 
     private var launchPicker: (() -> Unit)? = null
-    private var pending: CancellableContinuation<Path?>? = null
+    private var pending: CancellableContinuation<Uri?>? = null
 
     /** Called by the Activity with a callback that launches the system folder picker. */
     fun attachLauncher(launch: () -> Unit) {
@@ -41,10 +48,28 @@ class AndroidExportDirectoryProvider @Inject constructor() : ExportDirectoryProv
     fun onDirectoryPicked(uri: Uri?) {
         val continuation = pending ?: return
         pending = null
-        continuation.resume(uri?.toFileSystemPath())
+        continuation.resume(uri)
     }
 
-    override suspend fun pickExportDirectory(): Path? = suspendCancellableCoroutine { continuation ->
+    override suspend fun createExportTarget(fileName: String): ExportTarget? {
+        val treeUri = pickDirectory() ?: return null
+        val resolver = context.contentResolver
+        val parentDocument = DocumentsContract.buildDocumentUriUsingTree(
+            treeUri,
+            DocumentsContract.getTreeDocumentId(treeUri),
+        )
+        // Creates "<fileName>" inside the chosen tree and returns its document URI.
+        val documentUri = runCatching {
+            DocumentsContract.createDocument(resolver, parentDocument, MIME_TYPE_JSON, fileName)
+        }.getOrNull() ?: return null
+        val output = resolver.openOutputStream(documentUri) ?: return null
+        return ExportTarget(
+            displayPath = "${treeUri.toDisplayDirectory()}/$fileName",
+            sink = output.asSink().buffered(),
+        )
+    }
+
+    private suspend fun pickDirectory(): Uri? = suspendCancellableCoroutine { continuation ->
         val launch = launchPicker
         if (launch == null) {
             continuation.resume(null)
@@ -58,30 +83,16 @@ class AndroidExportDirectoryProvider @Inject constructor() : ExportDirectoryProv
         }
         launch()
     }
+
+    private companion object {
+        const val MIME_TYPE_JSON = "application/json"
+    }
 }
 
-/**
- * Maps a `DocumentsContract` tree URI to a real filesystem [Path].
- *
- * Only the two volumes that expose a plain filesystem path are supported:
- * `primary` (shared external storage) and `raw` (path already absolute). Other
- * document providers (cloud, USB, …) do not map to a [Path] and yield `null`.
- */
-@Suppress("DEPRECATION")
-private fun Uri.toFileSystemPath(): Path? {
+/** Human-readable directory name derived from the chosen tree URI (for the success message). */
+private fun Uri.toDisplayDirectory(): String {
     val documentId = runCatching { DocumentsContract.getTreeDocumentId(this) }.getOrNull()
-        ?: return null
+        ?: return toString()
     val separator = documentId.indexOf(':')
-    if (separator < 0) return null
-    val volume = documentId.substring(0, separator)
-    val relative = documentId.substring(separator + 1)
-    return when {
-        volume.equals("primary", ignoreCase = true) -> {
-            val root = Environment.getExternalStorageDirectory().absolutePath
-            if (relative.isBlank()) Path(root) else Path(root, relative)
-        }
-        volume.equals("raw", ignoreCase = true) ->
-            relative.takeIf { it.isNotBlank() }?.let { Path(it) }
-        else -> null
-    }
+    return if (separator >= 0) documentId.substring(separator + 1) else documentId
 }

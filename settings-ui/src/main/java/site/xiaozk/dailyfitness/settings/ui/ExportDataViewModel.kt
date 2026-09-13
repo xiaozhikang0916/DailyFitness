@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.ISettingRepository
-import site.xiaozk.dailyfitness.settings.exportFilePath
+import site.xiaozk.dailyfitness.settings.exportFileName
 import javax.inject.Inject
 
 /**
@@ -20,7 +20,7 @@ import javax.inject.Inject
 data class ExportDataUiState(
     /** A directory pick / file write is in flight. */
     val exporting: Boolean = false,
-    /** Absolute path of the last successfully written file (shown to the user). */
+    /** Full path of the last successfully written file (shown to the user). */
     val exportedPath: String? = null,
     /** The last attempt failed (directory unavailable or write error). */
     val failed: Boolean = false,
@@ -29,10 +29,11 @@ data class ExportDataUiState(
 /**
  * Drives a single full-data export.
  *
- * The destination directory comes from the app-injected [ExportDirectoryProvider]
- * (the platform folder picker), the file name is derived from `:settings` domain
- * logic ([exportFilePath]), and the write itself is performed by [ISettingRepository].
- * The ViewModel therefore owns no Android UI types and is unit-testable with fakes.
+ * The destination comes from the app-injected [ExportDirectoryProvider] (the
+ * platform folder picker, which also creates the file and opens a kotlinx-io
+ * [kotlinx.io.Sink]), the file name from `:settings` domain logic ([exportFileName]),
+ * and the bytes are written by [ISettingRepository]. The ViewModel therefore owns no
+ * Android UI types and is unit-testable with fakes.
  */
 @HiltViewModel
 class ExportDataViewModel @Inject constructor(
@@ -44,27 +45,33 @@ class ExportDataViewModel @Inject constructor(
     private val _state = MutableStateFlow(ExportDataUiState())
     val state: StateFlow<ExportDataUiState> = _state.asStateFlow()
 
-    /** Starts an export: pick a folder, then write the JSON file into it. */
+    /** Starts an export: pick a directory, then write the JSON file into it. */
     fun export() {
         if (_state.value.exporting) return
         viewModelScope.launch {
             _state.value = ExportDataUiState(exporting = true)
 
-            val directory = directoryProvider.pickExportDirectory()
-            if (directory == null) {
-                // Cancelled by the user: silently go back to idle.
+            val fileName = exportFileName(
+                clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            )
+            val target = runCatching {
+                directoryProvider.createExportTarget(fileName)
+            }.getOrNull()
+            if (target == null) {
+                // Cancelled by the user (or the folder was unusable): back to idle.
                 _state.value = ExportDataUiState()
                 return@launch
             }
 
-            val path = exportFilePath(
-                directory = directory,
-                timestamp = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()),
-            )
-            val result = runCatching { settingRepository.exportAllDataTo(path) }
+            val result = runCatching {
+                // The provider owns the file; closing the sink persists the bytes.
+                target.sink.use { sink ->
+                    settingRepository.exportAllDataTo(sink)
+                }
+            }
             _state.value = ExportDataUiState(
                 exporting = false,
-                exportedPath = path.toString().takeIf { result.isSuccess },
+                exportedPath = target.displayPath.takeIf { result.isSuccess },
                 failed = result.isFailure,
             )
         }
