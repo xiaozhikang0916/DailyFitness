@@ -14,8 +14,8 @@ android {
         applicationId = "site.xiaozk.dailyfitness"
         minSdk = 29
         targetSdk = 36
-        versionCode = 103002
-        versionName = "1.3.2"
+        versionCode = 103003
+        versionName = "1.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
