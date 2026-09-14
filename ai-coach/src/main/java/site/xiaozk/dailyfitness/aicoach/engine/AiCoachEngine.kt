@@ -18,7 +18,6 @@ import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,7 +59,7 @@ class AiCoachEngine @Inject constructor(
             return@withLock AiCoachResult.NoTrainParts
         }
 
-        val todayWorkout = allWorkouts[today]
+        val todayWorkout = allWorkouts.firstOrNull { it.date == today }
         return@withLock if (todayWorkout?.actions?.isNotEmpty() == true) {
             nextAdvice(today, allWorkouts, todayWorkout, trainGroups, conversation)
         } else {
@@ -72,15 +71,14 @@ class AiCoachEngine @Inject constructor(
 
     private suspend fun planToday(
         today: LocalDate,
-        allWorkouts: DailyWorkoutMap,
+        allWorkouts: List<DailyWorkout>,
         trainGroups: List<TrainPartGroup>,
         history: List<CoachMessage>,
     ): AiCoachResult {
-        // All past sessions, oldest -> newest.
-        val historyDays = allWorkouts.trainedDate.entries
-            .filter { it.key < today }
-            .sortedBy { it.key }
-            .mapNotNull { HistorySummarizer.summarize(it.value, today) }
+        // All past sessions, oldest -> newest (the repository API is already chronological).
+        val historyDays = allWorkouts
+            .filter { it.date < today }
+            .mapNotNull { HistorySummarizer.summarize(it, today) }
 
         if (historyDays.isEmpty()) {
             // No history at all: the model must answer with a plan (needMore is forbidden).
@@ -209,7 +207,7 @@ class AiCoachEngine @Inject constructor(
 
     private suspend fun nextAdvice(
         today: LocalDate,
-        allWorkouts: DailyWorkoutMap,
+        allWorkouts: List<DailyWorkout>,
         todayWorkout: DailyWorkout,
         trainGroups: List<TrainPartGroup>,
         history: List<CoachMessage>,
@@ -218,7 +216,8 @@ class AiCoachEngine @Inject constructor(
         if (todaySummary == null || todaySummary.parts.isEmpty()) {
             return AiCoachResult.Failed(CoachFailure.CannotDetermineTodayParts, retryable = true)
         }
-        // The "current part" = part of the most recent set of today.
+        // The "current part" = part of the most recent set of today. The list is
+        // chronological, so this is the last thing the user actually did.
         val currentPartName = todayWorkout.actions
             .maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
             ?.action?.part?.partName
@@ -230,15 +229,14 @@ class AiCoachEngine @Inject constructor(
         } ?: return AiCoachResult.Failed(CoachFailure.CurrentPartNotInLibrary, retryable = true)
 
         // Same-part history: sessions before today that trained currentPartName,
-        // restricted to that part only, most recent 5.
-        val partOnlyDays = allWorkouts.trainedDate.entries
-            .filter { it.key < today && HistorySummarizer.containsPart(it.value, currentPartName) }
-            .sortedBy { it.key }
+        // restricted to that part only, most recent 5 (chronological order).
+        val partOnlyDays = allWorkouts
+            .filter { it.date < today && HistorySummarizer.containsPart(it, currentPartName) }
         val partHistory = partOnlyDays.mapNotNull {
-            HistorySummarizer.summarizePartOnly(it.value, currentPartName, today)
+            HistorySummarizer.summarizePartOnly(it, currentPartName, today)
         }.takeLast(PART_HISTORY_SESSIONS)
         val lastPartDaysAgo = partOnlyDays.lastOrNull()?.let {
-            (today.toEpochDays() - it.key.toEpochDays()).toInt()
+            (today.toEpochDays() - it.date.toEpochDays()).toInt()
         }
 
         val userText = AiPrompts.nextAdviceUser(trainGroups, todaySummary, partHistory, lastPartDaysAgo)

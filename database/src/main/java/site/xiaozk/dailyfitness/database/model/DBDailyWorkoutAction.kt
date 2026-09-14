@@ -1,5 +1,6 @@
 package site.xiaozk.dailyfitness.database.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -11,18 +12,14 @@ import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionStaticPage
 import site.xiaozk.dailyfitness.repository.model.TrainActionWithPart
 import site.xiaozk.dailyfitness.repository.model.TrainPartStaticPage
-import site.xiaozk.dailyfitness.repository.model.WorkoutDaySummaryMap
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedDuration
 import site.xiaozk.dailyfitness.repository.model.unit.RecordedWeight
 import site.xiaozk.dailyfitness.repository.model.unit.TimeUnit
 import site.xiaozk.dailyfitness.repository.model.unit.WeightUnit
-import java.util.TreeMap
 
 
 /**
@@ -140,32 +137,37 @@ enum class DBTimeUnit(val repoUnit: TimeUnit) {
     }
 }
 
-fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutDailyMap(): DailyWorkoutMap {
-    val zone = TimeZone.currentSystemDefault()
-    return this.flatMap { outMap ->
-        outMap.value.flatMap { innerMap ->
-            innerMap.value.map {
-                outMap.key to (innerMap.key to it)
-            }
-        }
-    }.map {
-        it.second.toDailyWorkoutAction() to it.first.toRepoEntity()
-    }.groupBy({ it.first.instant.toLocalDateTime(zone).date }) {
-        it.first.action to it
-    }.entries.map { entry ->
-        entry.key to entry.value.groupBy({ it.first to it.second.second }) { it.second.first }
-    }.map {
-        it.first to it.second.entries.map { entry -> DailyWorkoutListActionPair(TrainActionWithPart(entry.key.second, entry.key.first), entry.value) }
-    }.associate {
-        it.first to DailyWorkout(it)
-    }.let {
-        DailyWorkoutMap(HashMap(it))
-    }
-}
+/**
+ * One row of the ordered workout query: the recorded set, its action and the resolved
+ * part name. The query orders rows by record time (oldest first), so this list order is
+ * the record order.
+ */
+data class DBDailyWorkoutRecord(
+    @Embedded val record: DBDailyWorkoutAction,
+    @Embedded val action: DBTrainAction,
+    @ColumnInfo(name = "partName") val partName: String,
+)
 
-fun Map<DBTrainPart, Map<DBTrainAction, List<DBDailyWorkoutAction>>>.toWorkoutSummary(): WorkoutDaySummaryMap {
-    return WorkoutDaySummaryMap(TreeMap(this.toWorkoutDailyMap().trainedDate.mapValues { kv -> DailyWorkoutSummary(kv.value) }))
-}
+/**
+ * Folds an ordered (oldest-first) list of [DBDailyWorkoutRecord] into [DailyWorkout]s
+ * while preserving that order: days oldest-first, action groups ordered by their earliest
+ * set, and each action's sets oldest-first.
+ */
+fun List<DBDailyWorkoutRecord>.toDailyWorkoutList(
+    zoneId: TimeZone = TimeZone.currentSystemDefault(),
+): List<DailyWorkout> = groupBy { it.record.actionTime.toLocalDateTime(zoneId).date }
+    .map { (date, rows) ->
+        DailyWorkout(
+            date = date,
+            actions = rows.groupBy { it.action }.map { (action, actionRows) ->
+                val part = DBTrainPart(id = action.partId, partName = actionRows.first().partName)
+                DailyWorkoutListActionPair(
+                    TrainActionWithPart(part.toRepoEntity(), action.toRepoAction()),
+                    actionRows.map { (action to it.record).toDailyWorkoutAction() },
+                )
+            },
+        )
+    }
 
 fun Pair<DBTrainAction, DBDailyWorkoutAction>.toDailyWorkoutAction(): DailyWorkoutAction {
     return DailyWorkoutAction(

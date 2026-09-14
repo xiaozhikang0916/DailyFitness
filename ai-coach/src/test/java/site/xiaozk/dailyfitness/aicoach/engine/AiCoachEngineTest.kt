@@ -28,7 +28,7 @@ import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlan
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlanReply
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 
 class AiCoachEngineTest {
@@ -40,7 +40,7 @@ class AiCoachEngineTest {
 
     private suspend fun newEngine(
         config: AiCoachConfig = configured,
-        map: DailyWorkoutMap = workoutMap(),
+        map: List<DailyWorkout> = workoutMap(),
         groups: List<TrainPartGroup>? = null,
         executor: FakePlanExecutor = FakePlanExecutor(),
         locale: CoachLocaleProvider = CoachLocaleProvider { "en-US" },
@@ -223,8 +223,8 @@ class AiCoachEngineTest {
             workoutOf(daysAgo(9), TestDayAction("胸部", "卧推", weighted = true, counted = true)),
         )
         val map = workoutMap(
-            *history.trainedDate.values.toTypedArray(),
-            *todayChestWorkout().trainedDate.values.toTypedArray(),
+            *history.toTypedArray(),
+            *todayChestWorkout().toTypedArray(),
         )
         val engine = newEngine(map = map, executor = executor)
 
@@ -277,7 +277,7 @@ class AiCoachEngineTest {
         // Today trained 胸部 but history contains only 背部.
         val map = workoutMap(
             workoutOf(daysAgo(5), TestDayAction("背部", "划船", counted = true)),
-            *todayChestWorkout().trainedDate.values.toTypedArray(),
+            *todayChestWorkout().toTypedArray(),
         )
         val engine = newEngine(map = map, executor = executor)
         val result = engine.recommendToday(emptyList())

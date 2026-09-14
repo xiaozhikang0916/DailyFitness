@@ -8,9 +8,10 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 import site.xiaozk.dailyfitness.database.model.DBDailyBodyData
-import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
-import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
+import site.xiaozk.dailyfitness.database.utils.getEndInstant
+import site.xiaozk.dailyfitness.database.utils.getStartInstant
 import site.xiaozk.dailyfitness.repository.model.User
+import kotlin.time.Instant
 
 /**
  * @author: xiaozhikang
@@ -27,14 +28,14 @@ interface BodyDao {
     @Delete
     suspend fun deleteDailyPersonData(data: DBDailyBodyData)
 
-    @Query("SELECT * from daily_body_data WHERE userId = :userId AND recordTime > :fromTimestampMilli AND recordTime < :toTimestampMilli")
-    fun getPersonDailyDataFlow(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<List<DBDailyBodyData>>
+    @Query("SELECT * from daily_body_data WHERE userId = :userId AND recordTime > :from AND recordTime < :to")
+    fun getPersonDailyDataFlow(userId: Int, from: Instant, to: Instant): Flow<List<DBDailyBodyData>>
 
     @Query("SELECT * from daily_body_data WHERE userId = :userId")
     fun getAllPersonDailyDataFlow(userId: Int): Flow<List<DBDailyBodyData>>
 
     fun getPersonDailyDataFlow(user: User, from: LocalDate, to: LocalDate): Flow<List<DBDailyBodyData>> {
-        return getPersonDailyDataFlow(user.uid, from.getStartEpochMillis(), to.getEndEpochMillis())
+        return getPersonDailyDataFlow(user.uid, from.getStartInstant(), to.getEndInstant())
     }
 
     /**

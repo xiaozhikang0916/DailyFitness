@@ -3,7 +3,6 @@ package site.xiaozk.dailyfitness.database.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
-import androidx.room.MapColumn
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -62,12 +61,5 @@ interface TrainDao {
 
     @Update
     suspend fun updateTrainAction(trainAction: DBTrainAction)
-
-
-    /**
-     * A helper query to map a group of train actions with id [actionId] to it's belonging train part
-     */
-    @Query("SELECT train_action.id as actionID, train_part.* FROM train_part JOIN train_action ON train_action.partId = train_part.id WHERE train_action.id IN (:actionId) ")
-    suspend fun getTrainPartOfAction(actionId: IntArray): Map<@MapColumn(columnName = "actionID") Int, DBTrainPart>
 
 }

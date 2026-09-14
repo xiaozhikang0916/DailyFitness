@@ -8,23 +8,24 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.database.dao.BodyDao
-import site.xiaozk.dailyfitness.database.dao.TrainDao
 import site.xiaozk.dailyfitness.database.dao.WorkoutDao
-import site.xiaozk.dailyfitness.database.model.DBDailyWorkoutAction
-import site.xiaozk.dailyfitness.database.model.DBTrainAction
+import site.xiaozk.dailyfitness.database.dao.getAllDailyWorkoutActions
+import site.xiaozk.dailyfitness.database.dao.getWorkoutDayList
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
+import site.xiaozk.dailyfitness.database.model.toDailyWorkoutList
 import site.xiaozk.dailyfitness.database.model.toDbEntity
-import site.xiaozk.dailyfitness.database.model.toWorkoutDailyMap
-import site.xiaozk.dailyfitness.database.model.toWorkoutSummary
-import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
-import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
+import site.xiaozk.dailyfitness.database.utils.getEndInstant
+import site.xiaozk.dailyfitness.database.utils.getStartInstant
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.model.BodyStatic
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutSummary
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
+import site.xiaozk.dailyfitness.repository.model.WorkoutDaySummaryMap
+import java.util.TreeMap
 import javax.inject.Inject
 
 /**
@@ -35,24 +36,21 @@ import javax.inject.Inject
 class DailyWorkoutRepository @Inject constructor(
     private val workoutDao: WorkoutDao,
     private val bodyDao: BodyDao,
-    private val trainDao: TrainDao,
 ) : IDailyWorkoutRepository {
 
     override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> {
-        return workoutDao.getDailyWorkoutActions(
+        return workoutDao.getWorkoutDayRecords(
             user.uid,
-            month.firstDay.getStartEpochMillis(),
-            month.lastDay.getEndEpochMillis(),
-        ).map {
-            val actions = it.keys.map { it.id }.toIntArray()
-            val parts = trainDao.getTrainPartOfAction(actions)
-            it.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
-                entry.toPair()
-            }.mapNotNull { entry ->
-                entry.key?.let { key -> key to entry.value.toMap() }
-            }.toMap().toWorkoutSummary()
-        }.map { workout ->
-            MonthWorkoutStatic(month, workout)
+            month.firstDay.getStartInstant(),
+            month.lastDay.getEndInstant(),
+        ).map { records ->
+            val workouts = records.toDailyWorkoutList()
+            MonthWorkoutStatic(
+                month = month,
+                workoutDays = WorkoutDaySummaryMap(
+                    TreeMap(workouts.associate { it.date to DailyWorkoutSummary(it) })
+                ),
+            )
         }
     }
 
@@ -96,14 +94,14 @@ class DailyWorkoutRepository @Inject constructor(
         user: User,
         from: LocalDate,
         to: LocalDate,
-    ): Flow<DailyWorkoutMap> {
-        return workoutDao.getDailyWorkoutActions(
-            user.uid, from.getStartEpochMillis(), to.getEndEpochMillis()
-        ).map { it.toDailyWorkoutMap(trainDao) }
+    ): Flow<List<DailyWorkout>> {
+        return workoutDao.getWorkoutDayList(
+            user.uid, from.getStartInstant(), to.getEndInstant()
+        )
     }
 
-    override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> {
-        return workoutDao.getAllDailyWorkoutActions(user.uid).map { it.toDailyWorkoutMap(trainDao) }
+    override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> {
+        return workoutDao.getAllDailyWorkoutActions(user.uid)
     }
 
     override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction {
@@ -139,15 +137,3 @@ private data class DataHolder(
     val hipSize: BodyStatic? = null,
     val bodyFat: BodyStatic? = null,
 )
-
-private suspend fun Map<DBTrainAction, List<DBDailyWorkoutAction>>.toDailyWorkoutMap(
-    trainDao: TrainDao,
-): DailyWorkoutMap {
-    val actions = this.keys.map { it.id }.toIntArray()
-    val parts = trainDao.getTrainPartOfAction(actions)
-    return this.entries.groupBy({ entry -> parts[entry.key.id] }) { entry ->
-        entry.toPair()
-    }.mapNotNull { entry ->
-        entry.key?.let { key -> key to entry.value.toMap() }
-    }.toMap().toWorkoutDailyMap()
-}

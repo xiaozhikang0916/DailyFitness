@@ -44,13 +44,6 @@ data class DailyWorkout(
 }
 
 @JvmInline
-value class DailyWorkoutMap(
-    val trainedDate: HashMap<LocalDate, DailyWorkout> = HashMap(),
-) {
-    operator fun get(date: LocalDate): DailyWorkout? = trainedDate[date]
-}
-
-@JvmInline
 value class DailyWorkoutListActionPair(
     val map: Pair<TrainActionWithPart, List<DailyWorkoutAction>>,
 ) {

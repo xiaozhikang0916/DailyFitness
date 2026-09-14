@@ -16,8 +16,8 @@ import site.xiaozk.dailyfitness.base.ActionStatus
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
@@ -189,9 +189,9 @@ class AddWorkoutStateMachineTest {
             user: User,
             from: LocalDate,
             to: LocalDate,
-        ): Flow<DailyWorkoutMap> = error("unused")
+        ): Flow<List<DailyWorkout>> = error("unused")
 
-        override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> = error("unused")
+        override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> = error("unused")
 
         override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction =
             error("unused")

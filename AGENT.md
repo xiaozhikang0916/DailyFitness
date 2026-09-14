@@ -32,7 +32,7 @@ Gradle modules are declared in `settings.gradle`:
 :app            Android application entry point (UI pages, navigation host, DI wiring)
 :session        Workout session feature (foreground service + ongoing notification)
 :database       Room database, DAOs, repository implementations, Hilt DB providers
-:repository     Pure interfaces + domain models shared across modules (no Android deps)
+:repository     Pure Kotlin/JVM module: interfaces + domain models shared across modules (no Android deps)
 :calendar       Reusable Compose calendar widgets
 :chart          Reusable Compose line-chart widgets (Vico wrapper)
 :settings       Settings logic + data definitions (import/export, settings bindings)

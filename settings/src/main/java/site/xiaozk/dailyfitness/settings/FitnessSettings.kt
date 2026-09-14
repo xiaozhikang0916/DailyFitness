@@ -58,7 +58,7 @@ class FitnessSettings
                 UserData(
                     user = user,
                     bodys = bodyData.personData.values.flatten(),
-                    workouts = workouts.trainedDate.flatMap { it.value.actions }
+                    workouts = workouts.flatMap { it.actions }
                         .flatMap { it.map.second },
                 ),
             ),

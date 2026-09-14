@@ -23,7 +23,6 @@ import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.TrainAction
@@ -67,10 +66,10 @@ class WorkoutSessionControllerTest {
             user: User,
             from: LocalDate,
             to: LocalDate,
-        ): Flow<DailyWorkoutMap> = flowOf(DailyWorkoutMap())
+        ): Flow<List<DailyWorkout>> = flowOf(emptyList())
 
-        override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> =
-            flowOf(DailyWorkoutMap())
+        override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> =
+            flowOf(emptyList())
 
         override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction =
             error("not used")

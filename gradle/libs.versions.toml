@@ -11,7 +11,11 @@ datetime = "0.8.0"
 kotlinx-io = "0.9.1"
 
 junit = "4.13.2"
+androidx-test-core = "1.7.0"
+androidx-test-ext-junit = "1.3.0"
+androidx-test-runner = "1.7.0"
 androidx-core = "1.19.0"
+androidx-annotation = "1.9.1"
 androidx-appcompat = "1.8.0"
 androidx-datastore = "1.2.1"
 androidx-lifecycle-runtime = "2.11.0"
@@ -32,6 +36,7 @@ flowredux = "2.1.1"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "android_build_tools" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt_version" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp_version" }
@@ -41,8 +46,10 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 
 [libraries]
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
-androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidx-test-core" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-ext-junit" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 coroutine-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutine" }
 coroutine-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutine" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
@@ -50,6 +57,7 @@ androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-p
 android-hilt-lib = { module = "com.google.dagger:hilt-android", version.ref = "hilt_version" }
 android-hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_version" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle-runtime" }
@@ -68,6 +76,7 @@ androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifec
 androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 
 serializationx-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization"}
+serializationx-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization"}
 datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 

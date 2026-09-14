@@ -24,7 +24,6 @@ import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutListActionPair
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
@@ -173,11 +172,8 @@ fun workoutOf(date: LocalDate, vararg entries: TestDayAction): DailyWorkout {
     return DailyWorkout(date = date, actions = actions)
 }
 
-fun workoutMap(vararg days: DailyWorkout): DailyWorkoutMap {
-    val map = HashMap<LocalDate, DailyWorkout>()
-    days.forEach { map[it.date] = it }
-    return DailyWorkoutMap(map)
-}
+/** Fake data mirroring the DAO's ordered API: days sorted oldest-first (chronological). */
+fun workoutMap(vararg days: DailyWorkout): List<DailyWorkout> = days.sortedBy { it.date }
 
 // ---------------------------------------------------------------------------
 // Fakes for repository interfaces & the LLM seam.
@@ -197,14 +193,14 @@ class FakeUserRepository : IUserRepository {
 }
 
 class FakeWorkoutRepository(
-    private val map: DailyWorkoutMap,
+    private val workouts: List<DailyWorkout> = emptyList(),
 ) : IDailyWorkoutRepository {
-    override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> = flowOf(map)
+    override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> = flowOf(workouts)
     override fun getWorkoutDayList(
         user: User,
         from: LocalDate,
         to: LocalDate,
-    ): Flow<DailyWorkoutMap> = flowOf(map)
+    ): Flow<List<DailyWorkout>> = flowOf(workouts.filter { it.date in from..to })
     override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> = TODO()
     override fun getHomeWorkoutStatics(user: User, month: YearMonth): Flow<HomeWorkoutStatic> = TODO()
     override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction = TODO()
