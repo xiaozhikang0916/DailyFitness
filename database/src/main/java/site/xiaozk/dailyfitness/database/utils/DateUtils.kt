@@ -1,12 +1,11 @@
 package site.xiaozk.dailyfitness.database.utils
 
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.nanoseconds
-import kotlin.time.toDuration
+import kotlin.time.Instant
 
 
 /**
@@ -15,10 +14,16 @@ import kotlin.time.toDuration
  * @create: 2023/3/1
  */
 
-fun LocalDate.getStartEpochMillis(zoneId: TimeZone = TimeZone.currentSystemDefault()): Long {
-    return this.atStartOfDayIn(zoneId).toEpochMilliseconds()
+/** First moment of this day in [zoneId]. */
+fun LocalDate.getStartInstant(zoneId: TimeZone = TimeZone.currentSystemDefault()): Instant {
+    return this.atStartOfDayIn(zoneId)
 }
 
-fun LocalDate.getEndEpochMillis(zoneId: TimeZone = TimeZone.currentSystemDefault()): Long {
-    return this.atStartOfDayIn(zoneId).plus(1.days).minus(1.nanoseconds).toEpochMilliseconds()
+/**
+ * Last moment of this day in [zoneId], meant to be used as an exclusive upper bound:
+ * queries compare `recordTime < :to`, so a record exactly at midnight of the next day is
+ * excluded while anything inside the day is included.
+ */
+fun LocalDate.getEndInstant(zoneId: TimeZone = TimeZone.currentSystemDefault()): Instant {
+    return this.atStartOfDayIn(zoneId).plus(1.days).minus(1.nanoseconds)
 }

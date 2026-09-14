@@ -11,6 +11,7 @@ import site.xiaozk.dailyfitness.database.model.DBDailyWorkoutRecord
 import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutList
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import kotlin.time.Instant
 
 /**
  * @author: xiaozhikang
@@ -29,12 +30,12 @@ interface WorkoutDao {
             JOIN train_action ON usingActionId = train_action.id 
             JOIN train_part ON train_action.partId = train_part.id 
             WHERE userId = :userId 
-            AND actionTime > :fromTimestampMilli 
-            AND actionTime < :toTimestampMilli
+            AND actionTime > :from 
+            AND actionTime < :to
             ORDER BY actionTime ASC, actionId ASC
         """
     )
-    fun getWorkoutDayRecords(userId: Int, fromTimestampMilli: Long, toTimestampMilli: Long): Flow<List<DBDailyWorkoutRecord>>
+    fun getWorkoutDayRecords(userId: Int, from: Instant, to: Instant): Flow<List<DBDailyWorkoutRecord>>
 
     @Query(
         """
@@ -68,10 +69,10 @@ interface WorkoutDao {
  */
 fun WorkoutDao.getWorkoutDayList(
     userId: Int,
-    fromTimestampMilli: Long,
-    toTimestampMilli: Long,
+    from: Instant,
+    to: Instant,
 ): Flow<List<DailyWorkout>> =
-    getWorkoutDayRecords(userId, fromTimestampMilli, toTimestampMilli)
+    getWorkoutDayRecords(userId, from, to)
         .map { it.toDailyWorkoutList() }
 
 /**

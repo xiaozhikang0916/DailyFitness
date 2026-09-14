@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -20,8 +21,9 @@ import site.xiaozk.dailyfitness.database.model.DBTrainAction
 import site.xiaozk.dailyfitness.database.model.DBTrainPart
 import site.xiaozk.dailyfitness.database.model.DBUser
 import site.xiaozk.dailyfitness.database.model.DBWeightUnit
-import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
-import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
+import site.xiaozk.dailyfitness.database.utils.getEndInstant
+import site.xiaozk.dailyfitness.database.utils.getStartInstant
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /**
@@ -92,12 +94,12 @@ class WorkoutDaoOrderingTest {
         addSet(day = DAY, hour = 9, actionId = BENCH, weightKg = 60f, reps = 8)
 
         val inRange = db.dailyDao()
-            .getWorkoutDayList(USER, DAY.getStartEpochMillis(zone), DAY.getEndEpochMillis(zone))
+            .getWorkoutDayList(USER, DAY.getStartInstant(zone), DAY.getEndInstant(zone))
             .first()
         assertEquals(listOf(DAY), inRange.map { it.date })
 
         val bothDays = db.dailyDao()
-            .getWorkoutDayList(USER, older.getStartEpochMillis(zone), DAY.getEndEpochMillis(zone))
+            .getWorkoutDayList(USER, older.getStartInstant(zone), DAY.getEndInstant(zone))
             .first()
         assertEquals(listOf(older, DAY), bothDays.map { it.date })
     }
@@ -125,9 +127,7 @@ class WorkoutDaoOrderingTest {
             DBDailyWorkoutAction(
                 usingActionId = actionId,
                 userId = USER,
-                actionTime = Instant.fromEpochMilliseconds(
-                    day.getStartEpochMillis(zone) + hour * 3_600_000L
-                ),
+                actionTime = day.getStartInstant(zone) + hour.hours,
                 recordedDuration = null,
                 recordedWeight = weightKg?.let { DBRecordedWeight(it, DBWeightUnit.Kg) },
                 takenCount = reps,
@@ -136,8 +136,7 @@ class WorkoutDaoOrderingTest {
         )
     }
 
-    private fun Instant.toLocalHour(): Int =
-        ((toEpochMilliseconds() % 86_400_000L) / 3_600_000L).toInt()
+    private fun Instant.toLocalHour(): Int = toLocalDateTime(zone).hour
 
     private fun LocalDate.minusDays(days: Int): LocalDate =
         LocalDate.fromEpochDays(toEpochDays() - days)

@@ -14,8 +14,8 @@ import site.xiaozk.dailyfitness.database.dao.getWorkoutDayList
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutAction
 import site.xiaozk.dailyfitness.database.model.toDailyWorkoutList
 import site.xiaozk.dailyfitness.database.model.toDbEntity
-import site.xiaozk.dailyfitness.database.utils.getEndEpochMillis
-import site.xiaozk.dailyfitness.database.utils.getStartEpochMillis
+import site.xiaozk.dailyfitness.database.utils.getEndInstant
+import site.xiaozk.dailyfitness.database.utils.getStartInstant
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.model.BodyStatic
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
@@ -41,8 +41,8 @@ class DailyWorkoutRepository @Inject constructor(
     override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> {
         return workoutDao.getWorkoutDayRecords(
             user.uid,
-            month.firstDay.getStartEpochMillis(),
-            month.lastDay.getEndEpochMillis(),
+            month.firstDay.getStartInstant(),
+            month.lastDay.getEndInstant(),
         ).map { records ->
             val workouts = records.toDailyWorkoutList()
             MonthWorkoutStatic(
@@ -96,7 +96,7 @@ class DailyWorkoutRepository @Inject constructor(
         to: LocalDate,
     ): Flow<List<DailyWorkout>> {
         return workoutDao.getWorkoutDayList(
-            user.uid, from.getStartEpochMillis(), to.getEndEpochMillis()
+            user.uid, from.getStartInstant(), to.getEndInstant()
         )
     }
 
