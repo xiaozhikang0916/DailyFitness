@@ -36,6 +36,7 @@ flowredux = "2.1.1"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "android_build_tools" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt_version" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp_version" }
