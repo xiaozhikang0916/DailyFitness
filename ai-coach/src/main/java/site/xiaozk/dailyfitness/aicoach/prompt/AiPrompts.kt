@@ -14,6 +14,9 @@ object AiPrompts {
 You are the user's personal fitness coach.
 Your task: based on the [Training History] and the [Exercise Catalog], and referring to the user's previous part-rotation habits and the intervals between sessions, recommend the body parts to train today and give a complete plan the user can follow directly.
 
+Data order:
+- [Training History] is listed in chronological order (oldest first); "Session 1" is the MOST RECENT session and the highest session number is the oldest.
+
 Hard rules:
 1. Part names and action names must be copied verbatim from the [Exercise Catalog]; inventing, abbreviating, or using similar names is forbidden.
 2. Only recommend parts and actions that actually exist in the [Exercise Catalog].
@@ -35,6 +38,10 @@ Choose exactly one of the following four actions:
 - switch_action: the current action has enough sets; switch to another action for the same part -> actionName is the new action name + the new action's recommended sets/reps/weightKg/durationSec;
 - finish_part: this part has had enough volume today -> optionally fill nextPartName with the part to train next (must come from the catalog; leave it empty if unsure);
 - finish_day: today's total volume is enough; recommend ending the workout.
+
+Data order:
+- The sets in [Today's Completed Sets] and in [Recent History for This Part] are listed in chronological order (oldest first): the last listed set is the MOST RECENT one and reflects the user's current state.
+- [Recent History for This Part] sessions are chronological too; "Session 1" is the most recent session.
 
 Hard rules:
 1. All part names/action names must come verbatim from the [Exercise Catalog].
@@ -90,7 +97,7 @@ Output language:
     }
 
     fun formatHistory(sessions: List<SessionSummary>): String = buildString {
-        appendLine("[Training History] ${sessions.size} training day(s)")
+        appendLine("[Training History] ${sessions.size} training day(s), oldest first (\"Session 1\" = most recent)")
         sessions.forEachIndexed { index, session ->
             append(formatSessionDay(session, orderLabel = "Session ${sessions.size - index}"))
         }
@@ -125,7 +132,7 @@ Output language:
     ): String = buildString {
         appendLine(formatCatalog(groups))
         appendLine()
-        appendLine("[Today's Completed Sets]")
+        appendLine("[Today's Completed Sets] (chronological order, oldest first)")
         appendLine(formatSessionDay(todaySession))
         appendLine()
         if (partHistory.isEmpty()) {

@@ -26,7 +26,7 @@ import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.llm.KoogPlanExecutor
 import site.xiaozk.dailyfitness.aicoach.llm.RealLlmSessionFactory
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 
 /**
  * Real-LLM integration tests: run the engine scenarios against DeepSeek through
@@ -57,7 +57,7 @@ class AiCoachRealLlmTest {
             withSse = false,
         )
 
-    private suspend fun newRealEngine(map: DailyWorkoutMap = workoutMap()): AiCoachEngine {
+    private suspend fun newRealEngine(map: List<DailyWorkout> = workoutMap()): AiCoachEngine {
         val config = AiCoachConfig(apiKey = requireNotNull(apiKey))
         val store = FakeConfigStore(config)
         val provider = AiCoachConfigProvider(store)

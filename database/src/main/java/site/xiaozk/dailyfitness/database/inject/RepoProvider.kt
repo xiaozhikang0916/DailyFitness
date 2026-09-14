@@ -38,8 +38,8 @@ class RepoProvider {
     }
 
     @Provides
-    fun provideTrainingDayRepo(workoutDao: WorkoutDao, bodyDao: BodyDao, trainDao: TrainDao): IDailyWorkoutRepository {
-        return DailyWorkoutRepository(workoutDao, bodyDao, trainDao)
+    fun provideTrainingDayRepo(workoutDao: WorkoutDao, bodyDao: BodyDao): IDailyWorkoutRepository {
+        return DailyWorkoutRepository(workoutDao, bodyDao)
     }
 
     @Provides

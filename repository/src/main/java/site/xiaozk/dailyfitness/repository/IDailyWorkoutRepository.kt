@@ -8,7 +8,6 @@ import kotlinx.datetime.YearMonth
 import kotlinx.datetime.toLocalDateTime
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.User
@@ -31,12 +30,14 @@ interface IDailyWorkoutRepository {
         month: YearMonth = YearMonth.now()
     ): Flow<HomeWorkoutStatic>
 
-    fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<DailyWorkoutMap>
+    /** Days ordered oldest-first (chronological), each day's records ordered oldest-first. */
+    fun getWorkoutDayList(user: User, from: LocalDate, to: LocalDate): Flow<List<DailyWorkout>>
 
-    fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap>
+    /** Days ordered oldest-first (chronological), each day's records ordered oldest-first. */
+    fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>>
 
     fun getWorkoutOfDayFlow(user: User, day: LocalDate): Flow<DailyWorkout?> {
-        return getWorkoutDayList(user, day, day).map { it.trainedDate[day] }
+        return getWorkoutDayList(user, day, day).map { workouts -> workouts.firstOrNull { it.date == day } }
     }
 
     suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction

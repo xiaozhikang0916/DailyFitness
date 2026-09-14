@@ -63,6 +63,7 @@ class AiPromptsTest {
         assertTrue(text.contains("3 days ago"))
         assertTrue(text.contains("7 days ago"))
         assertTrue(text.contains("Session 1"))
+        assertTrue(text.contains("oldest first"))
         assertTrue(text.contains("60kg×8"))
         assertTrue(text.contains("62.5kg×6"))
         assertTrue(text.contains("[Additional Note] No more training history can be provided"))
@@ -87,6 +88,7 @@ class AiPromptsTest {
         )
         val text = AiPrompts.nextAdviceUser(groups, todaySession, partHistory, lastPartDaysAgo = 4)
         assertTrue(text.contains("[Today's Completed Sets]"))
+        assertTrue(text.contains("chronological order, oldest first"))
         assertTrue(text.contains("[Recent History for This Part] last trained this part: 4 days ago"))
         assertTrue(text.contains("4 days ago"))
         assertTrue(text.contains("卧推"))
@@ -110,5 +112,7 @@ class AiPromptsTest {
         assertTrue(partPlan.contains("The user's locale is \"en-US\""))
         assertTrue(nextAdvice.contains("The user's locale is \"zh-CN\""))
         assertTrue(partPlan.contains("must never be translated"))
+        assertTrue(partPlan.contains("chronological order (oldest first)"))
+        assertTrue(nextAdvice.contains("chronological order (oldest first)"))
     }
 }

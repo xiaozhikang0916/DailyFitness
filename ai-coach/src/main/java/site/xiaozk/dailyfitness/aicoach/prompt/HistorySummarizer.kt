@@ -43,6 +43,11 @@ object HistorySummarizer {
     /**
      * Builds the summary of one [workout] day (its [DailyWorkoutListActionPair] entries are
      * grouped by part name in encounter order).
+     *
+     * [workout] is expected to come from the ordered repository API
+     * ([site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository]), i.e. parts, actions and
+     * sets are already oldest-first (chronological); the encounter-order grouping below keeps
+     * that order.
      */
     fun summarize(workout: DailyWorkout, today: LocalDate): SessionSummary? {
         if (workout.actions.isEmpty()) return null

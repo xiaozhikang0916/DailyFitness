@@ -22,8 +22,8 @@ import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.BodyDataRecord
 import site.xiaozk.dailyfitness.repository.model.BodyDataWithDate
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
-import site.xiaozk.dailyfitness.repository.model.DailyWorkoutMap
 import site.xiaozk.dailyfitness.repository.model.HomeTrainPartPage
 import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
 import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
@@ -95,14 +95,14 @@ class FitnessSettingsTest {
     }
 
     private class FakeWorkoutRepository : IDailyWorkoutRepository {
-        override fun getAllWorkoutDayList(user: User): Flow<DailyWorkoutMap> =
-            flowOf(DailyWorkoutMap())
+        override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> =
+            flowOf(emptyList())
 
         override fun getWorkoutDayList(
             user: User,
             from: LocalDate,
             to: LocalDate,
-        ): Flow<DailyWorkoutMap> = TODO()
+        ): Flow<List<DailyWorkout>> = TODO()
 
         override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> =
             TODO()
