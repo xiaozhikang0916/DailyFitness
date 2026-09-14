@@ -151,7 +151,7 @@ fun HomeWorkoutPage(
                 HomeWorkoutStaticsCard(
                     title = stringResource(R.string.label_home_workout_latest_weight),
                     content = it.data.second.toString(),
-                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_weight_unit_kg),
+                    subContent = stringResource(R.string.label_weight_unit_kg),
                     bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
@@ -161,7 +161,7 @@ fun HomeWorkoutPage(
                 HomeWorkoutStaticsCard(
                     title = stringResource(R.string.label_home_workout_latest_bust_size),
                     content = it.data.second.toString(),
-                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
+                    subContent = stringResource(R.string.label_length_unit_cm),
                     bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
@@ -171,7 +171,7 @@ fun HomeWorkoutPage(
                 HomeWorkoutStaticsCard(
                     title = stringResource(R.string.label_home_workout_latest_waist_size),
                     content = it.data.second.toString(),
-                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
+                    subContent = stringResource(R.string.label_length_unit_cm),
                     bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
@@ -181,7 +181,7 @@ fun HomeWorkoutPage(
                 HomeWorkoutStaticsCard(
                     title = stringResource(R.string.label_home_workout_latest_hip_size),
                     content = it.data.second.toString(),
-                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_length_unit_cm),
+                    subContent = stringResource(R.string.label_length_unit_cm),
                     bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }
@@ -191,7 +191,7 @@ fun HomeWorkoutPage(
                 HomeWorkoutStaticsCard(
                     title = stringResource(R.string.label_home_workout_latest_body_fat),
                     content = it.data.second.toString(),
-                    subContent = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_count_unit_percentage),
+                    subContent = stringResource(R.string.label_count_unit_percentage),
                     bottom = it.data.first.toJavaLocalDate().format(formatter)
                 )
             }

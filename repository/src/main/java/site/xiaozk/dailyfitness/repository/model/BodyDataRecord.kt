@@ -1,12 +1,9 @@
 package site.xiaozk.dailyfitness.repository.model
 
-import android.content.Context
 import androidx.annotation.FloatRange
-import androidx.annotation.StringRes
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.serialization.Serializable
-import site.xiaozk.dailyfitness.repository.R
 
 /**
  * @author: xiaozhikang
@@ -47,18 +44,12 @@ data class BodyDataRecord(
 
 
 enum class BodyField(
-    @StringRes val labelRes: Int,
-    @StringRes val trailingRes: Int,
     val property: (BodyDataRecord) -> Float,
     val fieldRange: ClosedFloatingPointRange<Float> = 0f..Float.MAX_VALUE,
 ) {
-    Weight(R.string.label_body_weight, R.string.label_weight_unit_kg, BodyDataRecord::weight),
-    Bust(R.string.label_bust_size, R.string.label_length_unit_cm, BodyDataRecord::bustSize),
-    Waist(R.string.label_waist_size, R.string.label_length_unit_cm, BodyDataRecord::waistSize),
-    Hip(R.string.label_hip_size, R.string.label_length_unit_cm, BodyDataRecord::hipSize),
-    BodyFat(R.string.label_body_fat, R.string.label_count_unit_percentage, BodyDataRecord::bodyFat, 0f..100f);
-
-    fun getLabel(context: Context): String = context.getString(labelRes)
-
-    fun getTrailing(context: Context): String = context.getString(trailingRes)
+    Weight(BodyDataRecord::weight),
+    Bust(BodyDataRecord::bustSize),
+    Waist(BodyDataRecord::waistSize),
+    Hip(BodyDataRecord::hipSize),
+    BodyFat(BodyDataRecord::bodyFat, 0f..100f);
 }

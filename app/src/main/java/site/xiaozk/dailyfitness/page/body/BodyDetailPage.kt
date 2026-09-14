@@ -251,23 +251,23 @@ private fun BodyDetailDaily(
         )
 
         if (data.weight != 0f) {
-            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_body_weight), content = "${data.weight} kg")
+            DataPair(name = stringResource(R.string.label_body_weight), content = "${data.weight} kg")
         }
 
         if (data.bustSize != 0f) {
-            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_bust_size), content = "${data.bustSize} cm")
+            DataPair(name = stringResource(R.string.label_bust_size), content = "${data.bustSize} cm")
         }
 
         if (data.waistSize != 0f) {
-            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_waist_size), content = "${data.waistSize} cm")
+            DataPair(name = stringResource(R.string.label_waist_size), content = "${data.waistSize} cm")
         }
 
         if (data.hipSize != 0f) {
-            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_hip_size), content = "${data.hipSize} cm")
+            DataPair(name = stringResource(R.string.label_hip_size), content = "${data.hipSize} cm")
         }
 
         if (data.bodyFat != 0f) {
-            DataPair(name = stringResource(site.xiaozk.dailyfitness.repository.R.string.label_body_fat), content = "${data.bodyFat} %")
+            DataPair(name = stringResource(R.string.label_body_fat), content = "${data.bodyFat} %")
         }
     }
 }
