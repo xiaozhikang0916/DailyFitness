@@ -3,6 +3,8 @@ package site.xiaozk.dailyfitness.aicoach.ui
 import com.freeletics.flowredux2.FlowReduxStateMachineFactory
 import com.freeletics.flowredux2.initializeWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
 import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
@@ -23,7 +25,9 @@ import javax.inject.Inject
  *   removed
  * - Idle / Error: [AiCoachUiAction.Refresh] -> Loading (history carried over)
  * - Loading: on enter, runs [IAiCoach.recommendToday] with the state's history and
- *   appends the returned turn(s) into the next Idle/Error state
+ *   appends the returned turn(s) into the next Idle/Error state; a timeout surfaces
+ *   as [CoachFailure.Timeout]. [AiCoachUiAction.Cancel] moves to Error immediately
+ *   ([CoachFailure.Cancelled]) and cancels the running request
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AiCoachStateMachine @Inject constructor(
@@ -84,6 +88,17 @@ class AiCoachStateMachine @Inject constructor(
             }
 
             inState<AiCoachUiState.Loading> {
+                on<AiCoachUiAction.Cancel> {
+                    override {
+                        AiCoachUiState.Error(
+                            setsToday = this.setsToday,
+                            failure = CoachFailure.Cancelled,
+                            retryable = true,
+                            // Keep the user turn, drop the pending (loading) assistant bubble.
+                            history = this.history.dropLast(1),
+                        )
+                    }
+                }
                 onEnter {
                     val setsToday = snapshot.setsToday
                     val turnId = snapshot.pendingTurnId
@@ -91,15 +106,22 @@ class AiCoachStateMachine @Inject constructor(
                     // Loading.history must never be sent to the engine/LLM.
                     val history = snapshot.requestHistory
                     // Rendered history minus the trailing pending loading bubble; the
-                    // reply replaces it, keeping the pending user bubble in place.
+                    // reply (or the failure hint) replaces it, keeping the pending user
+                    // bubble in place.
                     val baseHistory = snapshot.history.dropLast(1)
-                    val next = runCatching { aiCoach.recommendToday(history) }
-                        .getOrElse {
-                            AiCoachResult.Failed(
-                                CoachFailure.ModelError(it.message ?: it.javaClass.simpleName),
-                                retryable = true,
-                            )
-                        }
+                    val next = try {
+                        aiCoach.recommendToday(history)
+                    } catch (it: Throwable) {
+                        // Re-throw only if this coroutine itself was cancelled (e.g. the
+                        // request was aborted or the state changed); a random
+                        // CancellationException from an inner call must not cancel the
+                        // machine, so it is surfaced as a normal failure instead.
+                        currentCoroutineContext().ensureActive()
+                        AiCoachResult.Failed(
+                            CoachFailure.ModelError(it.message ?: it.javaClass.simpleName),
+                            retryable = true,
+                        )
+                    }
                     val target = when (next) {
                         is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
                         AiCoachResult.NoTrainParts ->
@@ -118,7 +140,9 @@ class AiCoachStateMachine @Inject constructor(
                             setsToday = setsToday,
                             failure = next.failure,
                             retryable = next.retryable,
-                            history = history,
+                            // Keep the user turn visible so retrying from the same spot
+                            // shows what was asked; the UI renders the hint as a bubble.
+                            history = baseHistory,
                         )
                     }
                     override { target }

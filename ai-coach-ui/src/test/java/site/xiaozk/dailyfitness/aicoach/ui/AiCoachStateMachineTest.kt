@@ -1,6 +1,7 @@
 package site.xiaozk.dailyfitness.aicoach.ui
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -13,6 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
+import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
@@ -28,6 +30,37 @@ import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
  * settings page storing a key and move to `Idle` on its own.
  */
 class AiCoachStateMachineTest {
+
+    @Test
+    fun `cancel aborts the in-flight request and surfaces a cancelled error`() = runTest {
+        val store = FakeConfigStore(AiCoachConfig(apiKey = "test-key"))
+        val provider = AiCoachConfigProvider(store)
+        provider.config.first { it.configured }
+
+        val started = CompletableDeferred<Unit>()
+        val coach = object : IAiCoach {
+            override suspend fun recommendToday(history: List<CoachMessage>): AiCoachResult {
+                started.complete(Unit)
+                awaitCancellation()
+            }
+        }
+        val machine = AiCoachStateMachine(coach, provider).launchIn(backgroundScope)
+        machine.state.first { it is AiCoachUiState.Idle }
+
+        val userContent = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))
+        machine.dispatchAction(AiCoachUiAction.Refresh(userContent))
+        started.await()
+        machine.state.first { it is AiCoachUiState.Loading }
+
+        machine.dispatchAction(AiCoachUiAction.Cancel)
+
+        val error = machine.state.first { it is AiCoachUiState.Error } as AiCoachUiState.Error
+        assertEquals(CoachFailure.Cancelled, error.failure)
+        // The user turn stays visible; only the pending (loading) assistant bubble is dropped.
+        assertFalse(error.history.last().isLoading)
+        assertTrue(error.history.last().fromUser)
+        assertEquals(userContent, error.history.last().content)
+    }
 
     @Test
     fun `the real reply reuses the pending bubble id`() = runTest {

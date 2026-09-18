@@ -21,6 +21,9 @@
     <string name="ai_settings_model_pro">DeepSeek V4 Pro</string>
     <string name="ai_settings_base_url">API 地址（可选）</string>
     <string name="ai_settings_base_url_hint">留空则使用 DeepSeek 官方地址。</string>
+    <string name="ai_settings_timeout">请求超时时间（秒）</string>
+    <string name="ai_settings_timeout_hint">5–120 秒，默认 15 秒。</string>
+    <string name="ai_settings_timeout_invalid">请输入 5–120 之间的数值。</string>
     <string name="ai_settings_save">保存</string>
     <string name="ai_settings_saved">已保存</string>
     <string name="ai_settings_api_key_required">请填写 API Key 以启用 AI 教练。</string>

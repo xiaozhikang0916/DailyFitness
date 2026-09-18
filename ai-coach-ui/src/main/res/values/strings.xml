@@ -6,11 +6,10 @@
     <string name="ai_ready_hint">AI Coach will analyze your training history (parts, actions, weights and sets) and recommend what to train today or what to do next. Data is only sent to the AI service when you tap the button below.</string>
     <string name="ai_refresh">Get AI recommendation</string>
     <string name="ai_loading">AI is analyzing your training history…</string>
-    <string name="ai_retry">Retry</string>
+    <string name="ai_cancel">Cancel</string>
     <string name="ai_config_missing_title">AI Coach needs a configuration</string>
     <string name="ai_config_missing_hint">Add your DeepSeek API key in the AI Coach settings to enable recommendations. The key is stored only on this device, and training summaries are only sent to the AI service when you request a recommendation.</string>
     <string name="ai_open_settings">Open AI Coach settings</string>
-    <string name="ai_error_title">Something went wrong</string>
     <string name="ai_no_train_parts_hint">No train parts or actions exist yet. Add a train part and its actions first, then ask AI Coach for a recommendation.</string>
     <string name="ai_plan_title">Recommended for today</string>
     <string name="ai_part_primary">Main</string>
@@ -32,7 +31,9 @@
     <string name="ai_action_weight">\@%1$skg</string>
     <string name="ai_action_duration">%1$ds</string>
     <string name="ai_error_invalid_key">Invalid or unauthorized API key. Check the AI settings.</string>
-    <string name="ai_error_network">Network connection failed or timed out. Check your connection and retry.</string>
+    <string name="ai_error_network">Network connection failed. Check your connection and retry.</string>
+    <string name="ai_error_timeout">The AI request timed out. Please retry.</string>
+    <string name="ai_error_cancelled">Request cancelled.</string>
     <string name="ai_error_rate_limited">Too many requests (rate limited). Please retry later.</string>
     <string name="ai_error_model">AI request failed: %1$s</string>
     <string name="ai_error_need_more_without_history">The AI asked for more data even though no history could be provided and returned no plan. Please retry.</string>

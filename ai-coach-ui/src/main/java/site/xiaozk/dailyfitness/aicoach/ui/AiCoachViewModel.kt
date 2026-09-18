@@ -57,6 +57,11 @@ class AiCoachViewModel @Inject constructor(
         machine.dispatchAction(AiCoachUiAction.Refresh(buildUserContent()))
     }
 
+    /** Aborts the in-flight request; the machine surfaces it as a cancelled error state. */
+    fun cancel() {
+        machine.dispatchAction(AiCoachUiAction.Cancel)
+    }
+
     private fun buildUserContent(): CoachMessageContent {
         val today = todayLocalDate()
         return if (todaySets <= 0) {

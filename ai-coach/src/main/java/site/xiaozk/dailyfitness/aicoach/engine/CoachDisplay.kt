@@ -58,8 +58,14 @@ sealed interface CoachFailure {
     /** API key rejected or missing permission. */
     data object InvalidKey : CoachFailure
 
-    /** Network unreachable or timed out. */
+    /** Network unreachable. */
     data object Network : CoachFailure
+
+    /** The provider did not answer within the configured request timeout. */
+    data object Timeout : CoachFailure
+
+    /** The user cancelled the in-flight request. */
+    data object Cancelled : CoachFailure
 
     /** Provider rate limit (HTTP 429). */
     data object RateLimited : CoachFailure

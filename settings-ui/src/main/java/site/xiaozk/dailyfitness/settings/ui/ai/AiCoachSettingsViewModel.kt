@@ -21,10 +21,17 @@ data class AiCoachSettingsUiState(
     val apiKey: String = "",
     val model: AiCoachModel = AiCoachModel.DeepSeekV4Flash,
     val baseUrl: String = "",
+    /** Kept as text so partial edits stay editable; parsed/validated via [timeoutValue]. */
+    val timeoutSeconds: String = AiCoachConfig.DEFAULT_TIMEOUT_SECONDS.toString(),
     val saved: Boolean = false,
 ) {
+    /** Parsed timeout, or null while the field is blank/invalid/out of range. */
+    val timeoutValue: Int?
+        get() = timeoutSeconds.trim().toIntOrNull()
+            ?.takeIf { it in AiCoachConfig.MIN_TIMEOUT_SECONDS..AiCoachConfig.MAX_TIMEOUT_SECONDS }
+
     val canSave: Boolean
-        get() = loaded && apiKey.isNotBlank()
+        get() = loaded && apiKey.isNotBlank() && timeoutValue != null
 }
 
 /**
@@ -51,6 +58,7 @@ class AiCoachSettingsViewModel @Inject constructor(
                     apiKey = config.apiKey,
                     model = config.model,
                     baseUrl = config.baseUrl.orEmpty(),
+                    timeoutSeconds = config.timeoutSeconds.toString(),
                 )
             }
         }
@@ -68,15 +76,21 @@ class AiCoachSettingsViewModel @Inject constructor(
         _state.update { it.copy(baseUrl = value, saved = false) }
     }
 
+    fun onTimeoutChange(value: String) {
+        _state.update { it.copy(timeoutSeconds = value, saved = false) }
+    }
+
     fun save() {
         val current = _state.value
         if (!current.canSave) return
+        val timeoutSeconds = current.timeoutValue ?: return
         viewModelScope.launch {
             configStore.save(
                 AiCoachConfig(
                     apiKey = current.apiKey.trim(),
                     model = current.model,
                     baseUrl = current.baseUrl.trim().takeIf { it.isNotBlank() },
+                    timeoutSeconds = timeoutSeconds,
                 )
             )
             _state.update { it.copy(saved = true) }

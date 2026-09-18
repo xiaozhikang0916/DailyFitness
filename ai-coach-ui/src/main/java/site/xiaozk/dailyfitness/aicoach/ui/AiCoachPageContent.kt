@@ -69,7 +69,9 @@ import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
  *
  * The chat is a single flat [LazyColumn]: the last assistant bubble is either the
  * pending loading bubble or the real reply, and both share the same stable item id
- * so the loading bubble animates into the reply in place.
+ * so the loading bubble animates into the reply in place. Failures are rendered as
+ * a hint bubble in the content tail (the failed turn itself is not part of the
+ * model-backed conversation).
  */
 @Composable
 fun AiCoachPageContent(
@@ -77,6 +79,7 @@ fun AiCoachPageContent(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     onRefresh: () -> Unit,
+    onCancel: () -> Unit,
     onOpenSettings: () -> Unit,
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
@@ -126,6 +129,7 @@ fun AiCoachPageContent(
                 ChatBubble(
                     message = message,
                     onAdoptSuggestion = onAdoptSuggestion,
+                    onCancel = onCancel,
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -142,7 +146,11 @@ fun AiCoachPageContent(
                         else -> RefreshFooter(onRefresh)
                     }
                     is AiCoachUiState.Loading -> Unit // The pending assistant bubble is the loading affordance.
-                    is AiCoachUiState.Error -> ErrorContent(state, onRefresh)
+                    is AiCoachUiState.Error -> {
+                        // Only the hint bubble; retrying uses the regular request button below.
+                        FailureBubble(state.failure)
+                        RefreshFooter(onRefresh)
+                    }
                 }
             }
         }
@@ -284,6 +292,7 @@ private fun Modifier.bubbleLoadingBorder(shape: Shape): Modifier {
 private fun ChatBubble(
     message: CoachMessage,
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = chatBubbleShape(message.fromUser)
@@ -292,6 +301,7 @@ private fun ChatBubble(
             .fillMaxWidth()
             .then(modifier),
         horizontalArrangement = if (message.fromUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(
             color = if (message.fromUser) {
@@ -331,6 +341,13 @@ private fun ChatBubble(
                         CoachMessageContent.Loading -> LoadingBubbleContent()
                     }
                 }
+            }
+        }
+        // The cancel affordance sits next to the bubble (not inside it) and only
+        // while the assistant turn is actually in flight.
+        if (message.isLoading) {
+            TextButton(onClick = onCancel) {
+                Text(stringResource(R.string.ai_cancel))
             }
         }
     }
@@ -541,17 +558,23 @@ private fun EmptyContentHint() {
     )
 }
 
+/** Assistant-styled bubble carrying only the failure hint (no retry affordance). */
 @Composable
-private fun ErrorContent(state: AiCoachUiState.Error, onRefresh: () -> Unit) {
-    Text(
-        text = stringResource(R.string.ai_error_title),
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-    )
-    Text(text = failureText(state.failure), style = MaterialTheme.typography.bodyMedium)
-    if (state.retryable) {
-        Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.ai_retry))
+private fun FailureBubble(failure: CoachFailure) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = chatBubbleShape(fromUser = false),
+            modifier = Modifier.widthIn(max = 300.dp),
+        ) {
+            Text(
+                text = failureText(failure),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(10.dp),
+            )
         }
     }
 }
@@ -585,6 +608,8 @@ private fun actionLineText(action: RecommendedAction): String {
 private fun failureText(failure: CoachFailure): String = when (failure) {
     CoachFailure.InvalidKey -> stringResource(R.string.ai_error_invalid_key)
     CoachFailure.Network -> stringResource(R.string.ai_error_network)
+    CoachFailure.Timeout -> stringResource(R.string.ai_error_timeout)
+    CoachFailure.Cancelled -> stringResource(R.string.ai_error_cancelled)
     CoachFailure.RateLimited -> stringResource(R.string.ai_error_rate_limited)
     is CoachFailure.ModelError -> stringResource(R.string.ai_error_model, failure.detail)
     CoachFailure.NeedMoreWithoutHistory -> stringResource(R.string.ai_error_need_more_without_history)

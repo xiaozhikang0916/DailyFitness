@@ -77,6 +77,7 @@ fun AiCoachHomePage() {
                 bottom = innerPadding.calculateBottomPadding() + 12.dp,
             ),
             onRefresh = viewModel::refresh,
+            onCancel = viewModel::cancel,
             onOpenSettings = { navBackStack.add(AiCoachSettings) },
             onAdoptSuggestion = { navBackStack.add(AddWorkoutAction(suggestion = it)) },
         )

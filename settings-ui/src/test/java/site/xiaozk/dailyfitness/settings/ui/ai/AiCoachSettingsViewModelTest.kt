@@ -41,7 +41,12 @@ class AiCoachSettingsViewModelTest {
     @Test
     fun `loads the persisted config`() = runTest(dispatcher) {
         val store = FakeConfigStore(
-            AiCoachConfig(apiKey = "old-key", model = AiCoachModel.DeepSeekV4Pro, baseUrl = "https://x")
+            AiCoachConfig(
+                apiKey = "old-key",
+                model = AiCoachModel.DeepSeekV4Pro,
+                baseUrl = "https://x",
+                timeoutSeconds = 30,
+            )
         )
         val viewModel = AiCoachSettingsViewModel(store)
         advanceUntilIdle()
@@ -51,6 +56,7 @@ class AiCoachSettingsViewModelTest {
         assertEquals("old-key", state.apiKey)
         assertEquals(AiCoachModel.DeepSeekV4Pro, state.model)
         assertEquals("https://x", state.baseUrl)
+        assertEquals("30", state.timeoutSeconds)
         assertFalse(state.saved)
     }
 
@@ -63,6 +69,7 @@ class AiCoachSettingsViewModelTest {
         viewModel.onApiKeyChange("  new-key  ")
         viewModel.onModelChange(AiCoachModel.DeepSeekV4Pro)
         viewModel.onBaseUrlChange("https://custom.example.com")
+        viewModel.onTimeoutChange("30")
         viewModel.save()
         advanceUntilIdle()
 
@@ -71,10 +78,25 @@ class AiCoachSettingsViewModelTest {
                 apiKey = "new-key",
                 model = AiCoachModel.DeepSeekV4Pro,
                 baseUrl = "https://custom.example.com",
+                timeoutSeconds = 30,
             ),
             store.saved,
         )
         assertTrue(viewModel.state.value.saved)
+    }
+
+    @Test
+    fun `save is ignored while the timeout is invalid`() = runTest(dispatcher) {
+        val store = FakeConfigStore(AiCoachConfig(apiKey = "old-key"))
+        val viewModel = AiCoachSettingsViewModel(store)
+        advanceUntilIdle()
+
+        viewModel.onTimeoutChange("0")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.canSave)
+        assertEquals(null, store.saved)
     }
 
     @Test

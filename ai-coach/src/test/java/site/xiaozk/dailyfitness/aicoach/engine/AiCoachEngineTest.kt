@@ -1,8 +1,10 @@
 package site.xiaozk.dailyfitness.aicoach.engine
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.KSerializer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,6 +29,7 @@ import site.xiaozk.dailyfitness.aicoach.llm.AdviceKindReply
 import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlan
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlanReply
+import site.xiaozk.dailyfitness.aicoach.llm.PlanExecutor
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
@@ -42,7 +45,7 @@ class AiCoachEngineTest {
         config: AiCoachConfig = configured,
         map: List<DailyWorkout> = workoutMap(),
         groups: List<TrainPartGroup>? = null,
-        executor: FakePlanExecutor = FakePlanExecutor(),
+        executor: PlanExecutor = FakePlanExecutor(),
         locale: CoachLocaleProvider = CoachLocaleProvider { "en-US" },
     ): AiCoachEngine {
         val resolvedGroups = groups ?: chestGroups()
@@ -51,7 +54,8 @@ class AiCoachEngineTest {
         // Propagation is async (provider scope on Dispatchers.Default); wait for the real
         // emission instead of bounding with virtual-time timeouts (runTest has none here).
         provider.config.first {
-            it.apiKey == config.apiKey && it.model == config.model && it.baseUrl == config.baseUrl
+            it.apiKey == config.apiKey && it.model == config.model &&
+                it.baseUrl == config.baseUrl && it.timeoutSeconds == config.timeoutSeconds
         }
         return AiCoachEngine(
             configProvider = provider,
@@ -186,6 +190,35 @@ class AiCoachEngineTest {
         val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
             ?: error("expected Failed")
         assertEquals(CoachFailure.Network, result.failure)
+        assertTrue(result.retryable)
+    }
+
+    @Test
+    fun `llm request over the configured timeout is mapped to a timeout failure`() = runTest {
+        // runTest's virtual clock makes the delay deterministic: withTimeout(5s) fires
+        // long before the 60s the fake would take.
+        val neverEnding = object : PlanExecutor {
+            override suspend fun <T> request(
+                promptId: String,
+                systemText: String,
+                userText: String,
+                history: List<CoachMessage>,
+                serializer: KSerializer<T>,
+            ): Result<T> {
+                delay(60_000)
+                error("must not be reached")
+            }
+
+            override fun close() = Unit
+        }
+        val engine = newEngine(
+            config = AiCoachConfig(apiKey = FAKE_API_KEY, timeoutSeconds = 5),
+            executor = neverEnding,
+        )
+
+        val result = engine.recommendToday(emptyList()) as? AiCoachResult.Failed
+            ?: error("expected Failed")
+        assertEquals(CoachFailure.Timeout, result.failure)
         assertTrue(result.retryable)
     }
 

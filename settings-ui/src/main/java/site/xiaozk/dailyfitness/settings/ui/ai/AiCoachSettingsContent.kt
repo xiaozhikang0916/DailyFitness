@@ -38,6 +38,7 @@ fun AiCoachSettingsContent(
     onApiKeyChange: (String) -> Unit,
     onModelChange: (AiCoachModel) -> Unit,
     onBaseUrlChange: (String) -> Unit,
+    onTimeoutChange: (String) -> Unit,
     onSave: () -> Unit,
 ) {
     Column(
@@ -81,6 +82,24 @@ fun AiCoachSettingsContent(
             label = { Text(stringResource(R.string.ai_settings_base_url)) },
             supportingText = { Text(stringResource(R.string.ai_settings_base_url_hint)) },
             singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = state.timeoutSeconds,
+            onValueChange = onTimeoutChange,
+            label = { Text(stringResource(R.string.ai_settings_timeout)) },
+            supportingText = {
+                Text(
+                    if (state.timeoutValue == null) {
+                        stringResource(R.string.ai_settings_timeout_invalid)
+                    } else {
+                        stringResource(R.string.ai_settings_timeout_hint)
+                    }
+                )
+            },
+            isError = state.timeoutValue == null,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
         )
         Button(

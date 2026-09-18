@@ -3,6 +3,7 @@ package site.xiaozk.dailyfitness.aicoach.config
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,6 +32,7 @@ class DataStoreAiCoachConfigStore @Inject constructor(
         val API_KEY = stringPreferencesKey("api_key")
         val MODEL = stringPreferencesKey("model")
         val BASE_URL = stringPreferencesKey("base_url")
+        val TIMEOUT_SECONDS = intPreferencesKey("timeout_seconds")
     }
 
     override fun observe(): Flow<AiCoachConfig> = dataStore.data.map { prefs ->
@@ -40,6 +42,8 @@ class DataStoreAiCoachConfigStore @Inject constructor(
                 runCatching { AiCoachModel.valueOf(raw) }.getOrNull()
             } ?: AiCoachModel.DeepSeekV4Flash,
             baseUrl = prefs[Keys.BASE_URL],
+            timeoutSeconds = (prefs[Keys.TIMEOUT_SECONDS] ?: AiCoachConfig.DEFAULT_TIMEOUT_SECONDS)
+                .coerceIn(AiCoachConfig.MIN_TIMEOUT_SECONDS, AiCoachConfig.MAX_TIMEOUT_SECONDS),
         )
     }
 
@@ -48,6 +52,8 @@ class DataStoreAiCoachConfigStore @Inject constructor(
         dataStore.edit { prefs ->
             prefs[Keys.API_KEY] = config.apiKey
             prefs[Keys.MODEL] = config.model.name
+            prefs[Keys.TIMEOUT_SECONDS] = config.timeoutSeconds
+                .coerceIn(AiCoachConfig.MIN_TIMEOUT_SECONDS, AiCoachConfig.MAX_TIMEOUT_SECONDS)
             if (baseUrl.isNullOrBlank()) {
                 prefs.remove(Keys.BASE_URL)
             } else {

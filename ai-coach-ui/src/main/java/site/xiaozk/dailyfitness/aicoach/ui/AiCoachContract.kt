@@ -92,4 +92,10 @@ sealed interface AiCoachUiAction {
 
     /** Live update of how many sets were recorded today (fed by the VM). */
     data class TodayInfo(val setsToday: Int) : AiCoachUiAction
+
+    /**
+     * Abort the in-flight request. Only handled while [AiCoachUiState.Loading]; it
+     * moves the machine to [AiCoachUiState.Error] and cancels the running request.
+     */
+    data object Cancel : AiCoachUiAction
 }
