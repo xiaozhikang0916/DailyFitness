@@ -59,6 +59,8 @@ sealed interface AiCoachUiState {
     @Immutable
     data class Ready(
         override val setsToday: Int,
+        /** Part of the most recent set today; null when nothing was trained. */
+        val currentPart: String? = null,
         override val history: List<CoachMessage> = emptyList(),
         /** Committed model conversation; a failed/aborted turn never lands here. */
         val requestHistory: List<CoachMessage> = emptyList(),
@@ -110,13 +112,10 @@ sealed interface AiCoachUiState {
 /** Actions dispatched into the FlowRedux machine. */
 sealed interface AiCoachUiAction {
     /**
-     * Fetch/re-fetch the recommendation. [userContent] is the locally-built user turn,
-     * shown immediately so the user bubble precedes the loading bubble.
+     * Fetch/re-fetch the recommendation. The machine owns the observed today state, so
+     * it builds the user turn itself instead of receiving it from the ViewModel.
      */
-    data class Refresh(val userContent: CoachMessageContent) : AiCoachUiAction
-
-    /** Live update of how many sets were recorded today (fed by the VM). */
-    data class TodayInfo(val setsToday: Int) : AiCoachUiAction
+    data object Refresh : AiCoachUiAction
 
     /** Abort the in-flight request; the machine turns the pending turn into a failure. */
     data object Cancel : AiCoachUiAction

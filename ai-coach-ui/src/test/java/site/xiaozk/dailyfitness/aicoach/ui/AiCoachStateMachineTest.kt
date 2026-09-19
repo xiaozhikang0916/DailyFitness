@@ -7,9 +7,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.YearMonth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -22,30 +25,36 @@ import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessageContent
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import site.xiaozk.dailyfitness.repository.IAiCoachConfigStore
+import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
+import site.xiaozk.dailyfitness.repository.IUserRepository
 import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
+import site.xiaozk.dailyfitness.repository.model.DailyWorkout
+import site.xiaozk.dailyfitness.repository.model.DailyWorkoutAction
+import site.xiaozk.dailyfitness.repository.model.HomeWorkoutStatic
+import site.xiaozk.dailyfitness.repository.model.MonthWorkoutStatic
+import site.xiaozk.dailyfitness.repository.model.User
 
 /**
  * The conversation is the state: pending/failed turns are ordinary messages, so
  * "loading" is derived from the last message and the machine runs/cancels its
  * request through a `condition` on that predicate.
  *
- * These tests cover the message layout, the request/abort lifecycle and the
- * invariant that UI-only turns never reach the engine.
+ * The machine also owns the observed today-training state and builds the user turn
+ * itself, so the ViewModel stays stateless.
  */
 class AiCoachStateMachineTest {
 
     @Test
-    fun `refresh appends a local user bubble and a loading assistant bubble`() = runTest {
+    fun `refresh builds a plan request when nothing was trained today`() = runTest {
         val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), HoldingCoach())
 
-        val userContent = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))
-        machine.dispatchAction(AiCoachUiAction.Refresh(userContent))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val loading = machine.awaitReady { it.isLoading }
 
         assertEquals(2, loading.history.size)
         val pendingUser = loading.history[0]
         assertTrue(pendingUser.fromUser)
-        assertEquals(userContent, pendingUser.content)
+        assertTrue(pendingUser.content is CoachMessageContent.PlanRequest)
         assertEquals(0, pendingUser.turnId)
         val pendingAssistant = loading.history[1]
         assertFalse(pendingAssistant.fromUser)
@@ -64,7 +73,7 @@ class AiCoachStateMachineTest {
         }
         val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
 
-        machine.dispatchAction(AiCoachUiAction.Refresh(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val loading = machine.awaitReady { it.isLoading }
         val pendingTurnId = loading.history.last().turnId
 
@@ -73,7 +82,7 @@ class AiCoachStateMachineTest {
 
         val reply = ready.history.last()
         assertFalse(reply.isLoading)
-        // Same list key => LazyColumn reuses the item and the loading bubble morphs in place.
+        // Same turn id => LazyColumn reuses the item and the loading bubble morphs in place.
         assertEquals(pendingTurnId, reply.turnId)
     }
 
@@ -88,8 +97,7 @@ class AiCoachStateMachineTest {
         }
         val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
 
-        val userContent = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))
-        machine.dispatchAction(AiCoachUiAction.Refresh(userContent))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         started.await()
         machine.awaitReady { it.isLoading }
 
@@ -99,7 +107,7 @@ class AiCoachStateMachineTest {
         // The user turn stays visible; the pending assistant bubble becomes the failure.
         assertEquals(2, ready.history.size)
         assertTrue(ready.history[0].fromUser)
-        assertEquals(userContent, ready.history[0].content)
+        assertTrue(ready.history[0].content is CoachMessageContent.PlanRequest)
         val failure = ready.history[1].content
         assertTrue(failure is CoachMessageContent.Failure)
         assertEquals(CoachFailure.Cancelled, (failure as CoachMessageContent.Failure).failure)
@@ -112,11 +120,11 @@ class AiCoachStateMachineTest {
         val coach = FailThenRecordCoach()
         val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
 
-        machine.dispatchAction(AiCoachUiAction.Refresh(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val failed = machine.awaitReady { !it.isLoading && coach.histories.size == 1 }
         assertTrue(failed.history.last().content is CoachMessageContent.Failure)
 
-        machine.dispatchAction(AiCoachUiAction.Refresh(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 2))))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val ready = machine.awaitReady { !it.isLoading && coach.histories.size == 2 }
 
         // First request: empty history. Second: the failed turn never entered the
@@ -136,7 +144,7 @@ class AiCoachStateMachineTest {
             NoTrainPartsThenPlanCoach(),
         )
 
-        machine.dispatchAction(AiCoachUiAction.Refresh(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val noParts = machine.state.first { it is AiCoachUiState.NoTrainParts } as AiCoachUiState.NoTrainParts
         // An empty library means no set could have been recorded today and no
         // conversation is worth keeping.
@@ -144,7 +152,7 @@ class AiCoachStateMachineTest {
         assertTrue(noParts.history.isEmpty())
 
         // Retry starts a fresh conversation once the library exists.
-        machine.dispatchAction(AiCoachUiAction.Refresh(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 2))))
+        machine.dispatchAction(AiCoachUiAction.Refresh)
         val ready = machine.awaitReady { !it.isLoading && it.history.size == 2 }
         assertTrue(ready.history.last().content is CoachMessageContent.PlanSummary)
     }
@@ -155,9 +163,8 @@ class AiCoachStateMachineTest {
         val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
 
         val turns = 7 // 14 messages, beyond the 5-round (10-message) request window.
-        val userContent = CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1))
         repeat(turns) { index ->
-            machine.dispatchAction(AiCoachUiAction.Refresh(userContent))
+            machine.dispatchAction(AiCoachUiAction.Refresh)
             machine.awaitReady { !it.isLoading && coach.histories.size == index + 1 }
         }
 
@@ -223,6 +230,38 @@ class AiCoachStateMachineTest {
         assertEquals(loading.history.last().turnId, replied.history.last().turnId)
         assertEquals(replied.history, replied.requestHistory)
     }
+
+    @Test
+    fun `reconciledWith gates on config and seeds today's training`() {
+        val configured = Observed(configured = true, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
+        val unconfigured = Observed(configured = false, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
+
+        // Initial / ConfigMissing become Ready already carrying today's data.
+        assertEquals(
+            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.Initial.reconciledWith(configured),
+        )
+        assertEquals(
+            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.ConfigMissing.reconciledWith(configured),
+        )
+
+        // Ready refreshes today's data but keeps both conversation lists.
+        val ready = AiCoachUiState.Ready(setsToday = 0)
+            .startTurn(CoachMessageContent.PlanRequest(LocalDate(2025, 1, 1)))
+        val reconciled = ready.reconciledWith(configured) as AiCoachUiState.Ready
+        assertEquals(3, reconciled.setsToday)
+        assertEquals("胸部", reconciled.currentPart)
+        assertEquals(ready.history, reconciled.history)
+        assertEquals(ready.requestHistory, reconciled.requestHistory)
+
+        // NoTrainParts ignores today: an empty library means zero sets.
+        assertEquals(AiCoachUiState.NoTrainParts, AiCoachUiState.NoTrainParts.reconciledWith(configured))
+
+        // A missing key always gates any settled state back to ConfigMissing.
+        assertEquals(AiCoachUiState.ConfigMissing, AiCoachUiState.Ready(setsToday = 3).reconciledWith(unconfigured))
+        assertEquals(AiCoachUiState.ConfigMissing, AiCoachUiState.NoTrainParts.reconciledWith(unconfigured))
+    }
 }
 
 private typealias UiMachine = FlowReduxStateMachine<StateFlow<AiCoachUiState>, AiCoachUiAction>
@@ -236,7 +275,12 @@ private suspend fun TestScope.machineWith(
     // so the first config emission is not the transient default.
     val expected = store.observe().first()
     provider.config.first { it == expected }
-    val machine = AiCoachStateMachine(coach, provider).launchIn(backgroundScope)
+    val machine = AiCoachStateMachine(
+        aiCoach = coach,
+        configProvider = provider,
+        userRepository = FakeUserRepository(),
+        workoutRepository = FakeWorkoutRepository(),
+    ).launchIn(backgroundScope)
     machine.state.first { it is AiCoachUiState.Ready || it is AiCoachUiState.ConfigMissing }
     return machine
 }
@@ -261,6 +305,29 @@ private class FakeConfigStore(initial: AiCoachConfig) : IAiCoachConfigStore {
     override suspend fun save(config: AiCoachConfig) {
         state.value = config
     }
+}
+
+private class FakeUserRepository : IUserRepository {
+    override suspend fun getCurrentUser(): User = User(uid = 1, name = "test")
+    override suspend fun createUser(user: User) = Unit
+}
+
+/** No workouts today, so the machine builds a PlanRequest turn. */
+private class FakeWorkoutRepository : IDailyWorkoutRepository {
+    override fun getWorkoutDayList(
+        user: User,
+        from: LocalDate,
+        to: LocalDate,
+    ): Flow<List<DailyWorkout>> = flowOf(emptyList())
+
+    override fun getAllWorkoutDayList(user: User): Flow<List<DailyWorkout>> = flowOf(emptyList())
+
+    override fun getMonthWorkoutStatic(user: User, month: YearMonth): Flow<MonthWorkoutStatic> = TODO()
+    override fun getHomeWorkoutStatics(user: User, month: YearMonth): Flow<HomeWorkoutStatic> = TODO()
+    override suspend fun getWorkout(user: User, workoutId: Int): DailyWorkoutAction = TODO()
+    override suspend fun addWorkoutAction(user: User, action: DailyWorkoutAction) = TODO()
+    override suspend fun deleteWorkoutAction(user: User, action: DailyWorkoutAction) = TODO()
+    override suspend fun getLastWorkout(user: User, date: LocalDate, zoneId: TimeZone): DailyWorkoutAction? = TODO()
 }
 
 private class HoldingCoach : IAiCoach {
