@@ -45,6 +45,13 @@ sealed interface CoachMessageContent {
      * flight. The UI renders it as a loading bubble and it is never sent to the LLM.
      */
     data object Loading : CoachMessageContent
+
+    /**
+     * Terminal assistant turn for a request that failed, timed out or was aborted
+     * by the user. Like [Loading] this is a UI-only turn: it belongs to the rendered
+     * conversation but must never be sent to the LLM.
+     */
+    data class Failure(val failure: CoachFailure) : CoachMessageContent
 }
 
 /**

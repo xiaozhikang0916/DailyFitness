@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,11 +68,11 @@ import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
  * navigation) lives in the app; this composable only renders the states produced
  * by [AiCoachViewModel].
  *
- * The chat is a single flat [LazyColumn]: the last assistant bubble is either the
- * pending loading bubble or the real reply, and both share the same stable item id
- * so the loading bubble animates into the reply in place. Failures are rendered as
- * a hint bubble in the content tail (the failed turn itself is not part of the
- * model-backed conversation).
+ * The chat is a single flat [LazyColumn]: each assistant turn is a real message,
+ * so the pending loading bubble, the real reply and a failure hint all render
+ * through [ChatBubble] and share one stable item id per turn (the loading bubble
+ * morphs in place into the reply / failure). The cancel affordance only appears
+ * next to an in-flight bubble.
  */
 @Composable
 fun AiCoachPageContent(
@@ -96,11 +97,6 @@ fun AiCoachPageContent(
         listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
     }
 
-    val setsToday = (state as? AiCoachUiState.Idle)?.setsToday
-        ?: (state as? AiCoachUiState.Loading)?.setsToday
-        ?: (state as? AiCoachUiState.Error)?.setsToday
-        ?: 0
-
     LazyColumn(
         state = listState,
         modifier = modifier
@@ -109,8 +105,8 @@ fun AiCoachPageContent(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (state !is AiCoachUiState.Initial && state !is AiCoachUiState.ConfigMissing) {
-            item(key = "scenario-header") { ScenarioHeader(setsToday) }
+        if (state is AiCoachUiState.Ready || state is AiCoachUiState.NoTrainParts) {
+            item(key = "scenario-header") { ScenarioHeader(state.setsToday) }
         }
         if (chatHistory.isNotEmpty()) {
             item(key = "chat-history-title") {
@@ -120,12 +116,12 @@ fun AiCoachPageContent(
                     color = MaterialTheme.colorScheme.outline,
                 )
             }
-            itemsIndexed(
+            items(
                 items = chatHistory,
-                // Stable ids let the pending bubble and its real reply share one item,
-                // so the message slides down (animateItem) and morphs in place.
-                key = { index, message -> message.id ?: "msg-$index" },
-            ) { _, message ->
+                // Stable per-turn keys let the pending bubble and its real reply share
+                // one item, so the message slides down (animateItem) and morphs in place.
+                key = { message -> message.listKey() },
+            ) { message ->
                 ChatBubble(
                     message = message,
                     onAdoptSuggestion = onAdoptSuggestion,
@@ -139,16 +135,18 @@ fun AiCoachPageContent(
                 when (state) {
                     AiCoachUiState.Initial -> Unit
                     AiCoachUiState.ConfigMissing -> ConfigMissingHint(onOpenSettings)
-                    is AiCoachUiState.Idle -> when {
-                        state.content is UiContent.NoTrainParts -> EmptyContentHint()
-                        // No assistant turn yet: the first-run call to action.
-                        state.history.none { !it.fromUser } -> RefreshCallToAction(onRefresh)
-                        else -> RefreshFooter(onRefresh)
+                    is AiCoachUiState.Ready -> if (state.history.none { !it.fromUser }) {
+                        // No assistant turn yet: the first-run call to action. A failed
+                        // turn is an assistant message, so this falls through to the
+                        // regular request button used to retry.
+                        RefreshCallToAction(onRefresh)
+                    } else {
+                        RefreshFooter(onRefresh)
                     }
-                    is AiCoachUiState.Loading -> Unit // The pending assistant bubble is the loading affordance.
-                    is AiCoachUiState.Error -> {
-                        // Only the hint bubble; retrying uses the regular request button below.
-                        FailureBubble(state.failure)
+                    is AiCoachUiState.NoTrainParts -> {
+                        EmptyContentHint()
+                        // The state machine allows retrying once a library exists; reuse
+                        // the regular request button so it is reachable from the UI.
                         RefreshFooter(onRefresh)
                     }
                 }
@@ -160,6 +158,17 @@ fun AiCoachPageContent(
 /** Bubble corner radii: large rounded sides, one pointed "tail" corner. */
 private val BubbleCornerRadius = 20.dp
 private val BubbleTailCornerRadius = 4.dp
+
+/**
+ * Stable LazyColumn key per turn: the loading bubble and the reply/failure replacing
+ * it share `turnId` + `fromUser`, so the same item is reused and animates in place.
+ *
+ * Depends only on message fields - never on the list position - so it stays stable as
+ * the conversation grows.
+ */
+@Stable
+private fun CoachMessage.listKey(): Int =
+    requireNotNull(turnId) { "a rendered message must belong to a turn" } * 2 + if (fromUser) 0 else 1
 
 /**
  * Material3-card-like speech bubble shape: large rounded corners everywhere except
@@ -335,6 +344,13 @@ private fun ChatBubble(
                         is CoachMessageContent.AdviceRequest ->
                             Text(
                                 text = userMessageText(content),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(10.dp),
+                            )
+                        is CoachMessageContent.Failure ->
+                            // Hint-only failure bubble; retrying uses the regular request button.
+                            Text(
+                                text = failureText(content.failure),
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(10.dp),
                             )
@@ -558,27 +574,6 @@ private fun EmptyContentHint() {
     )
 }
 
-/** Assistant-styled bubble carrying only the failure hint (no retry affordance). */
-@Composable
-private fun FailureBubble(failure: CoachFailure) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start,
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = chatBubbleShape(fromUser = false),
-            modifier = Modifier.widthIn(max = 300.dp),
-        ) {
-            Text(
-                text = failureText(failure),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(10.dp),
-            )
-        }
-    }
-}
-
 // ---------------------------------------------------------------- text helpers
 
 @Composable
@@ -587,9 +582,10 @@ private fun userMessageText(content: CoachMessageContent): String = when (conten
         stringResource(R.string.ai_chat_plan_request)
     is CoachMessageContent.AdviceRequest ->
         stringResource(R.string.ai_chat_advice_request, content.setsToday, content.partName)
-    // Assistant replies and the loading placeholder are rendered as rich content.
+    // Assistant replies, failures and the loading placeholder are rendered as rich content.
     is CoachMessageContent.PlanSummary,
     is CoachMessageContent.AdviceSummary,
+    is CoachMessageContent.Failure,
     CoachMessageContent.Loading -> ""
 }
 

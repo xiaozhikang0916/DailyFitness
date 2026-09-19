@@ -8,7 +8,6 @@ import kotlinx.coroutines.ensureActive
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.engine.AiCoachResult
 import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
-import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.engine.IAiCoach
 import javax.inject.Inject
 
@@ -18,16 +17,25 @@ import javax.inject.Inject
  * The machine instance is **stateless**: everything needed across transitions
  * (including the in-memory conversation) travels inside [AiCoachUiState].
  *
+ * The conversation is modelled as messages, so "loading" and "failed" are just the
+ * content of the last turn. The machine keys its side effects off that with
+ * `condition`, which FlowRedux folds into the side effect's `isInState`: flipping
+ * [AiCoachUiState.Ready.isLoading] cancels the running request job, which is how
+ * both completion and [AiCoachUiAction.Cancel] interrupt it. All turn mutation goes
+ * through the [AiCoachUiState.Ready] helpers, so the rendered and model
+ * conversations cannot drift.
+ *
  * Transitions:
  * - a single config observer registered on the [AiCoachUiState] upper bound runs in
- *   every state: it routes `Initial` -> Idle/ConfigMissing, `ConfigMissing` -> Idle
+ *   every state: it routes `Initial` -> Ready/ConfigMissing, `ConfigMissing` -> Ready
  *   once a key is stored, and any settled state -> ConfigMissing once the key is
  *   removed
- * - Idle / Error: [AiCoachUiAction.Refresh] -> Loading (history carried over)
- * - Loading: on enter, runs [IAiCoach.recommendToday] with the state's history and
- *   appends the returned turn(s) into the next Idle/Error state; a timeout surfaces
- *   as [CoachFailure.Timeout]. [AiCoachUiAction.Cancel] moves to Error immediately
- *   ([CoachFailure.Cancelled]) and cancels the running request
+ * - Ready && !isLoading: [AiCoachUiAction.Refresh] starts a turn (pending user +
+ *   loading assistant)
+ * - Ready && isLoading: `onEnter` runs [IAiCoach.recommendToday] and commits the
+ *   reply or a failure; [AiCoachUiAction.Cancel] commits a cancelled failure
+ *   immediately (and thereby cancels the request)
+ * - NoTrainParts: [AiCoachUiAction.Refresh] starts a fresh turn once a library exists
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AiCoachStateMachine @Inject constructor(
@@ -40,8 +48,8 @@ class AiCoachStateMachine @Inject constructor(
         spec {
             // Continuously observe the config in every state (registered on the
             // sealed-interface upper bound). This is the single place that reconciles
-            // the screen with the config: Initial routes to Idle/ConfigMissing,
-            // ConfigMissing -> Idle once a key appears, and any settled state ->
+            // the screen with the config: Initial routes to Ready/ConfigMissing,
+            // ConfigMissing -> Ready once a key appears, and any settled state ->
             // ConfigMissing once the key is removed.
             inState<AiCoachUiState> {
                 collectWhileInState(configProvider.config) { config ->
@@ -49,7 +57,7 @@ class AiCoachStateMachine @Inject constructor(
                         config.configured &&
                             (snapshot is AiCoachUiState.Initial ||
                                 snapshot is AiCoachUiState.ConfigMissing) ->
-                            override { AiCoachUiState.Idle(setsToday = 0, content = null) }
+                            override { AiCoachUiState.Ready(setsToday = 0) }
                         !config.configured && snapshot !is AiCoachUiState.ConfigMissing ->
                             override { AiCoachUiState.ConfigMissing }
                         else -> noChange()
@@ -57,106 +65,64 @@ class AiCoachStateMachine @Inject constructor(
                 }
             }
 
-            inState<AiCoachUiState.Idle> {
+            inState<AiCoachUiState.Ready> {
+                // Independent of the request lifecycle: works while loading too. The
+                // resulting Ready -> Ready update keeps `isLoading` unchanged, so the
+                // in-flight request is not cancelled.
                 on<AiCoachUiAction.TodayInfo> { action ->
                     mutate { copy(setsToday = action.setsToday) }
                 }
-                on<AiCoachUiAction.Refresh> { action ->
-                    override {
-                        AiCoachUiState.Loading(
-                            setsToday = this.setsToday,
-                            requestHistory = this.history,
-                            pendingUserContent = action.userContent,
-                        )
+
+                condition({ !it.isLoading }, name = "ready-idle") {
+                    on<AiCoachUiAction.Refresh> { action ->
+                        override { startTurn(action.userContent) }
+                    }
+                }
+
+                condition({ it.isLoading }, name = "ready-loading") {
+                    // Handled before the request finishes in the common case; the state
+                    // change flips `isLoading` and FlowRedux cancels the onEnter job.
+                    on<AiCoachUiAction.Cancel> {
+                        override { commitFailure(CoachFailure.Cancelled) }
+                    }
+
+                    onEnter {
+                        // The model conversation only: pending/failed turns never reach it.
+                        val next = try {
+                            aiCoach.recommendToday(snapshot.requestHistory)
+                        } catch (it: Throwable) {
+                            // Re-throw only if this coroutine itself was cancelled (e.g.
+                            // the request was aborted or the state changed); a random
+                            // CancellationException from an inner call must not cancel
+                            // the machine, so it is surfaced as a normal failure instead.
+                            currentCoroutineContext().ensureActive()
+                            AiCoachResult.Failed(
+                                CoachFailure.ModelError(it.message ?: it.javaClass.simpleName),
+                                retryable = true,
+                            )
+                        }
+                        val target: AiCoachUiState = when (next) {
+                            is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
+                            AiCoachResult.NoTrainParts -> AiCoachUiState.NoTrainParts
+                            is AiCoachResult.TodayPlan -> snapshot.commitReply(next.assistantMessage)
+                            is AiCoachResult.NextAdvice -> snapshot.commitReply(next.assistantMessage)
+                            is AiCoachResult.Failed -> snapshot.commitFailure(next.failure)
+                        }
+                        override { target }
                     }
                 }
             }
 
-            inState<AiCoachUiState.Error> {
-                on<AiCoachUiAction.TodayInfo> { action ->
-                    mutate { copy(setsToday = action.setsToday) }
-                }
+            inState<AiCoachUiState.NoTrainParts> {
+                // No TodayInfo handler: the library is empty, so setsToday is fixed at 0.
+                // Retry after the user built a library: a fresh turn moves the machine
+                // into Ready, whose loading condition runs the request.
                 on<AiCoachUiAction.Refresh> { action ->
                     override {
-                        AiCoachUiState.Loading(
-                            setsToday = this.setsToday,
-                            requestHistory = this.history,
-                            pendingUserContent = action.userContent,
-                        )
+                        AiCoachUiState.Ready(setsToday = 0).startTurn(action.userContent)
                     }
-                }
-            }
-
-            inState<AiCoachUiState.Loading> {
-                on<AiCoachUiAction.Cancel> {
-                    override {
-                        AiCoachUiState.Error(
-                            setsToday = this.setsToday,
-                            failure = CoachFailure.Cancelled,
-                            retryable = true,
-                            // Keep the user turn, drop the pending (loading) assistant bubble.
-                            history = this.history.dropLast(1),
-                        )
-                    }
-                }
-                onEnter {
-                    val setsToday = snapshot.setsToday
-                    val turnId = snapshot.pendingTurnId
-                    // Raw conversation only: the pending user/loading bubbles added by
-                    // Loading.history must never be sent to the engine/LLM.
-                    val history = snapshot.requestHistory
-                    // Rendered history minus the trailing pending loading bubble; the
-                    // reply (or the failure hint) replaces it, keeping the pending user
-                    // bubble in place.
-                    val baseHistory = snapshot.history.dropLast(1)
-                    val next = try {
-                        aiCoach.recommendToday(history)
-                    } catch (it: Throwable) {
-                        // Re-throw only if this coroutine itself was cancelled (e.g. the
-                        // request was aborted or the state changed); a random
-                        // CancellationException from an inner call must not cancel the
-                        // machine, so it is surfaced as a normal failure instead.
-                        currentCoroutineContext().ensureActive()
-                        AiCoachResult.Failed(
-                            CoachFailure.ModelError(it.message ?: it.javaClass.simpleName),
-                            retryable = true,
-                        )
-                    }
-                    val target = when (next) {
-                        is AiCoachResult.ConfigMissing -> AiCoachUiState.ConfigMissing
-                        AiCoachResult.NoTrainParts ->
-                            AiCoachUiState.Idle(setsToday, UiContent.NoTrainParts, history)
-                        is AiCoachResult.TodayPlan -> AiCoachUiState.Idle(
-                            setsToday = setsToday,
-                            content = null,
-                            history = baseHistory + next.assistantMessage.taggedAsAssistant(turnId),
-                        )
-                        is AiCoachResult.NextAdvice -> AiCoachUiState.Idle(
-                            setsToday = setsToday,
-                            content = null,
-                            history = baseHistory + next.assistantMessage.taggedAsAssistant(turnId),
-                        )
-                        is AiCoachResult.Failed -> AiCoachUiState.Error(
-                            setsToday = setsToday,
-                            failure = next.failure,
-                            retryable = next.retryable,
-                            // Keep the user turn visible so retrying from the same spot
-                            // shows what was asked; the UI renders the hint as a bubble.
-                            history = baseHistory,
-                        )
-                    }
-                    override { target }
                 }
             }
         }
     }
-
 }
-
-/**
- * Stamps the assistant reply with the id of the pending loading bubble
- * (`<turnId>:assistant`), so the LazyColumn reuses the same item when the reply
- * arrives and the loading bubble can animate into it in place.
- */
-private fun CoachMessage.taggedAsAssistant(turnId: String): CoachMessage =
-    copy(id = "$turnId:assistant")
