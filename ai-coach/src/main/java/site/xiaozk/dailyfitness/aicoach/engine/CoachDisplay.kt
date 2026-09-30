@@ -45,6 +45,13 @@ sealed interface CoachMessageContent {
      * flight. The UI renders it as a loading bubble and it is never sent to the LLM.
      */
     data object Loading : CoachMessageContent
+
+    /**
+     * Terminal assistant turn for a request that failed, timed out or was aborted
+     * by the user. Like [Loading] this is a UI-only turn: it belongs to the rendered
+     * conversation but must never be sent to the LLM.
+     */
+    data class Failure(val failure: CoachFailure) : CoachMessageContent
 }
 
 /**
@@ -58,8 +65,14 @@ sealed interface CoachFailure {
     /** API key rejected or missing permission. */
     data object InvalidKey : CoachFailure
 
-    /** Network unreachable or timed out. */
+    /** Network unreachable. */
     data object Network : CoachFailure
+
+    /** The provider did not answer within the configured request timeout. */
+    data object Timeout : CoachFailure
+
+    /** The user cancelled the in-flight request. */
+    data object Cancelled : CoachFailure
 
     /** Provider rate limit (HTTP 429). */
     data object RateLimited : CoachFailure

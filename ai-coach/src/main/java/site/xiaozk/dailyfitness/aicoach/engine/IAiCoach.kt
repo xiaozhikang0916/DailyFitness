@@ -32,10 +32,12 @@ data class CoachMessage(
     val suggestions: List<CoachSuggestion> = emptyList(),
     val at: Instant = Clock.System.now(),
     /**
-     * Stable identity assigned by the UI layer so a pending assistant bubble and the
-     * real reply that replaces it share one list item (in-place recomposition/animation).
+     * Turn this message belongs to, assigned by the UI layer so a pending assistant
+     * bubble and the real reply (or failure) that replaces it share one list item
+     * (in-place recomposition/animation). `fromUser` disambiguates the two sides of
+     * the turn. Null for turns built outside the UI layer.
      */
-    val id: String? = null,
+    val turnId: Int? = null,
 ) {
     /** True while this is the transient "AI is thinking" bubble (see [CoachMessageContent.Loading]). */
     val isLoading: Boolean get() = content is CoachMessageContent.Loading

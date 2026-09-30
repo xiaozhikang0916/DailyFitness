@@ -10,6 +10,7 @@ import ai.koog.prompt.executor.model.StructureFixingParser
 import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.prompt.toPromptText
@@ -59,13 +60,21 @@ internal class KoogLlmSession(
     ): Result<T> {
         val model = config.model.toKoogModel()
         val prompt = buildAiCoachPrompt(promptId, systemText, userText, history)
-        return runCatching {
-            executor.executeStructured(
-                prompt = prompt,
-                model = model,
-                serializer = serializer,
-                fixingParser = StructureFixingParser(model = model, retries = 1),
-            ).getOrThrow().data
+        return try {
+            Result.success(
+                executor.executeStructured(
+                    prompt = prompt,
+                    model = model,
+                    serializer = serializer,
+                    fixingParser = StructureFixingParser(model = model, retries = 1),
+                ).getOrThrow().data
+            )
+        } catch (e: CancellationException) {
+            // Keep cancellation cooperative: rethrowing lets the engine's withTimeout
+            // turn its own timeout into a TimeoutCancellationException it can map.
+            throw e
+        } catch (e: Throwable) {
+            Result.failure(e)
         }
     }
 

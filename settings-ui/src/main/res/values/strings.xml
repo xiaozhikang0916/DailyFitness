@@ -21,6 +21,9 @@
     <string name="ai_settings_model_pro">DeepSeek V4 Pro</string>
     <string name="ai_settings_base_url">API Base URL (optional)</string>
     <string name="ai_settings_base_url_hint">Leave empty to use the official DeepSeek endpoint.</string>
+    <string name="ai_settings_timeout">Request timeout (seconds)</string>
+    <string name="ai_settings_timeout_hint">5–120 seconds. Defaults to 15.</string>
+    <string name="ai_settings_timeout_invalid">Enter a value between 5 and 120.</string>
     <string name="ai_settings_save">Save</string>
     <string name="ai_settings_saved">Saved</string>
     <string name="ai_settings_api_key_required">Enter an API key to enable AI Coach.</string>

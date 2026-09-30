@@ -31,6 +31,7 @@ fun AiCoachSettingsPage() {
             onApiKeyChange = viewModel::onApiKeyChange,
             onModelChange = viewModel::onModelChange,
             onBaseUrlChange = viewModel::onBaseUrlChange,
+            onTimeoutChange = viewModel::onTimeoutChange,
             onSave = viewModel::save,
         )
     }

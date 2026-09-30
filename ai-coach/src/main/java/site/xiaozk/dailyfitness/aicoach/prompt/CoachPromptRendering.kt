@@ -29,9 +29,11 @@ internal fun CoachMessageContent.toPromptText(): String = when (this) {
 
     is CoachMessageContent.AdviceSummary -> advice.toPromptText()
 
-    // Transient UI placeholder: never part of the request history, so it renders
-    // to nothing if it ever leaks here.
+    // Transient UI placeholders: never part of the request history, so they render
+    // to nothing if they ever leak here.
     CoachMessageContent.Loading -> ""
+
+    is CoachMessageContent.Failure -> ""
 }
 
 private fun RecommendedAction.toPromptText(): String = buildList {

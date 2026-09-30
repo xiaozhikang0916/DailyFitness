@@ -6,11 +6,10 @@
     <string name="ai_ready_hint">AI 教练会分析你的训练历史（部位、动作、重量与组数），推荐今天练什么或下一步做什么。只有点击下方按钮时才会把训练摘要发送给 AI 服务。</string>
     <string name="ai_refresh">获取 AI 建议</string>
     <string name="ai_loading">AI 正在分析你的训练历史…</string>
-    <string name="ai_retry">重试</string>
+    <string name="ai_cancel">取消</string>
     <string name="ai_config_missing_title">需要先配置 AI 教练</string>
     <string name="ai_config_missing_hint">请在 AI 教练设置中填写 DeepSeek API Key 以启用推荐。Key 仅保存在本机；只有你请求推荐时才会把训练摘要发送给 AI 服务。</string>
     <string name="ai_open_settings">前往 AI 教练设置</string>
-    <string name="ai_error_title">出错了</string>
     <string name="ai_no_train_parts_hint">还没有任何训练部位与动作。请先添加训练部位及其动作，再向 AI 教练获取建议。</string>
     <string name="ai_plan_title">今日推荐</string>
     <string name="ai_part_primary">主推</string>
@@ -32,7 +31,9 @@
     <string name="ai_action_weight">\@%1$skg</string>
     <string name="ai_action_duration">%1$d秒</string>
     <string name="ai_error_invalid_key">API Key 无效或无权限，请检查 AI 设置中的配置。</string>
-    <string name="ai_error_network">网络连接失败或超时，请检查网络后重试。</string>
+    <string name="ai_error_network">网络连接失败，请检查网络后重试。</string>
+    <string name="ai_error_timeout">AI 请求超时，请重试。</string>
+    <string name="ai_error_cancelled">已取消本次请求。</string>
     <string name="ai_error_rate_limited">请求过于频繁（限流），请稍后重试。</string>
     <string name="ai_error_model">AI 请求失败：%1$s</string>
     <string name="ai_error_need_more_without_history">AI 在没有任何历史可提供时仍请求更多数据或返回了空计划，请重试。</string>

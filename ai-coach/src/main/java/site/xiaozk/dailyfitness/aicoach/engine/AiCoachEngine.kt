@@ -1,11 +1,14 @@
 package site.xiaozk.dailyfitness.aicoach.engine
 
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import kotlinx.serialization.KSerializer
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.llm.AdviceKindReply
 import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
@@ -17,12 +20,14 @@ import site.xiaozk.dailyfitness.aicoach.prompt.normalizeForMatch
 import site.xiaozk.dailyfitness.repository.IDailyWorkoutRepository
 import site.xiaozk.dailyfitness.repository.ITrainActionRepository
 import site.xiaozk.dailyfitness.repository.IUserRepository
+import site.xiaozk.dailyfitness.repository.model.AiCoachConfig
 import site.xiaozk.dailyfitness.repository.model.DailyWorkout
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Orchestrates the AI Coach flows.
@@ -83,7 +88,7 @@ class AiCoachEngine @Inject constructor(
         if (historyDays.isEmpty()) {
             // No history at all: the model must answer with a plan (needMore is forbidden).
             val userText = AiPrompts.partPlanUser(trainGroups, emptyList())
-            val reply = planExecutor.request(
+            val reply = requestLlm(
                 "aicoach-part-plan", AiPrompts.partPlanSystem(coachLocaleProvider.languageTag()), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
             if (reply.needMore || reply.plan.isNullOrEmpty()) {
@@ -106,7 +111,7 @@ class AiCoachEngine @Inject constructor(
                 null
             }
             val userText = AiPrompts.partPlanUser(trainGroups, window, additionalNote)
-            val reply = planExecutor.request(
+            val reply = requestLlm(
                 "aicoach-part-plan", AiPrompts.partPlanSystem(coachLocaleProvider.languageTag()), userText, history, PartPlanReply.serializer(),
             ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
@@ -240,7 +245,7 @@ class AiCoachEngine @Inject constructor(
         }
 
         val userText = AiPrompts.nextAdviceUser(trainGroups, todaySummary, partHistory, lastPartDaysAgo)
-        val reply = planExecutor.request(
+        val reply = requestLlm(
             "aicoach-next-advice", AiPrompts.nextAdviceSystem(coachLocaleProvider.languageTag()), userText, history, NextAdviceReply.serializer(),
         ).getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
 
@@ -309,6 +314,31 @@ class AiCoachEngine @Inject constructor(
 
     // ------------------------------------------------------------- turn helpers
 
+    /**
+     * Runs one LLM request bounded by the user-configured timeout. A timeout is
+     * returned as a failed [Result] (instead of propagating) so the caller maps it
+     * to [CoachFailure.Timeout]; any other cancellation keeps propagating so an
+     * externally aborted request really stops.
+     */
+    private suspend fun <T> requestLlm(
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage>,
+        serializer: KSerializer<T>,
+    ): Result<T> {
+        val timeout = configProvider.current.timeoutSeconds
+            .coerceIn(AiCoachConfig.MIN_TIMEOUT_SECONDS, AiCoachConfig.MAX_TIMEOUT_SECONDS)
+            .seconds
+        return try {
+            withTimeout(timeout) {
+                planExecutor.request(promptId, systemText, userText, history, serializer)
+            }
+        } catch (e: TimeoutCancellationException) {
+            Result.failure(e)
+        }
+    }
+
     private fun suggestionsOf(parts: List<RecommendedPart>): List<CoachSuggestion> =
         parts.flatMap { part ->
             part.actions.map { action ->
@@ -338,6 +368,7 @@ class AiCoachEngine @Inject constructor(
     }
 
     private fun userFacingError(cause: Throwable): CoachFailure {
+        if (cause is TimeoutCancellationException) return CoachFailure.Timeout
         val message = cause.message ?: cause.javaClass.simpleName
         val lower = message.lowercase()
         return when {

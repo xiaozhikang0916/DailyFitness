@@ -11,9 +11,17 @@ data class AiCoachConfig(
     val model: AiCoachModel = AiCoachModel.DeepSeekV4Flash,
     /** Null = use the provider's official endpoint. */
     val baseUrl: String? = null,
+    /** Timeout applied to a single LLM request, in seconds. */
+    val timeoutSeconds: Int = DEFAULT_TIMEOUT_SECONDS,
 ) {
     val configured: Boolean
         get() = apiKey.isNotBlank()
+
+    companion object {
+        const val DEFAULT_TIMEOUT_SECONDS: Int = 15
+        const val MIN_TIMEOUT_SECONDS: Int = 5
+        const val MAX_TIMEOUT_SECONDS: Int = 120
+    }
 }
 
 enum class AiCoachModel(val modelId: String) {
