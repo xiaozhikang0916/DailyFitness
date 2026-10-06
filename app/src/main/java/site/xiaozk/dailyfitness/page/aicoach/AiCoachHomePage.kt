@@ -11,6 +11,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -46,7 +47,14 @@ fun AiCoachHomePage() {
         hiltViewModel()
     }
     val state by viewModel.state.collectAsState()
+    val a2uiSurfaces by viewModel.a2uiSurfaces.collectAsState()
     val navBackStack = LocalNavBackStack.current
+    // Adopting from an agent-authored surface is an event: navigate once, never replay it.
+    LaunchedEffect(viewModel) {
+        viewModel.adoptRequests.collect { suggestion ->
+            navBackStack.add(AddWorkoutAction(suggestion = suggestion))
+        }
+    }
     val appSnackbarHostState = LocalAppSnackbarHostState.current
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -72,6 +80,7 @@ fun AiCoachHomePage() {
     ) { innerPadding ->
         AiCoachPageContent(
             state = state,
+            a2uiSurfaces = a2uiSurfaces,
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
                 bottom = innerPadding.calculateBottomPadding() + 12.dp,

@@ -10,7 +10,8 @@ import ai.koog.prompt.executor.model.StructureFixingParser
 import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.KSerializer
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.prompt.toPromptText
@@ -22,8 +23,8 @@ import javax.inject.Singleton
 /**
  * A cached LLM session (client + executor) that can be closed.
  *
- * KoogPlanExecutor only caches [LlmSession] instances and calls
- * [LlmSession.structuredRequest]; faking this type lets unit tests observe cache
+ * KoogPlanExecutor only caches [LlmSession] instances and calls [LlmSession.structuredRequest]
+ * or [LlmSession.textRequest]; faking this type lets unit tests observe cache
  * creation/teardown without any real client or network.
  */
 interface LlmSession : AutoCloseable {
@@ -36,6 +37,20 @@ interface LlmSession : AutoCloseable {
         history: List<CoachMessage> = emptyList(),
         serializer: KSerializer<T>,
     ): Result<T>
+
+    /**
+     * Runs one plain-text request and returns the raw assistant reply.
+     *
+     * Used by the agent-driven A2UI flow, whose answer is a JSON Lines envelope rather
+     * than a single structured object, so it cannot go through [structuredRequest].
+     */
+    suspend fun textRequest(
+        config: AiCoachConfig,
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage> = emptyList(),
+    ): Result<String>
 
     override fun close() {}
 }
@@ -69,11 +84,30 @@ internal class KoogLlmSession(
                     fixingParser = StructureFixingParser(model = model, retries = 1),
                 ).getOrThrow().data
             )
-        } catch (e: CancellationException) {
-            // Keep cancellation cooperative: rethrowing lets the engine's withTimeout
-            // turn its own timeout into a TimeoutCancellationException it can map.
-            throw e
         } catch (e: Throwable) {
+            // Only a cancellation of *this* coroutine should propagate (the engine's
+            // withTimeout turns it into a TimeoutCancellationException); a
+            // CancellationException raised inside the client must be surfaced as a normal
+            // failure instead of tearing down the caller.
+            currentCoroutineContext().ensureActive()
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun textRequest(
+        config: AiCoachConfig,
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage>,
+    ): Result<String> {
+        val model = config.model.toKoogModel()
+        val prompt = buildAiCoachPrompt(promptId, systemText, userText, history)
+        return try {
+            Result.success(executor.execute(prompt = prompt, model = model).textContent())
+        } catch (e: Throwable) {
+            // See structuredRequest: propagate only a real cancellation of this coroutine.
+            currentCoroutineContext().ensureActive()
             Result.failure(e)
         }
     }

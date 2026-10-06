@@ -29,6 +29,11 @@ internal fun CoachMessageContent.toPromptText(): String = when (this) {
 
     is CoachMessageContent.AdviceSummary -> advice.toPromptText()
 
+    // The agent's own A2UI payload is deliberately not replayed verbatim: it is verbose
+    // and the factual continuity comes from the workout data in the next prompt.
+    is CoachMessageContent.AgentUi ->
+        "[A2UI surface \"$surfaceId\" rendered from ${messages.size} protocol message(s)]"
+
     // Transient UI placeholders: never part of the request history, so they render
     // to nothing if they ever leak here.
     CoachMessageContent.Loading -> ""

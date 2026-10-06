@@ -138,6 +138,38 @@ class AiCoachStateMachineTest {
     }
 
     @Test
+    fun `an agent authored surface is committed as an AgentUi turn`() = runTest {
+        val messages = listOf(
+            """{"version":"v0.9","createSurface":{"surfaceId":"plan-1"}}""",
+            """{"version":"v0.9","updateComponents":{"surfaceId":"plan-1","components":[]}}""",
+        )
+        val coach = object : IAiCoach {
+            override suspend fun recommendToday(history: List<CoachMessage>): AiCoachResult =
+                AiCoachResult.AgentUi(
+                    surfaceId = "plan-1",
+                    messages = messages,
+                    assistantMessage = CoachMessage(
+                        fromUser = false,
+                        content = CoachMessageContent.AgentUi("plan-1", messages),
+                    ),
+                )
+        }
+        val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
+
+        machine.dispatchAction(AiCoachUiAction.Refresh)
+        val ready = machine.awaitReady { !it.isLoading && it.history.size == 2 }
+
+        val reply = ready.history.last()
+        val content = reply.content as? CoachMessageContent.AgentUi ?: error("expected AgentUi")
+        assertEquals("plan-1", content.surfaceId)
+        assertEquals(2, content.messages.size)
+        // The reply replaces the pending bubble inside the same turn.
+        assertEquals(ready.history.first().turnId, reply.turnId)
+        // The agent turn joins the model conversation like any other reply.
+        assertEquals(2, ready.requestHistory.size)
+    }
+
+    @Test
     fun `no train parts is a page gate that can be retried from scratch`() = runTest {
         val machine = machineWith(
             FakeConfigStore(AiCoachConfig(apiKey = "test-key")),

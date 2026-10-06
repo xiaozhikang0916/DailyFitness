@@ -78,6 +78,19 @@ sealed interface AiCoachResult {
         val assistantMessage: CoachMessage,
     ) : AiCoachResult
 
+    /**
+     * Agent-driven UI: the assistant answer is an A2UI surface the agent authored.
+     *
+     * [assistantMessage] carries the raw A2UI messages inside
+     * [CoachMessageContent.AgentUi] so the UI layer can feed the surface processor.
+     */
+    data class AgentUi(
+        val surfaceId: String,
+        val messages: List<String>,
+        /** Assistant reply; the matching user turn is built locally by the UI layer. */
+        val assistantMessage: CoachMessage,
+    ) : AiCoachResult
+
     /** AI key/model not configured yet. */
     data object ConfigMissing : AiCoachResult
 

@@ -13,6 +13,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.a2ui.A2uiSurface
+import androidx.compose.material3.a2ui.A2uiSurfaceDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -52,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.a2ui.model.processor.A2uiSurfaceModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
@@ -79,6 +83,7 @@ fun AiCoachPageContent(
     state: AiCoachUiState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    a2uiSurfaces: List<A2uiSurfaceModel> = emptyList(),
     onRefresh: () -> Unit,
     onCancel: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -122,12 +127,19 @@ fun AiCoachPageContent(
                 // one item, so the message slides down (animateItem) and morphs in place.
                 key = { message -> message.listKey() },
             ) { message ->
-                ChatBubble(
-                    message = message,
-                    onAdoptSuggestion = onAdoptSuggestion,
-                    onCancel = onCancel,
-                    modifier = Modifier.animateItem(),
-                )
+                when (val content = message.content) {
+                    is CoachMessageContent.AgentUi -> AgentUiTurn(
+                        content = content,
+                        surfaces = a2uiSurfaces,
+                        modifier = Modifier.animateItem(),
+                    )
+                    else -> ChatBubble(
+                        message = message,
+                        onAdoptSuggestion = onAdoptSuggestion,
+                        onCancel = onCancel,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
         }
         item(key = "content-tail") {
@@ -354,6 +366,9 @@ private fun ChatBubble(
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(10.dp),
                             )
+                        // Agent-authored turns render as a full-width A2UI surface via
+                        // [AgentUiTurn], never through the chat bubble.
+                        is CoachMessageContent.AgentUi -> Unit
                         CoachMessageContent.Loading -> LoadingBubbleContent()
                     }
                 }
@@ -377,6 +392,34 @@ private fun LoadingBubbleContent() {
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier.padding(10.dp),
     )
+}
+
+/**
+ * Renders an agent-authored turn: the A2UI surface the agent created under
+ * [CoachMessageContent.AgentUi.surfaceId].
+ *
+ * The surface is looked up among the processor's active surfaces, so a turn stays a pure
+ * function of the conversation plus the processor output.
+ */
+@Composable
+private fun AgentUiTurn(
+    content: CoachMessageContent.AgentUi,
+    surfaces: List<A2uiSurfaceModel>,
+    modifier: Modifier = Modifier,
+) {
+    val surface = surfaces.firstOrNull { it.id == content.surfaceId }
+    if (surface != null) {
+        A2uiSurface(
+            surfaceModel = surface,
+            modifier = modifier.fillMaxWidth(),
+        )
+    } else {
+        // The turn is committed before the processor has applied its messages: this covers
+        // that one-frame gap (and a surface the agent deleted).
+        Box(modifier = modifier.fillMaxWidth()) {
+            A2uiSurfaceDefaults.LoadingIndicator()
+        }
+    }
 }
 
 @Composable
@@ -585,6 +628,7 @@ private fun userMessageText(content: CoachMessageContent): String = when (conten
     // Assistant replies, failures and the loading placeholder are rendered as rich content.
     is CoachMessageContent.PlanSummary,
     is CoachMessageContent.AdviceSummary,
+    is CoachMessageContent.AgentUi,
     is CoachMessageContent.Failure,
     CoachMessageContent.Loading -> ""
 }

@@ -6,6 +6,7 @@ import site.xiaozk.dailyfitness.aicoach.TestActionSpec
 import site.xiaozk.dailyfitness.aicoach.TestDayAction
 import site.xiaozk.dailyfitness.aicoach.TestPartSpec
 import site.xiaozk.dailyfitness.aicoach.TestSetSpec
+import site.xiaozk.dailyfitness.aicoach.a2ui.A2uiActionContract
 import site.xiaozk.dailyfitness.aicoach.daysAgo
 import site.xiaozk.dailyfitness.aicoach.trainGroups
 import site.xiaozk.dailyfitness.aicoach.workoutOf
@@ -114,5 +115,25 @@ class AiPromptsTest {
         assertTrue(partPlan.contains("must never be translated"))
         assertTrue(partPlan.contains("chronological order (oldest first)"))
         assertTrue(nextAdvice.contains("chronological order (oldest first)"))
+    }
+
+    @Test
+    fun `agent system prompts carry the catalog, the envelope and the adopt action contract`() {
+        val catalogId = "https://dailyfitness.xiaozk.site/a2ui/v1/catalog.json"
+        val schema = """{"components":{"PartCard":{}}}"""
+
+        listOf(
+            AiPrompts.agentPlanSystem("en-US", catalogId, schema),
+            AiPrompts.agentAdviceSystem("en-US", catalogId, schema),
+        ).forEach { prompt ->
+            assertTrue(prompt.contains(catalogId))
+            assertTrue(prompt.contains(schema))
+            assertTrue(prompt.contains("\"control\":\"needMore\""))
+            assertTrue(prompt.contains("\"id\":\"root\""))
+            assertTrue(prompt.contains(A2uiActionContract.ADOPT_EVENT))
+            assertTrue(prompt.contains(A2uiActionContract.KEY_PART_NAME))
+            assertTrue(prompt.contains(A2uiActionContract.KEY_ACTION_NAME))
+            assertTrue(prompt.contains("The user's locale is \"en-US\""))
+        }
     }
 }

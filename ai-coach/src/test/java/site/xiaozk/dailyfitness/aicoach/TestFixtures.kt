@@ -12,6 +12,7 @@ import kotlinx.datetime.YearMonth
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Instant
+import site.xiaozk.dailyfitness.aicoach.a2ui.A2uiCapabilityProvider
 import site.xiaozk.dailyfitness.aicoach.engine.CoachMessage
 import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
 import site.xiaozk.dailyfitness.aicoach.llm.PartPlanReply
@@ -234,16 +235,25 @@ class FakeTrainActionRepository(
 class FakePlanExecutor : PlanExecutor {
     val calls = mutableListOf<Pair<String, String>>()
     val histories = mutableListOf<List<CoachMessage>>()
+    val systemTexts = mutableListOf<String>()
     private val partPlans = ArrayDeque<Result<PartPlanReply>>()
     private val nextAdvices = ArrayDeque<Result<NextAdviceReply>>()
+    private val rawReplies = ArrayDeque<Result<String>>()
 
     fun enqueuePartPlan(result: Result<PartPlanReply>) = partPlans.addLast(result)
     fun enqueueNextAdvice(result: Result<NextAdviceReply>) = nextAdvices.addLast(result)
+
+    /** Scripts one raw-text reply for the agent-driven A2UI flow. */
+    fun enqueueRawText(result: Result<String>) = rawReplies.addLast(result)
 
     val partPlanRequests: List<String>
         get() = calls.filter { it.first == "aicoach-part-plan" }.map { it.second }
     val nextAdviceRequests: List<String>
         get() = calls.filter { it.first == "aicoach-next-advice" }.map { it.second }
+
+    /** User prompts sent to the agent-driven flow, in call order. */
+    val agentRequests: List<String>
+        get() = calls.filter { it.first.startsWith("aicoach-agent-") }.map { it.second }
 
     override suspend fun <T> request(
         promptId: String,
@@ -254,6 +264,7 @@ class FakePlanExecutor : PlanExecutor {
     ): Result<T> {
         calls += promptId to userText
         histories += history
+        systemTexts += systemText
         val reply: Result<*> = when (promptId) {
             "aicoach-part-plan" -> partPlans.removeFirstOrNull()
                 ?: Result.failure(IllegalStateException("no scripted part-plan reply"))
@@ -265,5 +276,27 @@ class FakePlanExecutor : PlanExecutor {
         return reply as Result<T>
     }
 
+    override suspend fun requestRawText(
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage>,
+    ): Result<String> {
+        calls += promptId to userText
+        histories += history
+        systemTexts += systemText
+        return rawReplies.removeFirstOrNull()
+            ?: Result.failure(IllegalStateException("no scripted raw reply for $promptId"))
+    }
+
     override fun close() = Unit
+}
+
+/** In-memory [A2uiCapabilityProvider] so `:ai-coach` tests never touch the Compose catalog. */
+class FakeA2uiCapabilityProvider(
+    override val catalogId: String = "https://dailyfitness.xiaozk.site/a2ui/v1/catalog.json",
+    private val schema: String =
+        """{"components":{"PartCard":{"properties":{"partName":{}}},"ActionRow":{"properties":{"actionName":{}}}}}""",
+) : A2uiCapabilityProvider {
+    override fun inlineCatalogJson(): String = schema
 }

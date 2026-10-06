@@ -1,5 +1,6 @@
 package site.xiaozk.dailyfitness.aicoach.prompt
 
+import site.xiaozk.dailyfitness.aicoach.a2ui.A2uiActionContract
 import site.xiaozk.dailyfitness.repository.model.TrainPartGroup
 
 /**
@@ -66,6 +67,82 @@ Output language:
 
     fun nextAdviceSystem(localeTag: String): String =
         NEXT_ADVICE_SYSTEM + "\n\n" + languageInstruction(localeTag)
+
+    // ------------------------------------------------------------------ A2UI prompts
+
+    /**
+     * System prompt for the agent-driven UI variant of case A (today's plan).
+     *
+     * Reuses the recommendation rules of [PART_PLAN_SYSTEM] verbatim and replaces the
+     * structured reply contract with the A2UI one: the model either asks for more history
+     * or renders the plan as an A2UI surface built from [catalogSchema].
+     */
+    fun agentPlanSystem(localeTag: String, catalogId: String, catalogSchema: String): String =
+        listOf(
+            PART_PLAN_SYSTEM,
+            a2uiOutputContract(catalogId),
+            a2uiComponentRules(catalogSchema),
+            a2uiActionContract(),
+            languageInstruction(localeTag),
+        ).joinToString("\n\n")
+
+    /** System prompt for the agent-driven UI variant of case B (next-step advice). */
+    fun agentAdviceSystem(localeTag: String, catalogId: String, catalogSchema: String): String =
+        listOf(
+            NEXT_ADVICE_SYSTEM,
+            a2uiOutputContract(catalogId),
+            a2uiComponentRules(catalogSchema),
+            a2uiActionContract(),
+            languageInstruction(localeTag),
+        ).joinToString("\n\n")
+
+    /**
+     * The strict output envelope: JSON Lines, either the `needMore` control reply or an
+     * A2UI surface. A2UI has no "need more data" message, hence the two-variant envelope.
+     */
+    private fun a2uiOutputContract(catalogId: String): String = """
+[A2UI Output Contract] (STRICT)
+Do not answer with prose and do not answer with a JSON object that describes your recommendation.
+Reply with JSON Lines only: one JSON object per line, no markdown fences, no prose, no comments.
+Every message must carry "version":"v0.9".
+You have exactly two allowed replies; never mix them in one answer:
+(1) Ask for more training history - only when the data below is genuinely insufficient:
+    {"control":"needMore","wantSessions":<how many additional complete training days you need>}
+(2) Render the recommendation as an A2UI surface on catalog "$catalogId". Emit exactly these lines, in this order:
+    {"version":"v0.9","createSurface":{"surfaceId":"<any unique id>","catalogId":"$catalogId","sendDataModel":false}}
+    {"version":"v0.9","updateComponents":{"surfaceId":"<the same id>","components":[<component objects>]}}
+Wherever the rules above say "needMore=true / wantSessions=N", express it as reply (1).
+Wherever they say "needMore=false and the plan must be filled", or "give the advice", express it as reply (2).
+""".trimIndent()
+
+    /** Component authoring rules plus the catalog schema the agent must build against. */
+    private fun a2uiComponentRules(catalogSchema: String): String = """
+[A2UI Component Rules]
+- Use only the component types and property names declared in the [A2UI Catalog Schema] below. Never invent, rename or drop required properties.
+- Exactly one component must have "id":"root"; that component is the entry point of the surface and every other component must be reachable from it.
+- Components are declared as a flat list. A property declared as a child list takes an array of component ids, for example "children":["action-1","action-2"].
+- Every string the user reads must be spelled out in the component properties, in the output language. Part and action names stay verbatim.
+- Emit only components that carry real content; do not add decorative filler.
+[A2UI Catalog Schema]
+$catalogSchema
+""".trimIndent()
+
+    /**
+     * The tap-to-adopt contract: every recommended action row must be one tap away from a
+     * prefilled set, which is the app's own event vocabulary (not part of A2UI).
+     */
+    private fun a2uiActionContract(): String = """
+[A2UI Action Contract]
+Every recommended action row must be adoptable with one tap. On each ActionRow component set:
+    "action":{"event":{"name":"${A2uiActionContract.ADOPT_EVENT}","context":{
+      "${A2uiActionContract.KEY_PART_NAME}":"<the part name>",
+      "${A2uiActionContract.KEY_ACTION_NAME}":"<the action name>",
+      "${A2uiActionContract.KEY_SETS}":<sets>,
+      "${A2uiActionContract.KEY_REPS}":<reps>,
+      "${A2uiActionContract.KEY_WEIGHT_KG}":<weight in kg>,
+      "${A2uiActionContract.KEY_DURATION_SEC}":<duration in seconds>}}}
+Use literal values. Omit the context keys the action type does not support (reps / weightKg / durationSec).
+""".trimIndent()
 
     /** [Exercise Catalog] section text, names only (+ type markers). Groups come straight from the repository models. */
     fun formatCatalog(groups: List<TrainPartGroup>): String = buildString {

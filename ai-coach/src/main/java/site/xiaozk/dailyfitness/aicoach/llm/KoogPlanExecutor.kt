@@ -87,6 +87,20 @@ class KoogPlanExecutor @Inject constructor(
         return cached.session.structuredRequest(config, promptId, systemText, userText, history, serializer)
     }
 
+    override suspend fun requestRawText(
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage>,
+    ): Result<String> {
+        val config = configProvider.current
+        if (config.apiKey.isBlank()) {
+            return Result.failure(IllegalStateException("AI 未配置 API Key"))
+        }
+        val cached = rebuildIfNeeded(config)
+        return cached.session.textRequest(config, promptId, systemText, userText, history)
+    }
+
     override fun close() {
         // Cancellation triggers the awaitCancellation cleanup coroutine, which destroys
         // the cached session inside withContext(NonCancellable). No blocking wait here.

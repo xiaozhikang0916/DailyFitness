@@ -1,7 +1,7 @@
 [versions]
 java = "17"
 kotlin = "2.4.20"
-android_build_tools = "9.4.0"
+android_build_tools = "9.4.1"
 app_version = "0.0.1"
 hilt_version = "2.60.1"
 ksp_version = "2.3.11"
@@ -14,25 +14,27 @@ junit = "4.13.2"
 androidx-test-core = "1.7.0"
 androidx-test-ext-junit = "1.3.0"
 androidx-test-runner = "1.7.0"
-androidx-core = "1.19.0"
-androidx-annotation = "1.9.1"
+androidx-core = "1.19.1"
+androidx-annotation = "1.11.0"
 androidx-appcompat = "1.8.0"
 androidx-datastore = "1.2.1"
 androidx-lifecycle-runtime = "2.11.0"
 androidx-lifecycle-viewmodel-compose = "2.11.0"
 androidx-activity = "1.13.0"
-compose-bom = "2026.08.00"
-room = "2.8.4"
-navigation3 = "1.1.7"
+compose-bom = "2026.09.00"
+room = "2.8.5"
+navigation3 = "1.2.0"
 lifecycle-viewmodel-navigation3 = "2.11.0"
 hilt-lifecycle-viewmodel-compose = "1.4.0"
 
 vico = "1.6.4"
 
-koog = "1.2.0"
+koog = "1.3.0"
 koog-beta = "1.2.0-beta"
-ktor = "3.3.3"
+ktor = "3.6.0"
 flowredux = "2.1.1"
+
+a2ui-compose = "1.0.0-alpha01"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android_build_tools" }
@@ -89,6 +91,12 @@ koog-prompt-executor-llms-all = { module = "ai.koog:prompt-executor-llms-all", v
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 flowredux = { module = "com.freeletics.flowredux2:flowredux-android", version.ref = "flowredux" }
+
+a2ui-compose-runtime = { module = "androidx.a2ui.compose:compose-runtime", version.ref = "a2ui-compose" }
+a2ui-compose-ui = { module = "androidx.a2ui.compose:compose-ui", version.ref = "a2ui-compose" }
+a2ui-material3 = { module = "androidx.compose.material3:material3-a2ui", version.ref = "a2ui-compose" }
+a2ui-compose-ui-testing = { module = "androidx.a2ui.compose:compose-ui-testing", version.ref = "a2ui-compose" }
+a2ui-model = { module = "androidx.a2ui:a2ui-model", version.ref = "a2ui-compose" }
 
 [bundles]
 androidx-compose = ["androidx-composeUi", "androidx-composeGraphics", "androidx-composeMaterial", "androidx-composeUiTooling", "androidx-compose-material3", "androidx-lifecycle-viewmodel-compose"]

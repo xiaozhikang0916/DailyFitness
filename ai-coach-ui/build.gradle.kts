@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "site.xiaozk.dailyfitness.aicoach.ui"
     compileSdk = 37
+    compileSdkMinor = 2
 
     defaultConfig {
         minSdk = 29
@@ -51,9 +52,14 @@ dependencies {
     implementation(libs.bundles.androidx.compose)
     implementation(libs.androidx.composeMaterialIconsCore)
 
+    implementation(libs.a2ui.compose.runtime)
+    implementation(libs.a2ui.compose.ui)
+    implementation(libs.a2ui.material3)
+
     implementation(project(":ai-coach"))
     implementation(project(":repository"))
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutine.test)
+    testImplementation(libs.a2ui.compose.ui.testing)
 }

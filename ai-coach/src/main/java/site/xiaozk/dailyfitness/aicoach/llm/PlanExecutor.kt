@@ -27,6 +27,19 @@ interface PlanExecutor {
         serializer: KSerializer<T>,
     ): Result<T>
 
+    /**
+     * Runs one raw-text request and returns the unparsed assistant reply.
+     *
+     * The agent-driven A2UI flow answers with a JSON Lines envelope, which has no
+     * `KSerializer`, so it cannot use [request].
+     */
+    suspend fun requestRawText(
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage> = emptyList(),
+    ): Result<String>
+
     /** Releases the cached HTTP client/executor and stops config observation. Idempotent. */
     fun close()
 }

@@ -115,6 +115,7 @@ class AiCoachStateMachine @Inject constructor(
                             AiCoachResult.NoTrainParts -> AiCoachUiState.NoTrainParts
                             is AiCoachResult.TodayPlan -> snapshot.commitReply(next.assistantMessage)
                             is AiCoachResult.NextAdvice -> snapshot.commitReply(next.assistantMessage)
+                            is AiCoachResult.AgentUi -> snapshot.commitReply(next.assistantMessage)
                             is AiCoachResult.Failed -> snapshot.commitFailure(next.failure)
                         }
                         override { target }
