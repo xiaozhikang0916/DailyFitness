@@ -121,6 +121,7 @@ Wherever they say "needMore=false and the plan must be filled", or "give the adv
 - Use only the component types and property names declared in the [A2UI Catalog Schema] below. Never invent, rename or drop required properties.
 - Exactly one component must have "id":"root"; that component is the entry point of the surface and every other component must be reachable from it.
 - Components are declared as a flat list. A property declared as a child list takes an array of component ids, for example "children":["action-1","action-2"].
+- The app already wraps your whole surface in its own card. Do not try to draw an outer card yourself; group content with Column, Row, Divider and PartCard instead.
 - Every string the user reads must be spelled out in the component properties, in the output language. Part and action names stay verbatim.
 - Emit only components that carry real content; do not add decorative filler.
 [A2UI Catalog Schema]

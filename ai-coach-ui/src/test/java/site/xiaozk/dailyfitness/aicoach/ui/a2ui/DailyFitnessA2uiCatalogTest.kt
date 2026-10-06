@@ -37,11 +37,21 @@ class DailyFitnessA2uiCatalogTest {
         val json = DailyFitnessA2uiCatalog.catalog.toJsonSchemaString()
 
         // Custom DailyFitness components.
-        assertTrue("PartCard missing from schema", json.contains("PartCard"))
-        assertTrue("ActionRow missing from schema", json.contains("ActionRow"))
-        // Representative reused Material 3 basic components.
-        assertTrue("Text missing from schema", json.contains("Text"))
-        assertTrue("Card missing from schema", json.contains("Card"))
+        assertTrue("PartCard missing from schema", json.contains("\"PartCard\""))
+        assertTrue("ActionRow missing from schema", json.contains("\"ActionRow\""))
+        // Representative reused Material 3 basic components (the ones that group content,
+        // since the app owns the outer card).
+        assertTrue("Text missing from schema", json.contains("\"Text\""))
+        assertTrue("Column missing from schema", json.contains("\"Column\""))
+        assertTrue("Divider missing from schema", json.contains("\"Divider\""))
+    }
+
+    @Test
+    fun `catalog does not advertise a card so the app owns the only card chrome`() {
+        val json = DailyFitnessA2uiCatalog.catalog.toJsonSchemaString()
+
+        // Quoted, so the custom "PartCard" does not count as a hit.
+        assertFalse("Card must not be advertised", json.contains("\"Card\""))
     }
 
     @Test
@@ -60,6 +70,24 @@ class DailyFitnessA2uiCatalogTest {
             DailyFitnessA2uiCatalog.catalog.id,
         )
         assertEquals(DailyFitnessA2uiCatalog.ID, DailyFitnessA2uiCatalog.catalog.id)
+    }
+
+    @Test
+    fun `catalog exposes only the functions the app actually serves`() {
+        val json = DailyFitnessA2uiCatalog.catalog.toJsonSchemaString()
+
+        // Kept: text interpolation and number formatting.
+        assertTrue("formatString missing", json.contains("\"formatString\""))
+        assertTrue("formatNumber missing", json.contains("\"formatNumber\""))
+
+        // Dropped: link opening (privacy), formatting this UI does itself, and the
+        // validation functions that only serve `checks` on form components we do not
+        // register. Quoted matches, so function names mentioned inside another
+        // function's description do not count as hits.
+        listOf("openUrl", "pluralize", "formatCurrency", "formatDate", "email", "regex", "numeric")
+            .forEach { name ->
+                assertFalse("$name must not be advertised", json.contains("\"$name\""))
+            }
     }
 
     @Test

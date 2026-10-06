@@ -2,9 +2,10 @@ package site.xiaozk.dailyfitness.aicoach.ui.a2ui
 
 import androidx.a2ui.compose.ui.A2uiCatalog
 import androidx.a2ui.compose.ui.catalog.A2uiBasicCatalogV1
-import androidx.a2ui.model.catalog.basiccatalog.createBasicCatalogFunctions
+import androidx.a2ui.model.catalog.A2uiFunction
+import androidx.a2ui.model.catalog.functions.A2uiFormatNumberFunction
+import androidx.a2ui.model.catalog.functions.A2uiFormatStringFunction
 import androidx.a2ui.model.catalog.functions.A2uiLocaleProvider
-import androidx.a2ui.model.catalog.functions.A2uiMessageFormatter
 import androidx.compose.material3.a2ui.catalog.MaterialA2uiBasicCatalogV1Defaults
 import site.xiaozk.dailyfitness.aicoach.ui.a2ui.components.ActionRowComponent
 import site.xiaozk.dailyfitness.aicoach.ui.a2ui.components.PartCardComponent
@@ -16,10 +17,13 @@ import site.xiaozk.dailyfitness.aicoach.ui.a2ui.components.PartCardComponent
  * ([MaterialA2uiBasicCatalogV1Defaults]); the DailyFitness-specific ones
  * ([PartCardComponent], [ActionRowComponent]) are appended by this app.
  *
- * Media components (`Image` / `Video` / `AudioPlayer`) are deliberately **not**
- * registered: they would require image/video loading libraries and network access,
- * which conflicts with the AI Coach privacy invariant (no network unless the user
- * explicitly asks for a recommendation) and with "no new heavy dependencies".
+ * Two groups are deliberately **not** registered:
+ * - Media components (`Image` / `Video` / `AudioPlayer`): they would require image/video
+ *   loading libraries and network access, which conflicts with the AI Coach privacy
+ *   invariant (no network unless the user explicitly asks for a recommendation).
+ * - `Card`: the chat surface already draws the outer card for every agent turn, so a
+ *   card the agent could emit would only produce card-inside-card chrome. Content is
+ *   grouped with `Column` / `Row` / `Divider` / `PartCard` instead.
  */
 object DailyFitnessA2uiCatalog {
 
@@ -36,7 +40,6 @@ object DailyFitnessA2uiCatalog {
             // --- Reused Material 3 Basic Catalog components ---
             MaterialA2uiBasicCatalogV1Defaults.text,
             MaterialA2uiBasicCatalogV1Defaults.icon,
-            MaterialA2uiBasicCatalogV1Defaults.card,
             MaterialA2uiBasicCatalogV1Defaults.column,
             MaterialA2uiBasicCatalogV1Defaults.row,
             MaterialA2uiBasicCatalogV1Defaults.list,
@@ -46,16 +49,27 @@ object DailyFitnessA2uiCatalog {
             PartCardComponent,
             ActionRowComponent,
         ),
-        functions = createBasicCatalogFunctions(
-            // Privacy invariant: external links are never opened from agent-generated UI.
-            urlOpener = { },
-            messageFormatter = A2uiMessageFormatter { pattern, locale, arguments ->
-                android.icu.text.MessageFormat(pattern, locale).format(arguments)
-            },
-            localeProvider = A2uiLocaleProvider.Default,
-        ),
+        functions = dailyFitnessFunctions(),
         themeSchema = A2uiBasicCatalogV1.ThemeSchema,
         // The catalog is app-private, so its full schema is advertised inline to the agent.
         isInline = true,
     )
 }
+
+/**
+ * The client-side functions this catalog exposes.
+ *
+ * The full Basic Catalog set is deliberately trimmed: every function is serialized into the
+ * inline schema and re-sent on every request, and the dropped ones are either unused or
+ * contrary to the app's invariants.
+ *
+ * - kept: `formatString` (compose text from data-model values) and `formatNumber`.
+ * - dropped: `openUrl` (the app never opens agent-supplied links), `pluralize` /
+ *   `formatCurrency` / `formatDate` (this UI formats volumes itself), and the validation
+ *   functions (`and` / `or` / `not` / `numeric` / `length` / `regex` / `email` / `required`),
+ *   which only serve `checks` on form components this catalog does not register.
+ */
+private fun dailyFitnessFunctions(): List<A2uiFunction> = listOf(
+    A2uiFormatStringFunction.INSTANCE,
+    A2uiFormatNumberFunction(A2uiLocaleProvider.Default),
+)
