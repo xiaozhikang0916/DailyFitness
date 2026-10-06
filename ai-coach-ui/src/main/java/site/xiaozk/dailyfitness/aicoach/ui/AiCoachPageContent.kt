@@ -1,9 +1,5 @@
 package site.xiaozk.dailyfitness.aicoach.ui
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -11,8 +7,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,21 +18,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.a2ui.A2uiSurface
+import androidx.compose.material3.a2ui.A2uiSurfaceDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -52,8 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
+import androidx.a2ui.model.processor.A2uiSurfaceModel
 import site.xiaozk.dailyfitness.aicoach.engine.Advice
 import site.xiaozk.dailyfitness.aicoach.engine.AdviceKind
 import site.xiaozk.dailyfitness.aicoach.engine.CoachFailure
@@ -68,129 +60,177 @@ import site.xiaozk.dailyfitness.aicoach.engine.RecommendedPart
  * navigation) lives in the app; this composable only renders the states produced
  * by [AiCoachViewModel].
  *
- * The chat is a single flat [LazyColumn]: each assistant turn is a real message,
- * so the pending loading bubble, the real reply and a failure hint all render
- * through [ChatBubble] and share one stable item id per turn (the loading bubble
- * morphs in place into the reply / failure). The cancel affordance only appears
- * next to an in-flight bubble.
+ * The screen is no longer a chat log: a training summary card sits on top and, below
+ * it, only the latest assistant turn is shown (the recommended plan, the next-step
+ * advice, the agent-authored surface, or the in-flight / failed state). User-side
+ * request bubbles are never rendered - they exist only in the in-memory conversation
+ * that the model sees.
  */
 @Composable
 fun AiCoachPageContent(
     state: AiCoachUiState,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    a2uiSurfaces: List<A2uiSurfaceModel> = emptyList(),
     onRefresh: () -> Unit,
     onCancel: () -> Unit,
     onOpenSettings: () -> Unit,
     onAdoptSuggestion: (CoachSuggestion) -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    val chatHistory = state.history
-
-    // Keep the newest turn in view: on first entry and whenever a new message (e.g.
-    // the pending bubble or the user turn) arrives. Wait for the first layout pass
-    // so the item count is known before scrolling.
-    LaunchedEffect(chatHistory.size, state is AiCoachUiState.Initial) {
-        snapshotFlow { listState.layoutInfo.totalItemsCount }
-            .filter { it > 0 }
-            .first()
-        listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
-    }
-
-    LazyColumn(
-        state = listState,
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            .padding(contentPadding)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
+        // Every card is centered and never wider than [MessageCardMaxWidth].
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (state is AiCoachUiState.Ready || state is AiCoachUiState.NoTrainParts) {
-            item(key = "scenario-header") { ScenarioHeader(state.setsToday) }
+            TrainingSummaryCard(
+                setsToday = state.setsToday,
+                trainedParts = (state as? AiCoachUiState.Ready)?.trainedParts.orEmpty(),
+                currentAction = (state as? AiCoachUiState.Ready)?.currentAction,
+                currentActionSets = (state as? AiCoachUiState.Ready)?.currentActionSets ?: 0,
+                onRefresh = onRefresh,
+            )
         }
-        if (chatHistory.isNotEmpty()) {
-            item(key = "chat-history-title") {
+        AdviceSlot(
+            state = state,
+            a2uiSurfaces = a2uiSurfaces,
+            onCancel = onCancel,
+            onOpenSettings = onOpenSettings,
+            onAdoptSuggestion = onAdoptSuggestion,
+        )
+    }
+}
+
+/** Corner radius shared by every card. */
+private val MessageCardRadius = 20.dp
+
+/** The card shape: four equal rounded corners. */
+private val MessageCardShape = RoundedCornerShape(MessageCardRadius)
+
+/** Widest a card or the trailing call-to-action may grow on large screens. */
+private val MessageCardMaxWidth = 480.dp
+
+/** Breathing room between a card's edge and its content. */
+private val MessageCardPadding = 12.dp
+
+/**
+ * The top-of-page summary of today's training: how many sets were recorded, which
+ * parts were trained and the action currently being performed.
+ */
+@Composable
+private fun TrainingSummaryCard(
+    setsToday: Int,
+    trainedParts: List<String>,
+    currentAction: String?,
+    currentActionSets: Int,
+    onRefresh: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MessageCardShape,
+        modifier = Modifier
+            .widthIn(max = MessageCardMaxWidth)
+            .fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(MessageCardPadding)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = stringResource(R.string.ai_chat_history_title),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.outline,
+                    text = stringResource(R.string.ai_training_summary_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
                 )
+                Button(onClick = onRefresh) {
+                    Text(stringResource(R.string.ai_refresh))
+                }
             }
-            items(
-                items = chatHistory,
-                // Stable per-turn keys let the pending bubble and its real reply share
-                // one item, so the message slides down (animateItem) and morphs in place.
-                key = { message -> message.listKey() },
-            ) { message ->
-                ChatBubble(
-                    message = message,
-                    onAdoptSuggestion = onAdoptSuggestion,
-                    onCancel = onCancel,
-                    modifier = Modifier.animateItem(),
+            if (setsToday <= 0) {
+                Text(
+                    text = stringResource(R.string.ai_status_today_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
-            }
-        }
-        item(key = "content-tail") {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                when (state) {
-                    AiCoachUiState.Initial -> Unit
-                    AiCoachUiState.ConfigMissing -> ConfigMissingHint(onOpenSettings)
-                    is AiCoachUiState.Ready -> if (state.history.none { !it.fromUser }) {
-                        // No assistant turn yet: the first-run call to action. A failed
-                        // turn is an assistant message, so this falls through to the
-                        // regular request button used to retry.
-                        RefreshCallToAction(onRefresh)
-                    } else {
-                        RefreshFooter(onRefresh)
-                    }
-                    is AiCoachUiState.NoTrainParts -> {
-                        EmptyContentHint()
-                        // The state machine allows retrying once a library exists; reuse
-                        // the regular request button so it is reachable from the UI.
-                        RefreshFooter(onRefresh)
-                    }
+            } else {
+                Text(
+                    text = stringResource(R.string.ai_status_today_sets, setsToday),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                if (trainedParts.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.ai_summary_parts, trainedParts.joinToString("、")),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                currentAction?.let {
+                    Text(
+                        text = stringResource(R.string.ai_summary_current_action, it, currentActionSets),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
             }
         }
     }
 }
 
-/** Bubble corner radii: large rounded sides, one pointed "tail" corner. */
-private val BubbleCornerRadius = 20.dp
-private val BubbleTailCornerRadius = 4.dp
-
 /**
- * Stable LazyColumn key per turn: the loading bubble and the reply/failure replacing
- * it share `turnId` + `fromUser`, so the same item is reused and animates in place.
+ * The single advice slot below the summary: the latest assistant turn only.
  *
- * Depends only on message fields - never on the list position - so it stays stable as
- * the conversation grows.
+ * The user's own request turns are part of the in-memory conversation (they feed the
+ * model) but are deliberately not rendered. The slot also carries the first-run hint,
+ * the in-flight card with its cancel affordance, the failure hint and the gate hints for
+ * missing config / empty library. The refresh action lives in the summary header instead.
  */
-@Stable
-private fun CoachMessage.listKey(): Int =
-    requireNotNull(turnId) { "a rendered message must belong to a turn" } * 2 + if (fromUser) 0 else 1
-
-/**
- * Material3-card-like speech bubble shape: large rounded corners everywhere except
- * the corner pointing at the sender side (top-start for left/assistant bubbles,
- * top-end for right/user bubbles), which is left pointed like a tail.
- */
-private fun chatBubbleShape(fromUser: Boolean): RoundedCornerShape =
-    if (fromUser) {
-        RoundedCornerShape(
-            topStart = BubbleCornerRadius,
-            topEnd = BubbleTailCornerRadius,
-            bottomEnd = BubbleCornerRadius,
-            bottomStart = BubbleCornerRadius,
-        )
-    } else {
-        RoundedCornerShape(
-            topStart = BubbleTailCornerRadius,
-            topEnd = BubbleCornerRadius,
-            bottomEnd = BubbleCornerRadius,
-            bottomStart = BubbleCornerRadius,
-        )
+@Composable
+private fun AdviceSlot(
+    state: AiCoachUiState,
+    a2uiSurfaces: List<A2uiSurfaceModel>,
+    onCancel: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = MessageCardMaxWidth)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        when (state) {
+            AiCoachUiState.Initial -> Unit
+            AiCoachUiState.ConfigMissing -> ConfigMissingHint(onOpenSettings)
+            AiCoachUiState.NoTrainParts -> EmptyContentHint()
+            is AiCoachUiState.Ready -> {
+                val latest = state.history.lastOrNull { !it.fromUser }
+                if (latest == null) {
+                    FirstRunHint()
+                } else {
+                    when (val content = latest.content) {
+                        // The request side of a turn is never shown; only the reply is.
+                        is CoachMessageContent.PlanRequest,
+                        is CoachMessageContent.AdviceRequest -> Unit
+                        is CoachMessageContent.PlanSummary,
+                        is CoachMessageContent.AdviceSummary ->
+                            ReplyCard(message = latest, onAdoptSuggestion = onAdoptSuggestion)
+                        is CoachMessageContent.AgentUi ->
+                            AgentUiTurn(content = content, surfaces = a2uiSurfaces)
+                        CoachMessageContent.Loading -> LoadingCard(onCancel)
+                        is CoachMessageContent.Failure -> FailureCard(content.failure)
+                    }
+                }
+            }
+        }
     }
+}
 
 // Timing mirrors Material3's indeterminate CircularProgressIndicator (1.4.0):
 // 6000ms loop, 1080 deg global rotation + stepped 4x90 deg extra rotation, and a
@@ -207,9 +247,9 @@ private val BubbleBorderStepEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
 private val BubbleBorderSweepEasing = CubicBezierEasing(0.2f, 0.0f, 0.0f, 1.0f)
 
 /**
- * Loading border: a highlighted segment of the bubble outline travels along the
- * exact [shape] contour (incl. the pointed tail corner) while a faint track stays
- * visible. Length and cycle follow Material3's circular loading animation.
+ * Loading border: a highlighted segment of the outline travels along the exact [shape]
+ * contour while a faint track stays visible. Length and cycle follow Material3's circular
+ * loading animation.
  */
 @Composable
 private fun Modifier.bubbleLoadingBorder(shape: Shape): Modifier {
@@ -298,80 +338,29 @@ private fun Modifier.bubbleLoadingBorder(shape: Shape): Modifier {
 }
 
 @Composable
-private fun ChatBubble(
-    message: CoachMessage,
-    onAdoptSuggestion: (CoachSuggestion) -> Unit,
-    onCancel: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = chatBubbleShape(message.fromUser)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(modifier),
-        horizontalArrangement = if (message.fromUser) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically,
+private fun LoadingCard(onCancel: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Surface(
-            color = if (message.fromUser) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
-            shape = shape,
-            // Hug up to 300dp and animate the size change (loading is tiny, the reply
-            // is a full card).
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MessageCardShape,
             modifier = Modifier
-                .widthIn(max = 300.dp)
-                .animateContentSize(),
+                .widthIn(max = MessageCardMaxWidth)
+                .bubbleLoadingBorder(MessageCardShape),
         ) {
-            // Single AnimatedContent keeps one composition slot across
-            // loading -> reply, which is what makes the morph animation possible.
-            AnimatedContent(
-                targetState = message.isLoading,
-                modifier = if (message.isLoading) Modifier.bubbleLoadingBorder(shape) else Modifier,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "ai-coach-bubble",
-            ) { loading ->
-                when {
-                    loading -> LoadingBubbleContent()
-                    else -> when (val content = message.content) {
-                        is CoachMessageContent.PlanSummary ->
-                            PlanResultContent(content, onAdoptSuggestion)
-                        is CoachMessageContent.AdviceSummary ->
-                            AdviceResultContent(content, message.suggestions, onAdoptSuggestion)
-                        is CoachMessageContent.PlanRequest,
-                        is CoachMessageContent.AdviceRequest ->
-                            Text(
-                                text = userMessageText(content),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(10.dp),
-                            )
-                        is CoachMessageContent.Failure ->
-                            // Hint-only failure bubble; retrying uses the regular request button.
-                            Text(
-                                text = failureText(content.failure),
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(10.dp),
-                            )
-                        CoachMessageContent.Loading -> LoadingBubbleContent()
-                    }
-                }
-            }
+            LoadingBubbleContent()
         }
-        // The cancel affordance sits next to the bubble (not inside it) and only
-        // while the assistant turn is actually in flight.
-        if (message.isLoading) {
-            TextButton(onClick = onCancel) {
-                Text(stringResource(R.string.ai_cancel))
-            }
+        TextButton(onClick = onCancel) {
+            Text(stringResource(R.string.ai_cancel))
         }
     }
 }
 
 @Composable
 private fun LoadingBubbleContent() {
-    // Text-only loading state; the animated border on the bubble carries the motion.
+    // Text-only loading state; the animated border on the card carries the motion.
     Text(
         text = stringResource(R.string.ai_loading),
         style = MaterialTheme.typography.bodySmall,
@@ -379,35 +368,99 @@ private fun LoadingBubbleContent() {
     )
 }
 
+/**
+ * Renders the latest settled assistant reply (a recommended plan or next-step advice)
+ * inside the app's own card.
+ */
 @Composable
-private fun ScenarioHeader(setsToday: Int) {
-    Text(
-        text = if (setsToday <= 0) {
-            stringResource(R.string.ai_status_today_empty)
-        } else {
-            stringResource(R.string.ai_status_today_sets, setsToday)
-        },
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-    )
+private fun ReplyCard(
+    message: CoachMessage,
+    onAdoptSuggestion: (CoachSuggestion) -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MessageCardShape,
+        modifier = Modifier
+            .widthIn(max = MessageCardMaxWidth)
+            .fillMaxWidth(),
+    ) {
+        when (val content = message.content) {
+            is CoachMessageContent.PlanSummary ->
+                PlanResultContent(content, onAdoptSuggestion)
+            is CoachMessageContent.AdviceSummary ->
+                AdviceResultContent(content, message.suggestions, onAdoptSuggestion)
+            // Only settled assistant replies reach this slot.
+            else -> Unit
+        }
+    }
 }
 
 @Composable
-private fun RefreshCallToAction(onRefresh: () -> Unit) {
+private fun FailureCard(failure: CoachFailure) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MessageCardShape,
+        modifier = Modifier
+            .widthIn(max = MessageCardMaxWidth)
+            .fillMaxWidth(),
+    ) {
+        Text(
+            text = failureText(failure),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(MessageCardPadding),
+        )
+    }
+}
+
+/**
+ * Renders an agent-authored turn: the A2UI surface the agent created under
+ * [CoachMessageContent.AgentUi.surfaceId], wrapped in the app's own card.
+ *
+ * The outer card is app chrome (like every other turn), so it is deterministic and stays
+ * consistent with the design system; the agent only composes what goes inside it. The
+ * surface itself is looked up among the processor's active surfaces, so a turn stays a
+ * pure function of the conversation plus the processor output.
+ */
+@Composable
+private fun AgentUiTurn(
+    content: CoachMessageContent.AgentUi,
+    surfaces: List<A2uiSurfaceModel>,
+    modifier: Modifier = Modifier,
+) {
+    val surface = surfaces.firstOrNull { it.id == content.surfaceId }
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MessageCardShape,
+            modifier = Modifier
+                .widthIn(max = MessageCardMaxWidth)
+                .fillMaxWidth(),
+        ) {
+            Box(modifier = Modifier.padding(MessageCardPadding)) {
+                if (surface != null) {
+                    A2uiSurface(
+                        surfaceModel = surface,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    // The turn is committed before the processor has applied its messages:
+                    // this covers that one-frame gap (and a surface the agent deleted).
+                    A2uiSurfaceDefaults.LoadingIndicator()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FirstRunHint() {
     Text(
         text = stringResource(R.string.ai_ready_hint),
         style = MaterialTheme.typography.bodyMedium,
     )
-    Button(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.ai_refresh))
-    }
-}
-
-@Composable
-private fun RefreshFooter(onRefresh: () -> Unit) {
-    OutlinedButton(onClick = onRefresh, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.ai_refresh))
-    }
 }
 
 @Composable
@@ -425,7 +478,7 @@ private fun ConfigMissingHint(onOpenSettings: () -> Unit) {
     }
 }
 
-/** Rich plan reply, rendered inside the assistant bubble. */
+/** Rich plan reply, rendered inside the assistant card. */
 @Composable
 private fun PlanResultContent(
     content: CoachMessageContent.PlanSummary,
@@ -442,7 +495,7 @@ private fun PlanResultContent(
     }
 }
 
-/** Rich next-step reply, rendered inside the assistant bubble. */
+/** Rich next-step reply, rendered inside the assistant card. */
 @Composable
 private fun AdviceResultContent(
     content: CoachMessageContent.AdviceSummary,
@@ -575,19 +628,6 @@ private fun EmptyContentHint() {
 }
 
 // ---------------------------------------------------------------- text helpers
-
-@Composable
-private fun userMessageText(content: CoachMessageContent): String = when (content) {
-    is CoachMessageContent.PlanRequest ->
-        stringResource(R.string.ai_chat_plan_request)
-    is CoachMessageContent.AdviceRequest ->
-        stringResource(R.string.ai_chat_advice_request, content.setsToday, content.partName)
-    // Assistant replies, failures and the loading placeholder are rendered as rich content.
-    is CoachMessageContent.PlanSummary,
-    is CoachMessageContent.AdviceSummary,
-    is CoachMessageContent.Failure,
-    CoachMessageContent.Loading -> ""
-}
 
 @Composable
 private fun actionLineText(action: RecommendedAction): String {

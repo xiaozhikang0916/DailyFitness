@@ -115,6 +115,7 @@ class AiCoachStateMachine @Inject constructor(
                             AiCoachResult.NoTrainParts -> AiCoachUiState.NoTrainParts
                             is AiCoachResult.TodayPlan -> snapshot.commitReply(next.assistantMessage)
                             is AiCoachResult.NextAdvice -> snapshot.commitReply(next.assistantMessage)
+                            is AiCoachResult.AgentUi -> snapshot.commitReply(next.assistantMessage)
                             is AiCoachResult.Failed -> snapshot.commitFailure(next.failure)
                         }
                         override { target }
@@ -167,8 +168,14 @@ class AiCoachStateMachine @Inject constructor(
 /** Config gate + today's training, the only inputs the screen reconciles against. */
 internal data class Observed(val configured: Boolean, val today: TodayTraining)
 
-/** What today's training looks like: how many sets and the most recent part. */
-internal data class TodayTraining(val setsToday: Int, val currentPart: String?)
+/** What today's training looks like: set count, trained parts, and the most recent part/action. */
+internal data class TodayTraining(
+    val setsToday: Int,
+    val currentPart: String?,
+    val trainedParts: List<String> = emptyList(),
+    val currentAction: String? = null,
+    val currentActionSets: Int = 0,
+)
 
 /**
  * Reconciles the observed config gate and today's training into the current state.
@@ -183,25 +190,39 @@ internal fun AiCoachUiState.reconciledWith(observed: Observed): AiCoachUiState =
         AiCoachUiState.Ready(
             setsToday = observed.today.setsToday,
             currentPart = observed.today.currentPart,
+            trainedParts = observed.today.trainedParts,
+            currentAction = observed.today.currentAction,
+            currentActionSets = observed.today.currentActionSets,
         )
     } else {
         AiCoachUiState.ConfigMissing
     }
     is AiCoachUiState.Ready -> if (observed.configured) {
-        copy(setsToday = observed.today.setsToday, currentPart = observed.today.currentPart)
+        copy(
+            setsToday = observed.today.setsToday,
+            currentPart = observed.today.currentPart,
+            trainedParts = observed.today.trainedParts,
+            currentAction = observed.today.currentAction,
+            currentActionSets = observed.today.currentActionSets,
+        )
     } else {
         AiCoachUiState.ConfigMissing
     }
     AiCoachUiState.NoTrainParts -> if (observed.configured) this else AiCoachUiState.ConfigMissing
 }
 
-private fun DailyWorkout?.toTodayTraining(): TodayTraining = TodayTraining(
-    setsToday = this?.actions?.sumOf { it.trainAction.size } ?: 0,
-    currentPart = this?.actions
-        ?.filter { it.trainAction.isNotEmpty() }
-        ?.maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
-        ?.action?.part?.partName,
-)
+private fun DailyWorkout?.toTodayTraining(): TodayTraining {
+    val pairs = this?.actions.orEmpty()
+    val trained = pairs.filter { it.trainAction.isNotEmpty() }
+    val current = trained.maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
+    return TodayTraining(
+        setsToday = pairs.sumOf { it.trainAction.size },
+        currentPart = current?.action?.part?.partName,
+        currentAction = current?.action?.actionName,
+        currentActionSets = current?.trainAction?.size ?: 0,
+        trainedParts = trained.map { it.action.part.partName }.distinct(),
+    )
+}
 
 private fun todayLocalDate(): LocalDate =
     kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())

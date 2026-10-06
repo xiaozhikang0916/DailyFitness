@@ -41,6 +41,18 @@ sealed interface CoachMessageContent {
     ) : CoachMessageContent
 
     /**
+     * Assistant turn rendered from an agent-authored A2UI surface.
+     *
+     * [messages] are the raw A2UI protocol messages that build the surface; the UI layer
+     * feeds them into the A2UI message processor. [surfaceId] is the id the agent used in
+     * `createSurface` and identifies the rendered surface among the processor's active ones.
+     */
+    data class AgentUi(
+        val surfaceId: String,
+        val messages: List<String>,
+    ) : CoachMessageContent
+
+    /**
      * Transient placeholder appended to the UI conversation while a request is in
      * flight. The UI renders it as a loading bubble and it is never sent to the LLM.
      */

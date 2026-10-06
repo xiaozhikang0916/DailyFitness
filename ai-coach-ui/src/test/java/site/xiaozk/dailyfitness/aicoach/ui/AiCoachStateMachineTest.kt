@@ -138,6 +138,38 @@ class AiCoachStateMachineTest {
     }
 
     @Test
+    fun `an agent authored surface is committed as an AgentUi turn`() = runTest {
+        val messages = listOf(
+            """{"version":"v0.9","createSurface":{"surfaceId":"plan-1"}}""",
+            """{"version":"v0.9","updateComponents":{"surfaceId":"plan-1","components":[]}}""",
+        )
+        val coach = object : IAiCoach {
+            override suspend fun recommendToday(history: List<CoachMessage>): AiCoachResult =
+                AiCoachResult.AgentUi(
+                    surfaceId = "plan-1",
+                    messages = messages,
+                    assistantMessage = CoachMessage(
+                        fromUser = false,
+                        content = CoachMessageContent.AgentUi("plan-1", messages),
+                    ),
+                )
+        }
+        val machine = machineWith(FakeConfigStore(AiCoachConfig(apiKey = "test-key")), coach)
+
+        machine.dispatchAction(AiCoachUiAction.Refresh)
+        val ready = machine.awaitReady { !it.isLoading && it.history.size == 2 }
+
+        val reply = ready.history.last()
+        val content = reply.content as? CoachMessageContent.AgentUi ?: error("expected AgentUi")
+        assertEquals("plan-1", content.surfaceId)
+        assertEquals(2, content.messages.size)
+        // The reply replaces the pending bubble inside the same turn.
+        assertEquals(ready.history.first().turnId, reply.turnId)
+        // The agent turn joins the model conversation like any other reply.
+        assertEquals(2, ready.requestHistory.size)
+    }
+
+    @Test
     fun `no train parts is a page gate that can be retried from scratch`() = runTest {
         val machine = machineWith(
             FakeConfigStore(AiCoachConfig(apiKey = "test-key")),
@@ -233,16 +265,35 @@ class AiCoachStateMachineTest {
 
     @Test
     fun `reconciledWith gates on config and seeds today's training`() {
-        val configured = Observed(configured = true, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
-        val unconfigured = Observed(configured = false, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
+        val today = TodayTraining(
+            setsToday = 3,
+            currentPart = "胸部",
+            trainedParts = listOf("胸部", "背部"),
+            currentAction = "卧推",
+            currentActionSets = 2,
+        )
+        val configured = Observed(configured = true, today = today)
+        val unconfigured = Observed(configured = false, today = today)
 
         // Initial / ConfigMissing become Ready already carrying today's data.
         assertEquals(
-            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.Ready(
+                setsToday = 3,
+                currentPart = "胸部",
+                trainedParts = listOf("胸部", "背部"),
+                currentAction = "卧推",
+                currentActionSets = 2,
+            ),
             AiCoachUiState.Initial.reconciledWith(configured),
         )
         assertEquals(
-            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.Ready(
+                setsToday = 3,
+                currentPart = "胸部",
+                trainedParts = listOf("胸部", "背部"),
+                currentAction = "卧推",
+                currentActionSets = 2,
+            ),
             AiCoachUiState.ConfigMissing.reconciledWith(configured),
         )
 
@@ -252,6 +303,9 @@ class AiCoachStateMachineTest {
         val reconciled = ready.reconciledWith(configured) as AiCoachUiState.Ready
         assertEquals(3, reconciled.setsToday)
         assertEquals("胸部", reconciled.currentPart)
+        assertEquals(listOf("胸部", "背部"), reconciled.trainedParts)
+        assertEquals("卧推", reconciled.currentAction)
+        assertEquals(2, reconciled.currentActionSets)
         assertEquals(ready.history, reconciled.history)
         assertEquals(ready.requestHistory, reconciled.requestHistory)
 

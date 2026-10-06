@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "site.xiaozk.dailyfitness"
     compileSdk = 37
+    compileSdkMinor = 2
 
     defaultConfig {
         applicationId = "site.xiaozk.dailyfitness"
@@ -22,7 +23,7 @@ android {
     }
     signingConfigs {
         create("release") {
-            storeFile = file("${System.getenv("KEYSTORE_FILE") ?: "release.keystore"}")
+            storeFile = file(System.getenv("KEYSTORE_FILE") ?: "release.keystore")
             storePassword = System.getenv("KEYSTORE_PASSWORD")
             keyAlias = System.getenv("KEY_ALIAS")
             keyPassword = System.getenv("KEY_ALIAS_PASSWORD")
@@ -89,6 +90,8 @@ dependencies {
     implementation(project(":repository"))
     implementation(project(":ai-coach"))
     implementation(project(":ai-coach-ui"))
+    // A2UI surface models are part of the :ai-coach-ui public API consumed by the host page.
+    implementation(libs.a2ui.model)
     implementation(project(":session"))
     implementation(project(":database"))
     implementation(project(":calendar"))

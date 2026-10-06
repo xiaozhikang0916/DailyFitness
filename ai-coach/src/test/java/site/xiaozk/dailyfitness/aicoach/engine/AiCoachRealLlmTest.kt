@@ -11,6 +11,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeFalse
 import org.junit.Before
 import org.junit.Test
+import site.xiaozk.dailyfitness.aicoach.FakeA2uiCapabilityProvider
 import site.xiaozk.dailyfitness.aicoach.FakeConfigStore
 import site.xiaozk.dailyfitness.aicoach.FakeTrainActionRepository
 import site.xiaozk.dailyfitness.aicoach.FakeUserRepository
@@ -73,12 +74,13 @@ class AiCoachRealLlmTest {
             trainRepository = FakeTrainActionRepository(chestGroups()),
             planExecutor = executor,
             coachLocaleProvider = CoachLocaleProvider { "zh-CN" },
+            a2uiCapabilityProvider = FakeA2uiCapabilityProvider(),
         )
     }
 
     @Test
     fun `real LLM - case A without history returns a matched today plan`() = runTest {
-        val result = withContext(Dispatchers.Default) { newRealEngine().recommendToday(emptyList()) }
+        val result = withContext(Dispatchers.Default) { newRealEngine().recommendTodayStructured(emptyList()) }
         assertTrue("expected TodayPlan, got $result", result is AiCoachResult.TodayPlan)
     }
 
@@ -93,7 +95,7 @@ class AiCoachRealLlmTest {
             ),
         )
         val result = withContext(Dispatchers.Default) {
-            newRealEngine(map = workoutMap(todayWorkout)).recommendToday(emptyList())
+            newRealEngine(map = workoutMap(todayWorkout)).recommendTodayStructured(emptyList())
         }
         assertTrue("expected NextAdvice, got $result", result is AiCoachResult.NextAdvice)
     }

@@ -9,6 +9,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlinx.serialization.KSerializer
+import site.xiaozk.dailyfitness.aicoach.a2ui.A2uiCapabilityProvider
+import site.xiaozk.dailyfitness.aicoach.a2ui.AgentReply
+import site.xiaozk.dailyfitness.aicoach.a2ui.AgentReplyParser
 import site.xiaozk.dailyfitness.aicoach.config.AiCoachConfigProvider
 import site.xiaozk.dailyfitness.aicoach.llm.AdviceKindReply
 import site.xiaozk.dailyfitness.aicoach.llm.NextAdviceReply
@@ -47,11 +50,198 @@ class AiCoachEngine @Inject constructor(
     private val trainRepository: ITrainActionRepository,
     private val planExecutor: PlanExecutor,
     private val coachLocaleProvider: CoachLocaleProvider,
+    private val a2uiCapabilityProvider: A2uiCapabilityProvider,
 ) : IAiCoach {
 
     private val gate = Mutex()
 
+    /**
+     * Agent-driven UI entry point.
+     *
+     * The LLM authors an A2UI surface (or asks for more training history, which this method
+     * serves internally and transparently). Negotiation happens entirely inside this suspend
+     * call, so the caller only ever observes the final answer: intermediate rounds never reach
+     * the UI. One total timeout budget covers all rounds.
+     */
     override suspend fun recommendToday(history: List<CoachMessage>): AiCoachResult = gate.withLock {
+        if (!configProvider.current.configured) {
+            return@withLock AiCoachResult.ConfigMissing
+        }
+        val conversation = history.takeLast(HISTORY_MESSAGES)
+        val user = userRepository.getCurrentUser()
+        val today = todayLocalDate()
+        val allWorkouts = workoutRepository.getAllWorkoutDayList(user).first()
+        val trainGroups = trainRepository.getAllTrainParts().first()
+        if (trainGroups.isEmpty()) {
+            return@withLock AiCoachResult.NoTrainParts
+        }
+
+        val todayWorkout = allWorkouts.firstOrNull { it.date == today }
+        // A single budget for the whole exchange: the agent may ask for more history several
+        // times and the user waits for all of those round-trips.
+        val budget = configProvider.current.timeoutSeconds
+            .coerceIn(AiCoachConfig.MIN_TIMEOUT_SECONDS, AiCoachConfig.MAX_TIMEOUT_SECONDS)
+            .seconds
+        try {
+            withTimeout(budget) {
+                if (todayWorkout?.actions?.isNotEmpty() == true) {
+                    agentNextAdvice(today, allWorkouts, todayWorkout, trainGroups, conversation)
+                } else {
+                    agentPlanToday(today, allWorkouts, trainGroups, conversation)
+                }
+            }
+        } catch (e: TimeoutCancellationException) {
+            AiCoachResult.Failed(CoachFailure.Timeout, retryable = true)
+        }
+    }
+
+    // ------------------------------------------------------- Agent-driven (A2UI) branch
+
+    /**
+     * Case A on the A2UI branch: negotiate the history window until the agent renders a
+     * surface. Mirrors the structured pipeline's expansion policy (initial window, growth on
+     * request, hard caps, one final "no more history" attempt).
+     */
+    private suspend fun agentPlanToday(
+        today: LocalDate,
+        allWorkouts: List<DailyWorkout>,
+        trainGroups: List<TrainPartGroup>,
+        history: List<CoachMessage>,
+    ): AiCoachResult {
+        val historyDays = allWorkouts
+            .filter { it.date < today }
+            .mapNotNull { HistorySummarizer.summarize(it, today) }
+
+        val systemText = AiPrompts.agentPlanSystem(
+            localeTag = coachLocaleProvider.languageTag(),
+            catalogId = a2uiCapabilityProvider.catalogId,
+            catalogSchema = a2uiCapabilityProvider.inlineCatalogJson(),
+        )
+
+        if (historyDays.isEmpty()) {
+            // No history at all: the model must render a surface (needMore is forbidden).
+            val userText = AiPrompts.partPlanUser(trainGroups, emptyList())
+            val reply = requestAgentReply(PROMPT_AGENT_PLAN, systemText, userText, history)
+                .getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
+            return when (reply) {
+                is AgentReply.NeedMore ->
+                    AiCoachResult.Failed(CoachFailure.NeedMoreWithoutHistory, retryable = true)
+                is AgentReply.Ui -> agentUiResult(reply)
+            }
+        }
+
+        var included = min(INITIAL_SESSIONS, historyDays.size)
+        var rounds = 0
+        var forceFallback = false
+
+        while (true) {
+            rounds++
+            val window = historyDays.subList(max(0, historyDays.size - included), historyDays.size)
+            val additionalNote = if (forceFallback) noMoreHistoryNote(included) else null
+            val userText = AiPrompts.partPlanUser(trainGroups, window, additionalNote)
+            val reply = requestAgentReply(PROMPT_AGENT_PLAN, systemText, userText, history)
+                .getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
+
+            when (reply) {
+                is AgentReply.Ui -> return agentUiResult(reply)
+                is AgentReply.NeedMore -> {
+                    val canExpand = !forceFallback &&
+                        included < historyDays.size &&
+                        included < MAX_SESSIONS &&
+                        rounds <= MAX_ROUNDS
+                    if (canExpand) {
+                        val want = (reply.wantSessions ?: 1).coerceAtLeast(1)
+                        included = min(MAX_SESSIONS, max(included + 1, min(historyDays.size, included + want)))
+                        continue
+                    }
+                    if (!forceFallback) {
+                        // One final attempt telling the model it cannot get more history.
+                        forceFallback = true
+                        continue
+                    }
+                    return AiCoachResult.Failed(
+                        CoachFailure.InsufficientHistory,
+                        retryable = true,
+                    )
+                }
+            }
+        }
+    }
+
+    /** Case B on the A2UI branch. There is no history window to expand, so `needMore` fails. */
+    private suspend fun agentNextAdvice(
+        today: LocalDate,
+        allWorkouts: List<DailyWorkout>,
+        todayWorkout: DailyWorkout,
+        trainGroups: List<TrainPartGroup>,
+        history: List<CoachMessage>,
+    ): AiCoachResult {
+        val todaySummary = HistorySummarizer.summarize(todayWorkout, today)
+        if (todaySummary == null || todaySummary.parts.isEmpty()) {
+            return AiCoachResult.Failed(CoachFailure.CannotDetermineTodayParts, retryable = true)
+        }
+        val currentPartName = todayWorkout.actions
+            .maxByOrNull { pair -> pair.trainAction.maxOf { it.instant } }
+            ?.action?.part?.partName
+        if (currentPartName == null) {
+            return AiCoachResult.Failed(CoachFailure.CannotDetermineCurrentPart, retryable = true)
+        }
+        val partOnlyDays = allWorkouts
+            .filter { it.date < today && HistorySummarizer.containsPart(it, currentPartName) }
+        val partHistory = partOnlyDays.mapNotNull {
+            HistorySummarizer.summarizePartOnly(it, currentPartName, today)
+        }.takeLast(PART_HISTORY_SESSIONS)
+        val lastPartDaysAgo = partOnlyDays.lastOrNull()?.let {
+            (today.toEpochDays() - it.date.toEpochDays()).toInt()
+        }
+
+        val systemText = AiPrompts.agentAdviceSystem(
+            localeTag = coachLocaleProvider.languageTag(),
+            catalogId = a2uiCapabilityProvider.catalogId,
+            catalogSchema = a2uiCapabilityProvider.inlineCatalogJson(),
+        )
+        val userText = AiPrompts.nextAdviceUser(trainGroups, todaySummary, partHistory, lastPartDaysAgo)
+        val reply = requestAgentReply(PROMPT_AGENT_ADVICE, systemText, userText, history)
+            .getOrElse { return AiCoachResult.Failed(userFacingError(it), retryable = true) }
+        return when (reply) {
+            is AgentReply.Ui -> agentUiResult(reply)
+            is AgentReply.NeedMore ->
+                AiCoachResult.Failed(CoachFailure.InsufficientHistory, retryable = true)
+        }
+    }
+
+    /** Runs one raw-text round and parses the JSON Lines envelope it returns. */
+    private suspend fun requestAgentReply(
+        promptId: String,
+        systemText: String,
+        userText: String,
+        history: List<CoachMessage>,
+    ): Result<AgentReply> =
+        planExecutor.requestRawText(promptId, systemText, userText, history)
+            .mapCatching { AgentReplyParser.parse(it).getOrThrow() }
+
+    private fun agentUiResult(reply: AgentReply.Ui): AiCoachResult = AiCoachResult.AgentUi(
+        surfaceId = reply.surfaceId,
+        messages = reply.messages,
+        assistantMessage = CoachMessage(
+            fromUser = false,
+            content = CoachMessageContent.AgentUi(
+                surfaceId = reply.surfaceId,
+                messages = reply.messages,
+            ),
+        ),
+    )
+
+    private fun noMoreHistoryNote(included: Int): String =
+        "No more training history can be provided (the most recent $included training days are already included). Build the recommendation from the available data now, as an A2UI surface."
+
+    // ------------------------------------------------- Legacy structured branch (unused)
+
+    /**
+     * Superseded structured pipeline, retained for reference. It is **not** a fallback for
+     * [recommendToday]: the agent-driven branch does not fall back to it on any failure.
+     */
+    internal suspend fun recommendTodayStructured(history: List<CoachMessage>): AiCoachResult = gate.withLock {
         if (!configProvider.current.configured) {
             return@withLock AiCoachResult.ConfigMissing
         }
@@ -389,6 +579,10 @@ class AiCoachEngine @Inject constructor(
 
         /** 5 rounds = 10 messages carried into the next request. */
         const val HISTORY_MESSAGES = 10
+
+        /** Koog prompt ids of the agent-driven A2UI flow. */
+        const val PROMPT_AGENT_PLAN = "aicoach-agent-plan"
+        const val PROMPT_AGENT_ADVICE = "aicoach-agent-advice"
     }
 }
 

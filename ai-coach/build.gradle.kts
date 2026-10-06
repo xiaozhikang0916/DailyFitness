@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "site.xiaozk.dailyfitness.aicoach"
     compileSdk = 37
+    compileSdkMinor = 2
 
     defaultConfig {
         minSdk = 29

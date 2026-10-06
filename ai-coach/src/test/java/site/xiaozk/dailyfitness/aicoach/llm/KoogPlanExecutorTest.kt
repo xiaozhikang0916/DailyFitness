@@ -31,6 +31,14 @@ class KoogPlanExecutorTest {
             serializer: KSerializer<T>,
         ): Result<T> = Result.failure(IllegalStateException("not used in this test"))
 
+        override suspend fun textRequest(
+            config: AiCoachConfig,
+            promptId: String,
+            systemText: String,
+            userText: String,
+            history: List<site.xiaozk.dailyfitness.aicoach.engine.CoachMessage>,
+        ): Result<String> = Result.failure(IllegalStateException("not used in this test"))
+
         override fun close() = onClose(apiKey)
     }
 
