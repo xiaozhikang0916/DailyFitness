@@ -61,6 +61,12 @@ sealed interface AiCoachUiState {
         override val setsToday: Int,
         /** Part of the most recent set today; null when nothing was trained. */
         val currentPart: String? = null,
+        /** Parts trained today, in the order they first appear. */
+        val trainedParts: List<String> = emptyList(),
+        /** Action of the most recent set today; null when nothing was trained. */
+        val currentAction: String? = null,
+        /** How many sets of [currentAction] were recorded today. */
+        val currentActionSets: Int = 0,
         override val history: List<CoachMessage> = emptyList(),
         /** Committed model conversation; a failed/aborted turn never lands here. */
         val requestHistory: List<CoachMessage> = emptyList(),

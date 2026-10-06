@@ -265,16 +265,35 @@ class AiCoachStateMachineTest {
 
     @Test
     fun `reconciledWith gates on config and seeds today's training`() {
-        val configured = Observed(configured = true, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
-        val unconfigured = Observed(configured = false, today = TodayTraining(setsToday = 3, currentPart = "胸部"))
+        val today = TodayTraining(
+            setsToday = 3,
+            currentPart = "胸部",
+            trainedParts = listOf("胸部", "背部"),
+            currentAction = "卧推",
+            currentActionSets = 2,
+        )
+        val configured = Observed(configured = true, today = today)
+        val unconfigured = Observed(configured = false, today = today)
 
         // Initial / ConfigMissing become Ready already carrying today's data.
         assertEquals(
-            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.Ready(
+                setsToday = 3,
+                currentPart = "胸部",
+                trainedParts = listOf("胸部", "背部"),
+                currentAction = "卧推",
+                currentActionSets = 2,
+            ),
             AiCoachUiState.Initial.reconciledWith(configured),
         )
         assertEquals(
-            AiCoachUiState.Ready(setsToday = 3, currentPart = "胸部"),
+            AiCoachUiState.Ready(
+                setsToday = 3,
+                currentPart = "胸部",
+                trainedParts = listOf("胸部", "背部"),
+                currentAction = "卧推",
+                currentActionSets = 2,
+            ),
             AiCoachUiState.ConfigMissing.reconciledWith(configured),
         )
 
@@ -284,6 +303,9 @@ class AiCoachStateMachineTest {
         val reconciled = ready.reconciledWith(configured) as AiCoachUiState.Ready
         assertEquals(3, reconciled.setsToday)
         assertEquals("胸部", reconciled.currentPart)
+        assertEquals(listOf("胸部", "背部"), reconciled.trainedParts)
+        assertEquals("卧推", reconciled.currentAction)
+        assertEquals(2, reconciled.currentActionSets)
         assertEquals(ready.history, reconciled.history)
         assertEquals(ready.requestHistory, reconciled.requestHistory)
 
